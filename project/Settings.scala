@@ -93,7 +93,6 @@ object Settings {
     // Running yum as root or it fails
     Docker / daemonUserUid := None,
     Docker / daemonUser := "root",
-    dockerCommands += Cmd("RUN", "microdnf install -y yum && yum upgrade -y glibc-devel --allowerasing"),
     scalacOptions ++= commonCompilerSettings,
     // assembly merge
     assembly / assemblyMergeStrategy := Merging.customMergeStrategy((assembly / assemblyMergeStrategy).value),
