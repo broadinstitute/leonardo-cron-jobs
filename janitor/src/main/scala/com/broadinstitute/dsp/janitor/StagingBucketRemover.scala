@@ -44,4 +44,5 @@ object StagingBucketRemover {
 }
 
 final case class StagingBucketRemoverDeps[F[_]](reportDestinationBucket: GcsBucketName,
-                                                storageService: GoogleStorageService[F])
+                                                storageService: GoogleStorageService[F]
+)

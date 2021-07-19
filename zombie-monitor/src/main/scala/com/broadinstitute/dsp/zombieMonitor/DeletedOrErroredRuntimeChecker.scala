@@ -34,8 +34,8 @@ object DeletedOrErroredRuntimeChecker {
             checkGceRuntimeStatus(x, isDryRun)
         }
 
-      def checkDataprocClusterStatus(runtime: Runtime.Dataproc, isDryRun: Boolean)(
-        implicit ev: Ask[F, TraceId]
+      def checkDataprocClusterStatus(runtime: Runtime.Dataproc, isDryRun: Boolean)(implicit
+        ev: Ask[F, TraceId]
       ): F[Option[Runtime]] =
         for {
           runtimeOpt <- deps.dataprocService
@@ -97,12 +97,13 @@ object DeletedOrErroredRuntimeChecker {
         for {
           runtimeOpt <- deps.computeService
             .getInstance(runtime.googleProject, runtime.zone, InstanceName(runtime.runtimeName))
-          _ <- if (isDryRun) F.unit
-          else
-            runtimeOpt match {
-              case None    => dbReader.markRuntimeDeleted(runtime.id)
-              case Some(_) => F.unit
-            }
+          _ <-
+            if (isDryRun) F.unit
+            else
+              runtimeOpt match {
+                case None    => dbReader.markRuntimeDeleted(runtime.id)
+                case Some(_) => F.unit
+              }
         } yield runtimeOpt.fold[Option[Runtime]](Some(runtime))(_ => none[Runtime])
     }
 }

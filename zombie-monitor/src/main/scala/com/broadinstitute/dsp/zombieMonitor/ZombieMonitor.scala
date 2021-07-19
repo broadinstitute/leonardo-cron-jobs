@@ -56,7 +56,8 @@ object ZombieMonitor {
       processes = Stream(deleteDiskCheckerProcess,
                          deleteRuntimeCheckerProcess,
                          deletek8sClusterCheckerProcess,
-                         deleteOrErroredNodepoolCheckerProcess).covary[F]
+                         deleteOrErroredNodepoolCheckerProcess
+      ).covary[F]
 
       _ <- processes.parJoin(4) // Number of checkers in 'processes'
     } yield ExitCode.Success

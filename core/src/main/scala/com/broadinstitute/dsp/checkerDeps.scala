@@ -43,7 +43,8 @@ object RuntimeCheckerDeps {
                                                               scopedCredential,
                                                               blocker,
                                                               supportedRegions,
-                                                              blockerBound)
+                                                              blockerBound
+      )
       billingService <- GoogleBillingService.fromCredential(scopedCredential, blocker, blockerBound)
     } yield {
       val checkRunnerDeps = CheckRunnerDeps(config.reportDestinationBucket, storageService, metrics)
@@ -65,8 +66,8 @@ object Runtime {
                        runtimeName: String,
                        cloudService: CloudService,
                        status: String,
-                       zone: ZoneName)
-      extends Runtime {
+                       zone: ZoneName
+  ) extends Runtime {
     // this is the format we'll output in report, which can be easily consumed by scripts if necessary
     override def toString: String = s"$id,${googleProject.value},$runtimeName,$cloudService,$status,${zone.value}"
   }
@@ -76,8 +77,8 @@ object Runtime {
                             runtimeName: String,
                             cloudService: CloudService,
                             status: String,
-                            region: RegionName)
-      extends Runtime {
+                            region: RegionName
+  ) extends Runtime {
     // this is the format we'll output in report, which can be easily consumed by scripts if necessary
     override def toString: String = s"$id,${googleProject.value},$runtimeName,$cloudService,$status,${region.value}"
   }

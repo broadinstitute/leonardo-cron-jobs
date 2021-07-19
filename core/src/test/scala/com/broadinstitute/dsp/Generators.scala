@@ -12,30 +12,24 @@ object Generators {
     project <- genGoogleProject
     runtimeName <- Gen.uuid.map(_.toString)
     status <- Gen.oneOf("Running", "Creating", "Deleted", "Error")
-  } yield {
-    cloudService match {
-      case CloudService.Dataproc =>
-        Runtime.Dataproc(id, project, runtimeName, cloudService, status, DBTestHelper.regionName)
-      case CloudService.Gce =>
-        Runtime.Gce(id, project, runtimeName, cloudService, status, DBTestHelper.zoneName)
-    }
+  } yield cloudService match {
+    case CloudService.Dataproc =>
+      Runtime.Dataproc(id, project, runtimeName, cloudService, status, DBTestHelper.regionName)
+    case CloudService.Gce =>
+      Runtime.Gce(id, project, runtimeName, cloudService, status, DBTestHelper.zoneName)
   }
   val genDataprocRuntime: Gen[Runtime.Dataproc] = for {
     id <- Gen.chooseNum(0, 100)
     project <- genGoogleProject
     runtimeName <- Gen.uuid.map(_.toString)
     status <- Gen.oneOf("Running", "Creating", "Deleted", "Error")
-  } yield {
-    Runtime.Dataproc(id, project, runtimeName, CloudService.Dataproc, status, DBTestHelper.regionName)
-  }
+  } yield Runtime.Dataproc(id, project, runtimeName, CloudService.Dataproc, status, DBTestHelper.regionName)
   val genDisk: Gen[Disk] = for {
     id <- Gen.chooseNum(0, 100)
     project <- genGoogleProject
     diskName <- genDiskName
     zone <- genZoneName
-  } yield {
-    Disk(id, project, diskName, zone, formattedBy = Some("GCE"))
-  }
+  } yield Disk(id, project, diskName, zone, formattedBy = Some("GCE"))
 
   val genInitBucket: Gen[InitBucketToRemove] = for {
     project <- genGoogleProject

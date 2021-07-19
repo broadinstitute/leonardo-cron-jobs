@@ -19,8 +19,9 @@ object Janitor {
                                             shouldCheckAll: Boolean,
                                             shouldCheckKubernetesClustersToBeRemoved: Boolean,
                                             shouldCheckNodepoolsToBeRemoved: Boolean,
-                                            shouldCheckStagingBucketsToBeRemoved: Boolean)(
-    implicit timer: Timer[F],
+                                            shouldCheckStagingBucketsToBeRemoved: Boolean
+  )(implicit
+    timer: Timer[F],
     cs: ContextShift[F]
   ): Stream[F, Nothing] = {
     implicit def getLogger[F[_]: Sync] = Slf4jLogger.getLogger[F]
@@ -31,17 +32,20 @@ object Janitor {
       deps <- Stream.resource(initDependencies(config))
       checkRunnerDep = deps.runtimeCheckerDeps.checkRunnerDeps
 
-      removeKubernetesClusters = if (shouldCheckAll || shouldCheckKubernetesClustersToBeRemoved)
-        Stream.eval(KubernetesClusterRemover.impl(deps.dbReader, deps.leoPublisherDeps).run(isDryRun))
-      else Stream.empty
+      removeKubernetesClusters =
+        if (shouldCheckAll || shouldCheckKubernetesClustersToBeRemoved)
+          Stream.eval(KubernetesClusterRemover.impl(deps.dbReader, deps.leoPublisherDeps).run(isDryRun))
+        else Stream.empty
 
-      removeNodepools = if (shouldCheckAll || shouldCheckNodepoolsToBeRemoved)
-        Stream.eval(NodepoolRemover.impl(deps.dbReader, deps.leoPublisherDeps).run(isDryRun))
-      else Stream.empty
+      removeNodepools =
+        if (shouldCheckAll || shouldCheckNodepoolsToBeRemoved)
+          Stream.eval(NodepoolRemover.impl(deps.dbReader, deps.leoPublisherDeps).run(isDryRun))
+        else Stream.empty
 
-      removeStagingBuckets = if (shouldCheckAll || shouldCheckStagingBucketsToBeRemoved)
-        Stream.eval(StagingBucketRemover.impl(deps.dbReader, checkRunnerDep).run(isDryRun))
-      else Stream.empty
+      removeStagingBuckets =
+        if (shouldCheckAll || shouldCheckStagingBucketsToBeRemoved)
+          Stream.eval(StagingBucketRemover.impl(deps.dbReader, checkRunnerDep).run(isDryRun))
+        else Stream.empty
 
       processes = Stream(removeKubernetesClusters, removeNodepools, removeStagingBuckets).covary[F]
 

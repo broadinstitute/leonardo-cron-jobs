@@ -16,31 +16,31 @@ final class DbQueryBuilderSpec extends AnyFlatSpec with CronJobsTestSuite with I
   implicit val config = ConfigSpec.config.database
   val transactor = yoloTransactor
 
-  it should "build deletedDisksQuery properly" taggedAs (DbTest) in {
+  it should "build deletedDisksQuery properly" taggedAs DbTest in {
     check(DbReader.deletedDisksQuery)
   }
 
-  it should "build initBucketsToDeleteQuery properly" taggedAs (DbTest) in {
+  it should "build initBucketsToDeleteQuery properly" taggedAs DbTest in {
     check(DbReader.initBucketsToDeleteQuery)
   }
 
-  it should "build deletedRuntimeQuery properly" taggedAs (DbTest) in {
+  it should "build deletedRuntimeQuery properly" taggedAs DbTest in {
     check(DbReader.deletedRuntimeQuery)
   }
 
-  it should "build erroredRuntimeQuery properly" taggedAs (DbTest) in {
+  it should "build erroredRuntimeQuery properly" taggedAs DbTest in {
     check(DbReader.erroredRuntimeQuery)
   }
 
-  it should "build stoppedRuntimeQuery properly" taggedAs (DbTest) in {
+  it should "build stoppedRuntimeQuery properly" taggedAs DbTest in {
     check(DbReader.stoppedRuntimeQuery)
   }
 
-  it should "build deletedAndErroredKubernetesClusterQuery properly" taggedAs (DbTest) in {
+  it should "build deletedAndErroredKubernetesClusterQuery properly" taggedAs DbTest in {
     check(DbReader.deletedAndErroredKubernetesClusterQuery)
   }
 
-  it should "build deletedAndErroredNodepoolQuery properly" taggedAs (DbTest) in {
+  it should "build deletedAndErroredNodepoolQuery properly" taggedAs DbTest in {
     check(DbReader.deletedAndErroredNodepoolQuery)
   }
 

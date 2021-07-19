@@ -53,9 +53,7 @@ object Nuker {
       credential <- org.broadinstitute.dsde.workbench.google2.credentialResource[F](appConfig.pathToCredential.toString)
       topicAdminClient <- GoogleTopicAdmin.fromServiceAccountCrendential(credential)
       subscriptionClient <- GoogleSubscriptionAdmin.fromServiceAccountCredential(credential)
-    } yield {
-      NukerDeps(blocker, metrics, topicAdminClient, subscriptionClient)
-    }
+    } yield NukerDeps(blocker, metrics, topicAdminClient, subscriptionClient)
 }
 
 final case class NukerDeps[F[_]](

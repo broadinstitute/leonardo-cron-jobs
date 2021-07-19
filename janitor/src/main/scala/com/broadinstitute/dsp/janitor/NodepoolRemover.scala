@@ -19,8 +19,8 @@ object NodepoolRemover {
       override def dependencies: CheckRunnerDeps[F] = deps.checkRunnerDeps
       override def resourceToScan: fs2.Stream[F, Nodepool] = dbReader.getNodepoolsToDelete
 
-      override def checkResource(n: Nodepool, isDryRun: Boolean)(
-        implicit ev: Ask[F, TraceId]
+      override def checkResource(n: Nodepool, isDryRun: Boolean)(implicit
+        ev: Ask[F, TraceId]
       ): F[Option[Nodepool]] =
         for {
           ctx <- ev.ask
