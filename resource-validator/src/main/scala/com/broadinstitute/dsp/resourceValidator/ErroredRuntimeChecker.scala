@@ -20,8 +20,8 @@ object ErroredRuntimeChecker {
       override def dependencies: CheckRunnerDeps[F] = deps.checkRunnerDeps
       override def resourceToScan: fs2.Stream[F, Runtime] = dbReader.getErroredRuntimes
 
-      override def checkResource(runtime: Runtime, isDryRun: Boolean)(
-        implicit ev: Ask[F, TraceId]
+      override def checkResource(runtime: Runtime, isDryRun: Boolean)(implicit
+        ev: Ask[F, TraceId]
       ): F[Option[Runtime]] = runtime match {
         case x: Runtime.Dataproc =>
           checkDataprocCluster(x, isDryRun)
@@ -29,8 +29,9 @@ object ErroredRuntimeChecker {
           checkGceRuntime(x, isDryRun)
       }
 
-      def checkDataprocCluster(runtime: Runtime.Dataproc,
-                               isDryRun: Boolean)(implicit ev: Ask[F, TraceId]): F[Option[Runtime]] =
+      def checkDataprocCluster(runtime: Runtime.Dataproc, isDryRun: Boolean)(implicit
+        ev: Ask[F, TraceId]
+      ): F[Option[Runtime]] =
         for {
           clusterOpt <- deps.dataprocService
             .getCluster(runtime.googleProject, runtime.region, DataprocClusterName(runtime.runtimeName))
@@ -60,7 +61,6 @@ object ErroredRuntimeChecker {
                         )
                         .as(none[Runtime])
                   }
-              }
             } yield r
           }
         } yield r
