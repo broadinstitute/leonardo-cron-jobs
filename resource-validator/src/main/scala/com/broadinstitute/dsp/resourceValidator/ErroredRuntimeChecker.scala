@@ -44,16 +44,23 @@ object ErroredRuntimeChecker {
                     .warn(
                       s"${runtime} still exists in ${cluster.getStatus.getState.name} status. It needs to be deleted. isBillingEnabled: $isBillingEnabled. Project: ${runtime.googleProject}"
                     )
-                    .as(Option(runtime))
+                    .as(None)
                 else
                   isBillingEnabled match {
                     case true =>
                       logger.warn(
                         s"${runtime} still exists in ${cluster.getStatus.getState.name} status with billing enabled. Going to delete it."
-                      ) >> deps.dataprocService
-                        .deleteCluster(runtime.googleProject, runtime.region, DataprocClusterName(runtime.runtimeName))
-                        .void
-                        .as(Option(runtime))
+                      ) >> {
+                        if (isDryRun) F.pure(Some(runtime))
+                        else
+                          deps.dataprocService
+                            .deleteCluster(runtime.googleProject,
+                                           runtime.region,
+                                           DataprocClusterName(runtime.runtimeName)
+                            )
+                            .void
+                            .as(Option(runtime))
+                      }
                     case false =>
                       logger
                         .info(

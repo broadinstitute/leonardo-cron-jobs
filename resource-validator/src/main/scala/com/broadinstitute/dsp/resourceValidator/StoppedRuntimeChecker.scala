@@ -24,8 +24,9 @@ object StoppedRuntimeChecker {
       override def dependencies: CheckRunnerDeps[F] = deps.checkRunnerDeps
       override def resourceToScan: fs2.Stream[F, Runtime] = dbReader.getStoppedRuntimes
 
-      override def checkResource(runtime: Runtime,
-                                 isDryRun: Boolean)(implicit ev: Ask[F, TraceId]): F[Option[Runtime]] =
+      override def checkResource(runtime: Runtime, isDryRun: Boolean)(implicit
+        ev: Ask[F, TraceId]
+      ): F[Option[Runtime]] =
         runtime match {
           case x: Runtime.Dataproc =>
             checkDataprocCluster(x, isDryRun)
@@ -33,8 +34,8 @@ object StoppedRuntimeChecker {
             checkGceRuntime(x, isDryRun)
         }
 
-      private def checkGceRuntime(runtime: Runtime.Gce, isDryRun: Boolean)(
-        implicit ev: Ask[F, TraceId]
+      private def checkGceRuntime(runtime: Runtime.Gce, isDryRun: Boolean)(implicit
+        ev: Ask[F, TraceId]
       ): F[Option[Runtime]] =
         for {
           runtimeOpt <- deps.computeService
@@ -55,8 +56,8 @@ object StoppedRuntimeChecker {
           }
         } yield runningRuntimeOpt
 
-      private def checkDataprocCluster(runtime: Runtime.Dataproc, isDryRun: Boolean)(
-        implicit ev: Ask[F, TraceId]
+      private def checkDataprocCluster(runtime: Runtime.Dataproc, isDryRun: Boolean)(implicit
+        ev: Ask[F, TraceId]
       ): F[Option[Runtime]] = {
         val clusterName = DataprocClusterName(runtime.runtimeName)
         val project = runtime.googleProject
@@ -71,19 +72,22 @@ object StoppedRuntimeChecker {
                 // possible to stop Dataproc clusters otherwise. Therefore here, we are also checking that there is
                 // at least one underlying instance that is RUNNING.
                 runningInstanceExists <- containsRunningInstance(project, runtime.region, clusterName)
-                rt <- if (runningInstanceExists) {
-                  if (isDryRun)
-                    logger
-                      .warn(s"Cluster (${runtime}) has running instance(s). It needs to be stopped.")
-                      .as(runtime.some)
-                  else
-                    logger.warn(s"Cluster (${runtime}) has running instances(s). Going to stop it.") >> deps.dataprocService
-                    // In contrast to in Leo, we're not setting the shutdown script metadata before stopping the instance
-                    // in order to keep things simple since our main goal here is to prevent unintended cost to users.
-                      .stopCluster(project, runtime.region, clusterName, metadata = None)
-                      .void
-                      .as(runtime.some)
-                } else F.pure(none[Runtime.Dataproc])
+                rt <-
+                  if (runningInstanceExists) {
+                    if (isDryRun)
+                      logger
+                        .warn(s"Cluster (${runtime}) has running instance(s). It needs to be stopped.")
+                        .as(runtime.some)
+                    else
+                      logger.warn(
+                        s"Cluster (${runtime}) has running instances(s). Going to stop it."
+                      ) >> deps.dataprocService
+                        // In contrast to in Leo, we're not setting the shutdown script metadata before stopping the instance
+                        // in order to keep things simple since our main goal here is to prevent unintended cost to users.
+                        .stopCluster(project, runtime.region, clusterName, metadata = None)
+                        .void
+                        .as(runtime.some)
+                  } else F.pure(none[Runtime.Dataproc])
               } yield rt
             } else F.pure(none[Runtime.Dataproc])
           }
@@ -100,15 +104,14 @@ object StoppedRuntimeChecker {
           doesThereExistARunningInstance <- Stream
             .emits(instances.toList)
             .covary[F]
-            .parEvalMapUnordered(5) {
-              case (dataprocZonePreemptible, instances) =>
-                instances.toList
-                  .parTraverse { instance =>
-                    deps.computeService
-                      .getInstance(project, dataprocZonePreemptible.zone, instance)
-                      .handleErrorWith(_ => F.pure(none[Instance]))
-                  }
-                  .map(_.flatten)
+            .parEvalMapUnordered(5) { case (dataprocZonePreemptible, instances) =>
+              instances.toList
+                .parTraverse { instance =>
+                  deps.computeService
+                    .getInstance(project, dataprocZonePreemptible.zone, instance)
+                    .handleErrorWith(_ => F.pure(none[Instance]))
+                }
+                .map(_.flatten)
             }
             .exists(_.exists(_.getStatus == "RUNNING"))
             .compile

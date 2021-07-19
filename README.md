@@ -66,7 +66,7 @@ e.g. `sbt "resourceValidator/run --dryRun --all"`
 
 ## Contributing
 1. Run these unit tests locally before making a PR:
-- `com.broadinstitute.dsp.zombieMonitor.DbReaderSpec
+- `com.broadinstitute.dsp.zombieMonitor.DbReaderSpec`
 - `com.broadinstitute.dsp.resourceValidator.DbQueryBuilderSpec`
 - `com.broadinstitute.dsp.resourceValidator.DbReader*Spec`
 - `com.broadinstitute.dsp.janitor.DbQueryBuilderSpec`
