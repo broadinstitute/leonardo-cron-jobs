@@ -19,4 +19,5 @@ object Config {
 final case class AppConfig(database: DatabaseConfig,
                            pathToCredential: Path,
                            reportDestinationBucket: GcsBucketName,
-                           runtimeCheckerConfig: RuntimeCheckerConfig)
+                           runtimeCheckerConfig: RuntimeCheckerConfig
+)

@@ -21,23 +21,24 @@ object DeletedDiskChecker {
       override def dependencies: CheckRunnerDeps[F] = deps.checkRunnerDeps
       override def resourceToScan: fs2.Stream[F, Disk] = dbReader.getDeletedDisks
 
-      override def checkResource(disk: Disk, isDryRun: Boolean)(
-        implicit ev: Ask[F, TraceId]
+      override def checkResource(disk: Disk, isDryRun: Boolean)(implicit
+        ev: Ask[F, TraceId]
       ): F[Option[Disk]] =
         for {
           diskOpt <- deps.googleDiskService.getDisk(disk.googleProject, disk.zone, disk.diskName)
-          _ <- if (!isDryRun) {
-            if (disk.formattedBy.getOrElse(None) == "GALAXY") {
-              val dataDiskName = disk.diskName
-              val postgresDiskName = DiskName(s"${dataDiskName.value}-gxy-postres-disk")
-              diskOpt.traverse { _ =>
-                List(postgresDiskName, dataDiskName).parTraverse(dn =>
-                  deps.googleDiskService.deleteDisk(disk.googleProject, disk.zone, dn)
-                )
-              }
-            } else
-              diskOpt.traverse(_ => deps.googleDiskService.deleteDisk(disk.googleProject, disk.zone, disk.diskName))
-          } else F.pure(None)
+          _ <-
+            if (!isDryRun) {
+              if (disk.formattedBy.getOrElse(None) == "GALAXY") {
+                val dataDiskName = disk.diskName
+                val postgresDiskName = DiskName(s"${dataDiskName.value}-gxy-postres-disk")
+                diskOpt.traverse { _ =>
+                  List(postgresDiskName, dataDiskName).parTraverse(dn =>
+                    deps.googleDiskService.deleteDisk(disk.googleProject, disk.zone, dn)
+                  )
+                }
+              } else
+                diskOpt.traverse(_ => deps.googleDiskService.deleteDisk(disk.googleProject, disk.zone, disk.diskName))
+            } else F.pure(None)
         } yield diskOpt.map(_ => disk)
     }
 }

@@ -30,8 +30,9 @@ object DeletedOrErroredNodepoolChecker {
 
       override def dependencies: CheckRunnerDeps[F] = deps.checkRunnerDeps
 
-      def checkResource(nodepoolToScan: NodepoolToScan,
-                        isDryRun: Boolean)(implicit ev: Ask[F, TraceId]): F[Option[NodepoolToScan]] =
+      def checkResource(nodepoolToScan: NodepoolToScan, isDryRun: Boolean)(implicit
+        ev: Ask[F, TraceId]
+      ): F[Option[NodepoolToScan]] =
         for {
           nodepoolOpt <- deps.gkeService.getNodepool(nodepoolToScan.nodepoolId)
           nodepoolToReport <- nodepoolOpt match {

@@ -20,14 +20,14 @@ object DeletedOrErroredKubernetesClusterChecker {
 
       override def dependencies: CheckRunnerDeps[F] = deps.checkRunnerDeps
 
-      override def checkResource(cluster: KubernetesCluster, isDryRun: Boolean)(
-        implicit ev: Ask[F, TraceId]
+      override def checkResource(cluster: KubernetesCluster, isDryRun: Boolean)(implicit
+        ev: Ask[F, TraceId]
       ): F[Option[KubernetesCluster]] = checkKubernetesClusterStatus(cluster, isDryRun)
 
       override def resourceToScan: fs2.Stream[F, KubernetesCluster] = dbReader.getDeletedAndErroredKubernetesClusters
 
-      def checkKubernetesClusterStatus(cluster: KubernetesCluster, isDryRun: Boolean)(
-        implicit ev: Ask[F, TraceId]
+      def checkKubernetesClusterStatus(cluster: KubernetesCluster, isDryRun: Boolean)(implicit
+        ev: Ask[F, TraceId]
       ): F[Option[KubernetesCluster]] =
         for {
           clusterOpt <- deps.gkeService.getCluster(

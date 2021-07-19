@@ -17,8 +17,8 @@ class DataprocWorkerCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
   //we don't want to duplicate the purpose of the deleted runtime checker here
   it should "return None if cluster doesn't exist in google" in {
     val dataprocService = new BaseFakeGoogleDataprocService {
-      override def getCluster(project: GoogleProject, region: RegionName, clusterName: DataprocClusterName)(
-        implicit ev: Ask[IO, TraceId]
+      override def getCluster(project: GoogleProject, region: RegionName, clusterName: DataprocClusterName)(implicit
+        ev: Ask[IO, TraceId]
       ): IO[Option[Cluster]] = IO.pure(None)
     }
 
@@ -43,8 +43,8 @@ class DataprocWorkerCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
       }
 
       val dataprocService = new BaseFakeGoogleDataprocService {
-        override def getCluster(project: GoogleProject, region: RegionName, clusterName: DataprocClusterName)(
-          implicit ev: Ask[IO, TraceId]
+        override def getCluster(project: GoogleProject, region: RegionName, clusterName: DataprocClusterName)(implicit
+          ev: Ask[IO, TraceId]
         ): IO[Option[Cluster]] =
           IO.pure(
             Some(
@@ -85,8 +85,8 @@ class DataprocWorkerCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
       }
 
       val dataprocService = new BaseFakeGoogleDataprocService {
-        override def getCluster(project: GoogleProject, region: RegionName, clusterName: DataprocClusterName)(
-          implicit ev: Ask[IO, TraceId]
+        override def getCluster(project: GoogleProject, region: RegionName, clusterName: DataprocClusterName)(implicit
+          ev: Ask[IO, TraceId]
         ): IO[Option[Cluster]] =
           IO.pure(
             Some(
@@ -119,8 +119,8 @@ class DataprocWorkerCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
       }
 
       val dataprocService = new BaseFakeGoogleDataprocService {
-        override def getCluster(project: GoogleProject, region: RegionName, clusterName: DataprocClusterName)(
-          implicit ev: Ask[IO, TraceId]
+        override def getCluster(project: GoogleProject, region: RegionName, clusterName: DataprocClusterName)(implicit
+          ev: Ask[IO, TraceId]
         ): IO[Option[Cluster]] =
           IO.pure(
             Some(
@@ -157,8 +157,8 @@ class DataprocWorkerCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
       }
 
       val dataprocService = new BaseFakeGoogleDataprocService {
-        override def getCluster(project: GoogleProject, region: RegionName, clusterName: DataprocClusterName)(
-          implicit ev: Ask[IO, TraceId]
+        override def getCluster(project: GoogleProject, region: RegionName, clusterName: DataprocClusterName)(implicit
+          ev: Ask[IO, TraceId]
         ): IO[Option[Cluster]] =
           IO.pure(
             Some(
@@ -195,7 +195,8 @@ class DataprocWorkerCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
   it should "return None if preemptible worker numbers don't match when a cluster is stopped in Google and has zero preemptibles" in {
     forAll { (runtime: RuntimeWithWorkers, dryRun: Boolean) =>
       val sourceRuntime = runtime.copy(r = runtime.r.copy(status = "Stopped"),
-                                       workerConfig = WorkerConfig(runtime.workerConfig.numberOfWorkers, Some(4)))
+                                       workerConfig = WorkerConfig(runtime.workerConfig.numberOfWorkers, Some(4))
+      )
 
       val dbReader = new FakeDbReader {
         override def getRuntimesWithWorkers: fs2.Stream[IO, RuntimeWithWorkers] =
@@ -203,8 +204,8 @@ class DataprocWorkerCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
       }
 
       val dataprocService = new BaseFakeGoogleDataprocService {
-        override def getCluster(project: GoogleProject, region: RegionName, clusterName: DataprocClusterName)(
-          implicit ev: Ask[IO, TraceId]
+        override def getCluster(project: GoogleProject, region: RegionName, clusterName: DataprocClusterName)(implicit
+          ev: Ask[IO, TraceId]
         ): IO[Option[Cluster]] =
           IO.pure(
             Some(

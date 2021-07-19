@@ -24,13 +24,13 @@ import org.scalatest.flatspec.AnyFlatSpec
 class ErroredRuntimeCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
   it should "return None if runtime no longer exists in Google" in {
     val computeService = new FakeGoogleComputeService {
-      override def getInstance(project: GoogleProject, zone: ZoneName, instanceName: InstanceName)(
-        implicit ev: Ask[IO, TraceId]
+      override def getInstance(project: GoogleProject, zone: ZoneName, instanceName: InstanceName)(implicit
+        ev: Ask[IO, TraceId]
       ): IO[Option[Instance]] = IO.pure(None)
     }
     val dataprocService = new BaseFakeGoogleDataprocService {
-      override def getCluster(project: GoogleProject, region: RegionName, clusterName: DataprocClusterName)(
-        implicit ev: Ask[IO, TraceId]
+      override def getCluster(project: GoogleProject, region: RegionName, clusterName: DataprocClusterName)(implicit
+        ev: Ask[IO, TraceId]
       ): IO[Option[Cluster]] = IO.pure(None)
     }
 
@@ -53,20 +53,20 @@ class ErroredRuntimeCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
         override def getErroredRuntimes: fs2.Stream[IO, Runtime] = Stream.emit(runtime)
       }
       val computeService = new FakeGoogleComputeService {
-        override def getInstance(project: GoogleProject, zone: ZoneName, instanceName: InstanceName)(
-          implicit ev: Ask[IO, TraceId]
+        override def getInstance(project: GoogleProject, zone: ZoneName, instanceName: InstanceName)(implicit
+          ev: Ask[IO, TraceId]
         ): IO[Option[Instance]] = {
           val instance = Instance.newBuilder().build()
           IO.pure(Some(instance))
         }
 
-        override def deleteInstance(project: GoogleProject, zone: ZoneName, instanceName: InstanceName)(
-          implicit ev: Ask[IO, TraceId]
+        override def deleteInstance(project: GoogleProject, zone: ZoneName, instanceName: InstanceName)(implicit
+          ev: Ask[IO, TraceId]
         ): IO[Option[Operation]] = if (dryRun) IO.raiseError(fail("this shouldn't be called")) else IO.pure(None)
       }
       val dataprocService = new BaseFakeGoogleDataprocService {
-        override def getCluster(project: GoogleProject, region: RegionName, clusterName: DataprocClusterName)(
-          implicit ev: Ask[IO, TraceId]
+        override def getCluster(project: GoogleProject, region: RegionName, clusterName: DataprocClusterName)(implicit
+          ev: Ask[IO, TraceId]
         ): IO[Option[Cluster]] = {
           val cluster = Cluster.newBuilder().build()
           IO.pure(Some(cluster))
@@ -94,8 +94,8 @@ class ErroredRuntimeCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
         override def getErroredRuntimes: fs2.Stream[IO, Runtime] = Stream.emit(runtime)
       }
       val dataprocService = new BaseFakeGoogleDataprocService {
-        override def getCluster(project: GoogleProject, region: RegionName, clusterName: DataprocClusterName)(
-          implicit ev: Ask[IO, TraceId]
+        override def getCluster(project: GoogleProject, region: RegionName, clusterName: DataprocClusterName)(implicit
+          ev: Ask[IO, TraceId]
         ): IO[Option[Cluster]] = {
           val cluster = Cluster.newBuilder().setStatus(ClusterStatus.newBuilder().setState(State.ERROR)).build()
           IO.pure(Some(cluster))

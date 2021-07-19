@@ -25,19 +25,21 @@ object DeletedOrErroredNodepoolChecker {
 
       override def dependencies: CheckRunnerDeps[F] = deps.checkRunnerDeps
 
-      override def checkResource(nodepool: Nodepool, isDryRun: Boolean)(
-        implicit ev: Ask[F, TraceId]
+      override def checkResource(nodepool: Nodepool, isDryRun: Boolean)(implicit
+        ev: Ask[F, TraceId]
       ): F[Option[Nodepool]] = checkNodepoolStatus(nodepool, isDryRun)
 
       override def resourceToScan: fs2.Stream[F, Nodepool] = dbReader.getDeletedAndErroredNodepools
 
-      def checkNodepoolStatus(nodepool: Nodepool,
-                              isDryRun: Boolean)(implicit ev: Ask[F, TraceId]): F[Option[Nodepool]] =
+      def checkNodepoolStatus(nodepool: Nodepool, isDryRun: Boolean)(implicit
+        ev: Ask[F, TraceId]
+      ): F[Option[Nodepool]] =
         for {
           now <- timer.clock.realTime(TimeUnit.MILLISECONDS)
           nodepoolOpt <- deps.gkeService.getNodepool(
             NodepoolId(KubernetesClusterId(nodepool.googleProject, nodepool.location, nodepool.clusterName),
-                       nodepool.nodepoolName)
+                       nodepool.nodepoolName
+            )
           )
           _ <- nodepoolOpt.traverse_ { _ =>
             if (isDryRun) {
@@ -45,7 +47,8 @@ object DeletedOrErroredNodepoolChecker {
             } else {
               val msg = DeleteNodepoolMeesage(nodepool.nodepoolId,
                                               nodepool.googleProject,
-                                              Some(TraceId(s"DeletedOrErroredNodepoolChecker-$now")))
+                                              Some(TraceId(s"DeletedOrErroredNodepoolChecker-$now"))
+              )
               logger.warn(s"${nodepool.toString} still exists in Google. Going to delete") >> deps.publisher.publishOne(
                 msg
               )

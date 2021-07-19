@@ -40,7 +40,8 @@ object Main
          shouldCheckDeletedNodepools,
          shouldCheckDeletedDisks,
          shouldCheckInitBuckets,
-         shouldCheckDataprocWorkers).mapN {
+         shouldCheckDataprocWorkers
+        ).mapN {
           (dryRun,
            checkAll,
            shouldCheckDeletedRuntimes,
@@ -50,7 +51,8 @@ object Main
            shouldCheckDeletedNodepools,
            shouldCheckDeletedDisks,
            shouldCheckInitBuckets,
-           shouldCheckDataprocWorkers) =>
+           shouldCheckDataprocWorkers
+          ) =>
             ResourceValidator
               .run[IO](
                 isDryRun = dryRun,

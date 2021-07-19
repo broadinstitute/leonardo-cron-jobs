@@ -26,13 +26,13 @@ import org.scalatest.flatspec.AnyFlatSpec
 final class StoppedRuntimeCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
   it should "return None if runtime no longer exists in Google" in {
     val computeService = new FakeGoogleComputeService {
-      override def getInstance(project: GoogleProject, zone: ZoneName, instanceName: InstanceName)(
-        implicit ev: Ask[IO, TraceId]
+      override def getInstance(project: GoogleProject, zone: ZoneName, instanceName: InstanceName)(implicit
+        ev: Ask[IO, TraceId]
       ): IO[Option[Instance]] = IO.pure(None)
     }
     val dataprocService = new BaseFakeGoogleDataprocService {
-      override def getCluster(project: GoogleProject, region: RegionName, clusterName: DataprocClusterName)(
-        implicit ev: Ask[IO, TraceId]
+      override def getCluster(project: GoogleProject, region: RegionName, clusterName: DataprocClusterName)(implicit
+        ev: Ask[IO, TraceId]
       ): IO[Option[Cluster]] = IO.pure(None)
     }
 
@@ -56,34 +56,35 @@ final class StoppedRuntimeCheckerSpec extends AnyFlatSpec with CronJobsTestSuite
       }
 
       val computeService = new FakeGoogleComputeService {
-        override def getInstance(project: GoogleProject, zone: ZoneName, instanceName: InstanceName)(
-          implicit ev: Ask[IO, TraceId]
+        override def getInstance(project: GoogleProject, zone: ZoneName, instanceName: InstanceName)(implicit
+          ev: Ask[IO, TraceId]
         ): IO[Option[Instance]] = {
           val instance = Instance.newBuilder().setStatus(runtime.status.toUpperCase).build()
           IO.pure(Some(instance))
         }
 
-        override def stopInstance(project: GoogleProject, zone: ZoneName, instanceName: InstanceName)(
-          implicit ev: Ask[IO, TraceId]
+        override def stopInstance(project: GoogleProject, zone: ZoneName, instanceName: InstanceName)(implicit
+          ev: Ask[IO, TraceId]
         ): IO[Operation] = if (dryRun) IO.raiseError(fail("this shouldn't be called")) else IO.pure(defaultOperation)
       }
 
       val dataprocService = new BaseFakeGoogleDataprocService {
-        override def getCluster(project: GoogleProject, region: RegionName, clusterName: DataprocClusterName)(
-          implicit ev: Ask[IO, TraceId]
+        override def getCluster(project: GoogleProject, region: RegionName, clusterName: DataprocClusterName)(implicit
+          ev: Ask[IO, TraceId]
         ): IO[Option[Cluster]] =
           IO.pure(Some(makeClusterWithStatus(runtime.status.toUpperCase)))
 
-        override def getClusterInstances(project: GoogleProject,
-                                         region: RegionName,
-                                         clusterName: DataprocClusterName)(implicit ev: Ask[IO, TraceId]) =
+        override def getClusterInstances(project: GoogleProject, region: RegionName, clusterName: DataprocClusterName)(
+          implicit ev: Ask[IO, TraceId]
+        ) =
           IO.pure(dataprocRoleZonePreemptibilityInstances)
 
         override def stopCluster(project: GoogleProject,
                                  region: RegionName,
                                  clusterName: DataprocClusterName,
-                                 metadata: Option[Map[String, String]])(
-          implicit ev: Ask[IO, TraceId]
+                                 metadata: Option[Map[String, String]]
+        )(implicit
+          ev: Ask[IO, TraceId]
         ): IO[List[Operation]] =
           if (dryRun) IO.raiseError(fail("this shouldn't be called")) else IO.pure(List(defaultOperation))
       }
@@ -110,34 +111,35 @@ final class StoppedRuntimeCheckerSpec extends AnyFlatSpec with CronJobsTestSuite
       }
 
       val computeService = new FakeGoogleComputeService {
-        override def getInstance(project: GoogleProject, zone: ZoneName, instanceName: InstanceName)(
-          implicit ev: Ask[IO, TraceId]
+        override def getInstance(project: GoogleProject, zone: ZoneName, instanceName: InstanceName)(implicit
+          ev: Ask[IO, TraceId]
         ): IO[Option[Instance]] = {
           val instance = Instance.newBuilder().setStatus("STOPPED").build()
           IO.pure(Some(instance))
         }
 
-        override def stopInstance(project: GoogleProject, zone: ZoneName, instanceName: InstanceName)(
-          implicit ev: Ask[IO, TraceId]
+        override def stopInstance(project: GoogleProject, zone: ZoneName, instanceName: InstanceName)(implicit
+          ev: Ask[IO, TraceId]
         ): IO[Operation] = if (dryRun) IO.raiseError(fail("this shouldn't be called")) else IO.pure(defaultOperation)
       }
 
       val dataprocService = new BaseFakeGoogleDataprocService {
-        override def getCluster(project: GoogleProject, region: RegionName, clusterName: DataprocClusterName)(
-          implicit ev: Ask[IO, TraceId]
+        override def getCluster(project: GoogleProject, region: RegionName, clusterName: DataprocClusterName)(implicit
+          ev: Ask[IO, TraceId]
         ): IO[Option[Cluster]] =
           IO.pure(Some(makeClusterWithStatus("RUNNING")))
 
-        override def getClusterInstances(project: GoogleProject,
-                                         region: RegionName,
-                                         clusterName: DataprocClusterName)(implicit ev: Ask[IO, TraceId]) =
+        override def getClusterInstances(project: GoogleProject, region: RegionName, clusterName: DataprocClusterName)(
+          implicit ev: Ask[IO, TraceId]
+        ) =
           IO.pure(dataprocRoleZonePreemptibilityInstances)
 
         override def stopCluster(project: GoogleProject,
                                  region: RegionName,
                                  clusterName: DataprocClusterName,
-                                 metadata: Option[Map[String, String]])(
-          implicit ev: Ask[IO, TraceId]
+                                 metadata: Option[Map[String, String]]
+        )(implicit
+          ev: Ask[IO, TraceId]
         ): IO[List[Operation]] =
           if (dryRun) IO.raiseError(fail("this shouldn't be called")) else IO.pure(List(defaultOperation))
       }
@@ -158,10 +160,12 @@ object StoppedRuntimeCheckerSpec {
   val dataprocRoleZonePreemptibilityInstances = Map(
     DataprocRoleZonePreemptibility(Master, zone, false) -> Set(InstanceName("master-instance")),
     DataprocRoleZonePreemptibility(Worker, zone, false) -> Set(InstanceName("worker-instance-0"),
-                                                               InstanceName("worker-instance-1")),
+                                                               InstanceName("worker-instance-1")
+    ),
     DataprocRoleZonePreemptibility(SecondaryWorker, zone, true) -> Set(InstanceName("secondary-worker-instance-0"),
                                                                        InstanceName("secondary-worker-instance-1"),
-                                                                       InstanceName("secondary-worker-instance-2"))
+                                                                       InstanceName("secondary-worker-instance-2")
+    )
   )
 
   def makeClusterWithStatus(status: String): Cluster = {

@@ -16,8 +16,9 @@ import org.broadinstitute.dsde.workbench.openTelemetry.OpenTelemetryMetrics
 object Nuker {
   def run[F[_]: ConcurrentEffect: Parallel](isDryRun: Boolean,
                                             shouldRunAll: Boolean,
-                                            shouldDeletePubsubTopics: Boolean)(
-    implicit timer: Timer[F],
+                                            shouldDeletePubsubTopics: Boolean
+  )(implicit
+    timer: Timer[F],
     cs: ContextShift[F]
   ): Stream[F, Nothing] = {
     implicit def getLogger[F[_]: Sync] = Slf4jLogger.getLogger[F]
@@ -26,15 +27,17 @@ object Nuker {
     for {
       config <- Stream.fromEither(Config.appConfig)
       deps <- Stream.resource(initDependencies(config))
-      deleteRuntimeCheckerProcess = if (shouldRunAll || shouldDeletePubsubTopics)
-        Stream.eval(
-          PubsubTopicAndSubscriptionCleaner(config.pubsubTopicCleaner,
-                                            deps.topicAdminClient,
-                                            deps.subscriptionClient,
-                                            deps.metrics)
-            .run(isDryRun)
-        )
-      else Stream.empty
+      deleteRuntimeCheckerProcess =
+        if (shouldRunAll || shouldDeletePubsubTopics)
+          Stream.eval(
+            PubsubTopicAndSubscriptionCleaner(config.pubsubTopicCleaner,
+                                              deps.topicAdminClient,
+                                              deps.subscriptionClient,
+                                              deps.metrics
+            )
+              .run(isDryRun)
+          )
+        else Stream.empty
 
       processes = Stream(deleteRuntimeCheckerProcess).covary[F]
       _ <- processes.parJoin(2)
@@ -50,9 +53,7 @@ object Nuker {
       credential <- org.broadinstitute.dsde.workbench.google2.credentialResource[F](appConfig.pathToCredential.toString)
       topicAdminClient <- GoogleTopicAdmin.fromServiceAccountCrendential(credential)
       subscriptionClient <- GoogleSubscriptionAdmin.fromServiceAccountCredential(credential)
-    } yield {
-      NukerDeps(blocker, metrics, topicAdminClient, subscriptionClient)
-    }
+    } yield NukerDeps(blocker, metrics, topicAdminClient, subscriptionClient)
 }
 
 final case class NukerDeps[F[_]](

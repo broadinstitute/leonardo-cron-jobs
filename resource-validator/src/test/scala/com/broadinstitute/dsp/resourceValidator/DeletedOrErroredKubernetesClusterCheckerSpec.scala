@@ -15,8 +15,8 @@ import org.scalatest.flatspec.AnyFlatSpec
 class DeletedOrErroredKubernetesClusterCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
   it should "return None if kubernetes cluster no longer exists in Google" in {
     val gkeService = new MockGKEService {
-      override def getCluster(clusterId: KubernetesClusterId)(
-        implicit ev: Ask[IO, TraceId]
+      override def getCluster(clusterId: KubernetesClusterId)(implicit
+        ev: Ask[IO, TraceId]
       ): IO[Option[Cluster]] = IO.pure(None)
     }
 
@@ -39,15 +39,15 @@ class DeletedOrErroredKubernetesClusterCheckerSpec extends AnyFlatSpec with Cron
         override def getDeletedAndErroredKubernetesClusters: fs2.Stream[IO, KubernetesCluster] = Stream.emit(cluster)
       }
       val gkeService = new MockGKEService {
-        override def getCluster(clusterId: KubernetesClusterId)(
-          implicit ev: Ask[IO, TraceId]
+        override def getCluster(clusterId: KubernetesClusterId)(implicit
+          ev: Ask[IO, TraceId]
         ): IO[Option[Cluster]] = {
           val cluster = Cluster.newBuilder().build()
           IO.pure(Some(cluster))
         }
 
-        override def deleteCluster(clusterId: KubernetesClusterId)(
-          implicit ev: Ask[IO, TraceId]
+        override def deleteCluster(clusterId: KubernetesClusterId)(implicit
+          ev: Ask[IO, TraceId]
         ): IO[Option[Operation]] =
           if (dryRun) IO.raiseError(fail("this shouldn't be called")) else IO.pure(Some(Operation.newBuilder().build()))
       }

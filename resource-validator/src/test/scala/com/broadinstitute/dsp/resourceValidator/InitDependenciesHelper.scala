@@ -19,7 +19,8 @@ object InitDependenciesHelper {
   def initRuntimeCheckerDeps(googleComputeService: GoogleComputeService[IO] = FakeGoogleComputeService,
                              googleStorageService: GoogleStorageService[IO] = FakeGoogleStorageInterpreter,
                              googleDataprocService: GoogleDataprocService[IO] = FakeGoogleDataprocService,
-                             googleBillingService: GoogleBillingService[IO] = FakeGoogleBillingInterpreter) =
+                             googleBillingService: GoogleBillingService[IO] = FakeGoogleBillingInterpreter
+  ) =
     RuntimeCheckerDeps(
       googleComputeService,
       googleDataprocService,
@@ -28,7 +29,8 @@ object InitDependenciesHelper {
     )
 
   def initKubernetesClusterCheckerDeps(gkeService: GKEService[IO] = MockGKEService,
-                                       googleStorageService: GoogleStorageService[IO] = FakeGoogleStorageInterpreter) =
+                                       googleStorageService: GoogleStorageService[IO] = FakeGoogleStorageInterpreter
+  ) =
     KubernetesClusterCheckerDeps(
       CheckRunnerDeps(config.reportDestinationBucket, googleStorageService, FakeOpenTelemetryMetricsInterpreter),
       gkeService
@@ -36,7 +38,8 @@ object InitDependenciesHelper {
 
   def initNodepoolCheckerDeps(gkeService: GKEService[IO] = MockGKEService,
                               googleStorageService: GoogleStorageService[IO] = FakeGoogleStorageInterpreter,
-                              publisher: GooglePublisher[IO] = new FakeGooglePublisher) =
+                              publisher: GooglePublisher[IO] = new FakeGooglePublisher
+  ) =
     NodepoolCheckerDeps(
       CheckRunnerDeps(config.reportDestinationBucket, googleStorageService, FakeOpenTelemetryMetricsInterpreter),
       gkeService,

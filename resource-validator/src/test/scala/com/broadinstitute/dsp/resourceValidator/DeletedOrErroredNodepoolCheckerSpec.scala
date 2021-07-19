@@ -22,8 +22,8 @@ class DeletedOrErroredNodepoolCheckerSpec extends AnyFlatSpec with CronJobsTestS
       }
 
       val gkeService = new MockGKEService {
-        override def getNodepool(nodepoolId: NodepoolId)(
-          implicit ev: Ask[IO, TraceId]
+        override def getNodepool(nodepoolId: NodepoolId)(implicit
+          ev: Ask[IO, TraceId]
         ): IO[Option[NodePool]] = {
           val nodepool = NodePool.newBuilder().build()
           IO.pure(Some(nodepool))
@@ -33,8 +33,10 @@ class DeletedOrErroredNodepoolCheckerSpec extends AnyFlatSpec with CronJobsTestS
       var count = 0
 
       val publisher = new FakeGooglePublisher {
-        override def publishOne[MessageType](message: MessageType)(implicit evidence$2: Encoder[MessageType],
-                                                                   ev: Ask[IO, TraceId]): IO[Unit] =
+        override def publishOne[MessageType](message: MessageType)(implicit
+          evidence$2: Encoder[MessageType],
+          ev: Ask[IO, TraceId]
+        ): IO[Unit] =
           if (dryRun)
             IO.raiseError(fail("Shouldn't publish message in dryRun mode"))
           else {

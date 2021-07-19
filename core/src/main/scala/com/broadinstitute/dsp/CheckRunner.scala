@@ -21,8 +21,8 @@ trait CheckRunner[F[_], A] {
 
   def dependencies: CheckRunnerDeps[F]
 
-  def checkResource(a: A, isDryRun: Boolean)(
-    implicit ev: Ask[F, TraceId]
+  def checkResource(a: A, isDryRun: Boolean)(implicit
+    ev: Ask[F, TraceId]
   ): F[Option[A]]
 
   def resourceToScan: Stream[F, A]
@@ -32,9 +32,10 @@ trait CheckRunner[F[_], A] {
   )(implicit timer: Timer[F], F: Concurrent[F], logger: Logger[F], ev: Ask[F, TraceId]): F[Unit] =
     for {
       now <- timer.clock.realTime(TimeUnit.MILLISECONDS)
-      blobName = if (isDryRun)
-        GcsBlobName(s"${appName}/${configs.checkType}/dry-run-${Instant.ofEpochMilli(now)}")
-      else GcsBlobName(s"${appName}/${configs.checkType}/action-${Instant.ofEpochMilli(now)}")
+      blobName =
+        if (isDryRun)
+          GcsBlobName(s"${appName}/${configs.checkType}/dry-run-${Instant.ofEpochMilli(now)}")
+        else GcsBlobName(s"${appName}/${configs.checkType}/action-${Instant.ofEpochMilli(now)}")
       _ <- (resourceToScan
         .parEvalMapUnordered(50)(rt => checkResource(rt, isDryRun).handleErrorWith(_ => F.pure(None)))
         .unNone
@@ -76,5 +77,6 @@ trait CheckRunner[F[_], A] {
 final case class CheckRunnerConfigs(checkType: String, shouldAlert: Boolean)
 final case class CheckRunnerDeps[F[_]](reportDestinationBucket: GcsBucketName,
                                        storageService: GoogleStorageService[F],
-                                       metrics: OpenTelemetryMetrics[F])
+                                       metrics: OpenTelemetryMetrics[F]
+)
 final case class LeoPublisherDeps[F[_]](publisher: GooglePublisher[F], checkRunnerDeps: CheckRunnerDeps[F])

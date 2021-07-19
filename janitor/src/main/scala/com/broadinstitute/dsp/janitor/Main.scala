@@ -29,12 +29,14 @@ object Main
          shouldCheckAll,
          shouldCheckKubernetesClustersToBeRemoved,
          shouldCheckNodepoolsToBeRemoved,
-         shouldCheckStagingBucketsToBeRemoved).mapN {
+         shouldCheckStagingBucketsToBeRemoved
+        ).mapN {
           (dryRun,
            checkAll,
            shouldCheckKubernetesClustersToBeRemoved,
            shouldCheckNodepoolsToBeRemoved,
-           shouldCheckStagingBucketsToBeRemoved) =>
+           shouldCheckStagingBucketsToBeRemoved
+          ) =>
             Janitor
               .run[IO](
                 isDryRun = dryRun,

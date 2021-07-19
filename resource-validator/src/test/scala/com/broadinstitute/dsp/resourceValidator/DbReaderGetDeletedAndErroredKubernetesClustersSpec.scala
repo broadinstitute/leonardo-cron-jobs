@@ -43,7 +43,8 @@ class DbReaderGetDeletedAndErroredKubernetesClustersSpec extends AnyFlatSpec wit
           clustersToDelete <- dbReader.getDeletedAndErroredKubernetesClusters.compile.toList
         } yield clustersToDelete.map(_.clusterName) shouldBe List(KubernetesClusterName(cluster1Name),
                                                                   KubernetesClusterName(cluster2Name),
-                                                                  KubernetesClusterName(cluster3Name))
+                                                                  KubernetesClusterName(cluster3Name)
+        )
       }
       res.unsafeRunSync()
     }

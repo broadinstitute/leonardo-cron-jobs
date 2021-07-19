@@ -32,16 +32,19 @@ object RuntimeCheckerDeps {
       computeService <- GoogleComputeService.fromCredential(scopedCredential,
                                                             blocker,
                                                             blockerBound,
-                                                            RetryPredicates.standardRetryConfig)
+                                                            RetryPredicates.standardRetryConfig
+      )
       storageService <- GoogleStorageService.resource(config.pathToCredential.toString,
                                                       blocker,
                                                       Some(blockerBound),
-                                                      None)
+                                                      None
+      )
       dataprocService <- GoogleDataprocService.fromCredential(computeService,
                                                               scopedCredential,
                                                               blocker,
                                                               supportedRegions,
-                                                              blockerBound)
+                                                              blockerBound
+      )
       billingService <- GoogleBillingService.fromCredential(scopedCredential, blocker, blockerBound)
     } yield {
       val checkRunnerDeps = CheckRunnerDeps(config.reportDestinationBucket, storageService, metrics)
@@ -63,8 +66,8 @@ object Runtime {
                        runtimeName: String,
                        cloudService: CloudService,
                        status: String,
-                       zone: ZoneName)
-      extends Runtime {
+                       zone: ZoneName
+  ) extends Runtime {
     // this is the format we'll output in report, which can be easily consumed by scripts if necessary
     override def toString: String = s"$id,${googleProject.value},$runtimeName,$cloudService,$status,${zone.value}"
   }
@@ -74,8 +77,8 @@ object Runtime {
                             runtimeName: String,
                             cloudService: CloudService,
                             status: String,
-                            region: RegionName)
-      extends Runtime {
+                            region: RegionName
+  ) extends Runtime {
     // this is the format we'll output in report, which can be easily consumed by scripts if necessary
     override def toString: String = s"$id,${googleProject.value},$runtimeName,$cloudService,$status,${region.value}"
   }
@@ -101,13 +104,15 @@ final case class RuntimeWithWorkers(r: Runtime.Dataproc, workerConfig: WorkerCon
 final case class RuntimeCheckerDeps[F[_]](computeService: GoogleComputeService[F],
                                           dataprocService: GoogleDataprocService[F],
                                           checkRunnerDeps: CheckRunnerDeps[F],
-                                          billingService: GoogleBillingService[F])
+                                          billingService: GoogleBillingService[F]
+)
 
 final case class KubernetesClusterCheckerDeps[F[_]](checkRunnerDeps: CheckRunnerDeps[F], gkeService: GKEService[F])
 
 final case class NodepoolCheckerDeps[F[_]](checkRunnerDeps: CheckRunnerDeps[F],
                                            gkeService: GKEService[F],
-                                           publisher: GooglePublisher[F])
+                                           publisher: GooglePublisher[F]
+)
 
 final case class DiskCheckerDeps[F[_]](checkRunnerDeps: CheckRunnerDeps[F], googleDiskService: GoogleDiskService[F])
 

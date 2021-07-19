@@ -22,7 +22,8 @@ class InitBucketCheckerSpec extends AnyFlatSpec with CronJobsTestSuite with Mock
       override def getBucket(googleProject: GoogleProject,
                              bucketName: GcsBucketName,
                              bucketGetOptions: List[Storage.BucketGetOption],
-                             traceId: Option[TraceId]): IO[Option[Bucket]] =
+                             traceId: Option[TraceId]
+      ): IO[Option[Bucket]] =
         IO.pure(None)
     }
     val checkerDeps =
@@ -44,7 +45,8 @@ class InitBucketCheckerSpec extends AnyFlatSpec with CronJobsTestSuite with Mock
         override def getBucket(googleProject: GoogleProject,
                                bucketName: GcsBucketName,
                                bucketGetOptions: List[Storage.BucketGetOption],
-                               traceId: Option[TraceId]): IO[Option[Bucket]] =
+                               traceId: Option[TraceId]
+        ): IO[Option[Bucket]] =
           IO.pure(Some(mockBucket))
 
         override def deleteBucket(googleProject: GoogleProject,
@@ -52,7 +54,8 @@ class InitBucketCheckerSpec extends AnyFlatSpec with CronJobsTestSuite with Mock
                                   isRecursive: Boolean,
                                   bucketSourceOptions: List[Storage.BucketSourceOption],
                                   traceId: Option[TraceId],
-                                  retryConfig: RetryConfig): Stream[IO, Boolean] =
+                                  retryConfig: RetryConfig
+        ): Stream[IO, Boolean] =
           if (dryRun) Stream.emit(fail("this shouldn't be called")) else Stream.emit(true).covary[IO]
       }
 

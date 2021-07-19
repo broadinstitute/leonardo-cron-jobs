@@ -25,8 +25,9 @@ object ResourceValidator {
                                             shouldCheckDeletedNodepool: Boolean,
                                             shouldCheckDeletedDisks: Boolean,
                                             shouldCheckInitBuckets: Boolean,
-                                            shouldCheckDataprocWorkers: Boolean)(
-    implicit T: Timer[F],
+                                            shouldCheckDataprocWorkers: Boolean
+  )(implicit
+    T: Timer[F],
     C: ContextShift[F]
   ): Stream[F, Nothing] = {
     implicit def getLogger[F[_]: Sync] = Slf4jLogger.getLogger[F]
@@ -37,39 +38,49 @@ object ResourceValidator {
       deps <- Stream.resource(initDependencies(config))
       checkRunnerDep = deps.runtimeCheckerDeps.checkRunnerDeps
 
-      deleteRuntimeCheckerProcess = if (shouldCheckAll || shouldCheckDeletedRuntimes)
-        Stream.eval(DeletedRuntimeChecker.impl(deps.dbReader, deps.runtimeCheckerDeps).run(isDryRun))
-      else Stream.empty
+      deleteRuntimeCheckerProcess =
+        if (shouldCheckAll || shouldCheckDeletedRuntimes)
+          Stream.eval(DeletedRuntimeChecker.impl(deps.dbReader, deps.runtimeCheckerDeps).run(isDryRun))
+        else Stream.empty
 
-      deleteDiskCheckerProcess = if (shouldCheckAll || shouldCheckDeletedDisks)
-        Stream.eval(DeletedDiskChecker.impl[F](deps.dbReader, deps.deletedDiskCheckerDeps).run(isDryRun))
-      else Stream.empty
+      deleteDiskCheckerProcess =
+        if (shouldCheckAll || shouldCheckDeletedDisks)
+          Stream.eval(DeletedDiskChecker.impl[F](deps.dbReader, deps.deletedDiskCheckerDeps).run(isDryRun))
+        else Stream.empty
 
-      errorRuntimeCheckerProcess = if (shouldCheckAll || shouldCheckErroredRuntimes)
-        Stream.eval(ErroredRuntimeChecker.iml(deps.dbReader, deps.runtimeCheckerDeps).run(isDryRun))
-      else Stream.empty
-      deleteKubernetesClusterCheckerProcess = if (shouldCheckAll || shouldCheckDeletedKubernetesCluster)
-        Stream.eval(
-          DeletedOrErroredKubernetesClusterChecker.impl(deps.dbReader, deps.kubernetesClusterCheckerDeps).run(isDryRun)
-        )
-      else Stream.empty
-      deleteNodepoolCheckerProcess = if (shouldCheckAll || shouldCheckDeletedNodepool)
-        Stream.eval(
-          DeletedOrErroredNodepoolChecker.impl(deps.dbReader, deps.nodepoolCheckerDeps).run(isDryRun)
-        )
-      else Stream.empty
+      errorRuntimeCheckerProcess =
+        if (shouldCheckAll || shouldCheckErroredRuntimes)
+          Stream.eval(ErroredRuntimeChecker.iml(deps.dbReader, deps.runtimeCheckerDeps).run(isDryRun))
+        else Stream.empty
+      deleteKubernetesClusterCheckerProcess =
+        if (shouldCheckAll || shouldCheckDeletedKubernetesCluster)
+          Stream.eval(
+            DeletedOrErroredKubernetesClusterChecker
+              .impl(deps.dbReader, deps.kubernetesClusterCheckerDeps)
+              .run(isDryRun)
+          )
+        else Stream.empty
+      deleteNodepoolCheckerProcess =
+        if (shouldCheckAll || shouldCheckDeletedNodepool)
+          Stream.eval(
+            DeletedOrErroredNodepoolChecker.impl(deps.dbReader, deps.nodepoolCheckerDeps).run(isDryRun)
+          )
+        else Stream.empty
 
-      stoppedRuntimeCheckerProcess = if (shouldCheckAll || shouldCheckStoppedRuntimes)
-        Stream.eval(StoppedRuntimeChecker.iml(deps.dbReader, deps.runtimeCheckerDeps).run(isDryRun))
-      else Stream.empty
+      stoppedRuntimeCheckerProcess =
+        if (shouldCheckAll || shouldCheckStoppedRuntimes)
+          Stream.eval(StoppedRuntimeChecker.iml(deps.dbReader, deps.runtimeCheckerDeps).run(isDryRun))
+        else Stream.empty
 
-      removeInitBuckets = if (shouldCheckAll || shouldCheckInitBuckets)
-        Stream.eval(InitBucketChecker.impl(deps.dbReader, checkRunnerDep).run(isDryRun))
-      else Stream.empty
+      removeInitBuckets =
+        if (shouldCheckAll || shouldCheckInitBuckets)
+          Stream.eval(InitBucketChecker.impl(deps.dbReader, checkRunnerDep).run(isDryRun))
+        else Stream.empty
 
-      workerProcess = if (shouldCheckAll || shouldCheckDataprocWorkers)
-        Stream.eval(DataprocWorkerChecker.impl(deps.dbReader, deps.runtimeCheckerDeps).run(isDryRun))
-      else Stream.empty
+      workerProcess =
+        if (shouldCheckAll || shouldCheckDataprocWorkers)
+          Stream.eval(DataprocWorkerChecker.impl(deps.dbReader, deps.runtimeCheckerDeps).run(isDryRun))
+        else Stream.empty
 
       processes = Stream(
         deleteRuntimeCheckerProcess,
@@ -113,7 +124,8 @@ object ResourceValidator {
                                   kubernetesClusterCheckerDeps,
                                   nodepoolCheckerDeps,
                                   dbReader,
-                                  blocker)
+                                  blocker
+      )
     }
 }
 

@@ -16,8 +16,9 @@ import org.broadinstitute.dsde.workbench.openTelemetry.OpenTelemetryMetrics
 class PubsubTopicAndSubscriptionCleaner[F[_]: Timer](config: PubsubTopicCleanerConfig,
                                                      topicAdmin: GoogleTopicAdmin[F],
                                                      subcriptionAdmin: GoogleSubscriptionAdmin[F],
-                                                     metrics: OpenTelemetryMetrics[F])(
-  implicit F: Concurrent[F],
+                                                     metrics: OpenTelemetryMetrics[F]
+)(implicit
+  F: Concurrent[F],
   logger: Logger[F]
 ) {
   def run(isDryRun: Boolean): F[Unit] = {
@@ -28,29 +29,33 @@ class PubsubTopicAndSubscriptionCleaner[F[_]: Timer](config: PubsubTopicCleanerC
       deleteTopicStream = for {
         topic <- topicAdmin.list(config.googleProject)
         topicName = TopicName.parse(topic.getName)
-        _ <- if (topicName.getTopic.startsWith("leonardo-pubsub-") || topicName.getTopic.startsWith(
-                   "hamm-metadata-topic-fiab"
-                 )) {
-          if (isDryRun)
-            Stream.eval(logger.info(s"${topicName} will be deleted if run in nonDryRun mode"))
-          else
-            Stream.eval(metrics.incrementCounter("pubsubTopicAndSubscriptionCleaner")) >> Stream.eval(
-              topicAdmin.delete(topicName, Some(traceId))
+        _ <-
+          if (
+            topicName.getTopic.startsWith("leonardo-pubsub-") || topicName.getTopic.startsWith(
+              "hamm-metadata-topic-fiab"
             )
-        } else Stream.eval(F.unit)
+          ) {
+            if (isDryRun)
+              Stream.eval(logger.info(s"${topicName} will be deleted if run in nonDryRun mode"))
+            else
+              Stream.eval(metrics.incrementCounter("pubsubTopicAndSubscriptionCleaner")) >> Stream.eval(
+                topicAdmin.delete(topicName, Some(traceId))
+              )
+          } else Stream.eval(F.unit)
       } yield ()
       deleteSubscriptionStream = for {
         subscription <- subcriptionAdmin.list(config.googleProject)
-        _ <- if (subscription.getTopic == "_deleted-topic_") { // Google marks the associated topic `_deleted-topic_` if it has been deleted
-          if (isDryRun)
-            Stream.eval(logger.info(s"${subscription.getName} will be deleted if run in nonDryRun mode"))
-          else
-            Stream.eval(metrics.incrementCounter("pubsubTopicAndSubscriptionCleaner")) >> Stream.eval(
-              subcriptionAdmin.delete(
-                ProjectSubscriptionName.parse(subscription.getName)
+        _ <-
+          if (subscription.getTopic == "_deleted-topic_") { // Google marks the associated topic `_deleted-topic_` if it has been deleted
+            if (isDryRun)
+              Stream.eval(logger.info(s"${subscription.getName} will be deleted if run in nonDryRun mode"))
+            else
+              Stream.eval(metrics.incrementCounter("pubsubTopicAndSubscriptionCleaner")) >> Stream.eval(
+                subcriptionAdmin.delete(
+                  ProjectSubscriptionName.parse(subscription.getName)
+                )
               )
-            )
-        } else Stream.eval(F.unit)
+          } else Stream.eval(F.unit)
       } yield ()
       _ <- Stream.emits(List(deleteTopicStream, deleteSubscriptionStream)).covary[F].parJoinUnbounded
     } yield ()
@@ -63,8 +68,9 @@ object PubsubTopicAndSubscriptionCleaner {
   def apply[F[_]: Timer](config: PubsubTopicCleanerConfig,
                          topicAdmin: GoogleTopicAdmin[F],
                          subscriptionAdmin: GoogleSubscriptionAdmin[F],
-                         metrics: OpenTelemetryMetrics[F])(
-    implicit F: Concurrent[F],
+                         metrics: OpenTelemetryMetrics[F]
+  )(implicit
+    F: Concurrent[F],
     logger: Logger[F]
   ): PubsubTopicAndSubscriptionCleaner[F] =
     new PubsubTopicAndSubscriptionCleaner(config, topicAdmin, subscriptionAdmin, metrics)

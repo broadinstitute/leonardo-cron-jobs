@@ -26,16 +26,18 @@ object DeletedKubernetesClusterChecker {
 
       override def dependencies: CheckRunnerDeps[F] = deps.checkRunnerDeps
 
-      def checkResource(cluster: K8sClusterToScan,
-                        isDryRun: Boolean)(implicit ev: Ask[F, TraceId]): F[Option[K8sClusterToScan]] =
+      def checkResource(cluster: K8sClusterToScan, isDryRun: Boolean)(implicit
+        ev: Ask[F, TraceId]
+      ): F[Option[K8sClusterToScan]] =
         for {
           clusterOpt <- deps.gkeService.getCluster(cluster.kubernetesClusterId)
-          _ <- if (isDryRun) F.unit
-          else
-            clusterOpt match {
-              case None    => dbReader.markK8sClusterDeleted(cluster.id)
-              case Some(_) => F.unit
-            }
+          _ <-
+            if (isDryRun) F.unit
+            else
+              clusterOpt match {
+                case None    => dbReader.markK8sClusterDeleted(cluster.id)
+                case Some(_) => F.unit
+              }
         } yield clusterOpt.fold[Option[K8sClusterToScan]](Some(cluster))(_ => none[K8sClusterToScan])
     }
 }

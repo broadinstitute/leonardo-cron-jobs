@@ -17,8 +17,8 @@ import org.broadinstitute.dsde.workbench.openTelemetry.FakeOpenTelemetryMetricsI
 class DeletedDiskCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
   it should "return None if disk no longer exists in Google" in {
     val diskService = new MockGoogleDiskService {
-      override def getDisk(project: GoogleProject, zone: ZoneName, diskName: DiskName)(
-        implicit ev: Ask[IO, TraceId]
+      override def getDisk(project: GoogleProject, zone: ZoneName, diskName: DiskName)(implicit
+        ev: Ask[IO, TraceId]
       ): IO[Option[v1.Disk]] = IO.pure(None)
     }
     val checkerDeps =
@@ -40,12 +40,12 @@ class DeletedDiskCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
         override def getDeletedDisks: Stream[IO, Disk] = Stream.emit(disk)
       }
       val diskService = new MockGoogleDiskService {
-        override def getDisk(project: GoogleProject, zone: ZoneName, diskName: DiskName)(
-          implicit ev: Ask[IO, TraceId]
+        override def getDisk(project: GoogleProject, zone: ZoneName, diskName: DiskName)(implicit
+          ev: Ask[IO, TraceId]
         ): IO[Option[v1.Disk]] = IO.pure(Some(v1.Disk.newBuilder.build()))
 
-        override def deleteDisk(project: GoogleProject, zone: ZoneName, diskName: DiskName)(
-          implicit ev: Ask[IO, TraceId]
+        override def deleteDisk(project: GoogleProject, zone: ZoneName, diskName: DiskName)(implicit
+          ev: Ask[IO, TraceId]
         ): IO[Option[Operation]] = if (dryRun) IO.raiseError(fail("this shouldn't be called")) else IO.pure(None)
       }
       val checkerDeps =

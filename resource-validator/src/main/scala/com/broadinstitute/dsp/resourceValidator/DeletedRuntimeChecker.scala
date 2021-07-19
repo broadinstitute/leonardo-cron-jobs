@@ -23,8 +23,9 @@ object DeletedRuntimeChecker {
 
       override def resourceToScan: fs2.Stream[F, Runtime] = dbReader.getDeletedRuntimes
 
-      override def checkResource(runtime: Runtime,
-                                 isDryRun: Boolean)(implicit ev: Ask[F, TraceId]): F[Option[Runtime]] =
+      override def checkResource(runtime: Runtime, isDryRun: Boolean)(implicit
+        ev: Ask[F, TraceId]
+      ): F[Option[Runtime]] =
         runtime match {
           case x: Runtime.Dataproc =>
             checkDataprocCluster(x, isDryRun)
@@ -32,8 +33,8 @@ object DeletedRuntimeChecker {
             checkGceRuntime(x, isDryRun)
         }
 
-      private def checkDataprocCluster(runtime: Runtime.Dataproc, isDryRun: Boolean)(
-        implicit ev: Ask[F, TraceId]
+      private def checkDataprocCluster(runtime: Runtime.Dataproc, isDryRun: Boolean)(implicit
+        ev: Ask[F, TraceId]
       ): F[Option[Runtime]] =
         for {
           clusterOpt <- deps.dataprocService
@@ -41,25 +42,28 @@ object DeletedRuntimeChecker {
           r <- clusterOpt.flatTraverse { _ =>
             for {
               isBillingEnabled <- deps.billingService.isBillingEnabled(runtime.googleProject)
-              r <- if (isDryRun)
-                logger
-                  .warn(
-                    s"$runtime still exists in Google. It needs to be deleted. isBillingEnabled: $isBillingEnabled. Project: ${runtime.googleProject}"
-                  )
-                  .as(runtime.some)
-              else
-                isBillingEnabled match {
-                  case true =>
-                    logger.warn(s"$runtime still exists in Google and billing is enabled. Going to delete it.") >> deps.dataprocService
-                      .deleteCluster(runtime.googleProject, runtime.region, DataprocClusterName(runtime.runtimeName))
-                      .as(runtime.some)
-                  case false =>
-                    logger
-                      .info(
-                        s"$runtime has been reported from getCluster, but billing is disabled so cannot perform any actions."
-                      )
-                      .as(none[Runtime.Dataproc])
-                }
+              r <-
+                if (isDryRun)
+                  logger
+                    .warn(
+                      s"$runtime still exists in Google. It needs to be deleted. isBillingEnabled: $isBillingEnabled. Project: ${runtime.googleProject}"
+                    )
+                    .as(runtime.some)
+                else
+                  isBillingEnabled match {
+                    case true =>
+                      logger.warn(
+                        s"$runtime still exists in Google and billing is enabled. Going to delete it."
+                      ) >> deps.dataprocService
+                        .deleteCluster(runtime.googleProject, runtime.region, DataprocClusterName(runtime.runtimeName))
+                        .as(runtime.some)
+                    case false =>
+                      logger
+                        .info(
+                          s"$runtime has been reported from getCluster, but billing is disabled so cannot perform any actions."
+                        )
+                        .as(none[Runtime.Dataproc])
+                  }
             } yield r
           }
         } yield r

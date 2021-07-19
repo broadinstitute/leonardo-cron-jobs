@@ -11,18 +11,20 @@ object InitBucketChecker {
   def impl[F[_]: Timer](
     dbReader: DbReader[F],
     deps: CheckRunnerDeps[F]
-  )(implicit F: Concurrent[F],
+  )(implicit
+    F: Concurrent[F],
     timer: Timer[F],
     logger: Logger[F],
-    ev: Ask[F, TraceId]): CheckRunner[F, InitBucketToRemove] =
+    ev: Ask[F, TraceId]
+  ): CheckRunner[F, InitBucketToRemove] =
     new CheckRunner[F, InitBucketToRemove] {
       override def appName: String = resourceValidator.appName
       override def configs = CheckRunnerConfigs("remove-init-buckets", true)
       override def dependencies: CheckRunnerDeps[F] = deps
       override def resourceToScan: fs2.Stream[F, InitBucketToRemove] = dbReader.getInitBucketsToDelete
 
-      override def checkResource(a: InitBucketToRemove, isDryRun: Boolean)(
-        implicit ev: Ask[F, TraceId]
+      override def checkResource(a: InitBucketToRemove, isDryRun: Boolean)(implicit
+        ev: Ask[F, TraceId]
       ): F[Option[InitBucketToRemove]] =
         a.bucket
           .flatTraverse { b =>

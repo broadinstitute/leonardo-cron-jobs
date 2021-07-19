@@ -28,7 +28,8 @@ final case class Disk(id: Long,
                       googleProject: GoogleProject,
                       diskName: DiskName,
                       zone: ZoneName,
-                      formattedBy: Option[String]) {
+                      formattedBy: Option[String]
+) {
   override def toString: String = s"${id}/${googleProject.value},${diskName.value},${zone.value}"
 }
 
@@ -54,7 +55,8 @@ final case class KubernetesClusterToRemove(id: Long, googleProject: GoogleProjec
 
 final case class KubernetesCluster(clusterName: KubernetesClusterName,
                                    googleProject: GoogleProject,
-                                   location: Location) {
+                                   location: Location
+) {
   override def toString: String = s"${googleProject}/${clusterName}"
 }
 
@@ -62,7 +64,8 @@ final case class Nodepool(nodepoolId: Long,
                           nodepoolName: NodepoolName,
                           clusterName: KubernetesClusterName,
                           googleProject: GoogleProject,
-                          location: Location) {
+                          location: Location
+) {
   override def toString: String = s"$googleProject/${nodepoolName.value}"
 }
 

@@ -34,8 +34,8 @@ object DeletedOrErroredRuntimeChecker {
             checkGceRuntimeStatus(x, isDryRun)
         }
 
-      def checkDataprocClusterStatus(runtime: Runtime.Dataproc, isDryRun: Boolean)(
-        implicit ev: Ask[F, TraceId]
+      def checkDataprocClusterStatus(runtime: Runtime.Dataproc, isDryRun: Boolean)(implicit
+        ev: Ask[F, TraceId]
       ): F[Option[Runtime]] =
         for {
           runtimeOpt <- deps.dataprocService
@@ -66,26 +66,27 @@ object DeletedOrErroredRuntimeChecker {
                      // If billing is enabled, then cluster may indeed be in a `Error` mode that we can still ssh to
                      // master instance to move data if necessary.
                      // If billing is disabled, we update error info to billing disabled
-                     _ <- if (isBillingEnabled)
-                       dbReader.insertClusterError(
-                         runtime.id,
-                         Some(cluster.getStatus.getState.getNumber),
-                         s"""
-                            |Unrecoverable ERROR state for Spark Cloud Environment: ${cluster.getStatus.getDetail}
-                            |
-                            |Please Delete and Recreate your Cloud environment. If you have important data you’d like to retrieve
-                            |from your Cloud environment prior to deleting, try to access the machine via notebook or terminal.
-                            |If you can't connect to the cluster, please contact customer support and we can help you move your data.
-                            |""".stripMargin
-                       )
-                     else
-                       dbReader.insertClusterError(
-                         runtime.id,
-                         Some(cluster.getStatus.getState.getNumber),
-                         s"""
-                            |Billing is disabled for this project
-                            |""".stripMargin
-                       )
+                     _ <-
+                       if (isBillingEnabled)
+                         dbReader.insertClusterError(
+                           runtime.id,
+                           Some(cluster.getStatus.getState.getNumber),
+                           s"""
+                              |Unrecoverable ERROR state for Spark Cloud Environment: ${cluster.getStatus.getDetail}
+                              |
+                              |Please Delete and Recreate your Cloud environment. If you have important data you’d like to retrieve
+                              |from your Cloud environment prior to deleting, try to access the machine via notebook or terminal.
+                              |If you can't connect to the cluster, please contact customer support and we can help you move your data.
+                              |""".stripMargin
+                         )
+                       else
+                         dbReader.insertClusterError(
+                           runtime.id,
+                           Some(cluster.getStatus.getState.getNumber),
+                           s"""
+                              |Billing is disabled for this project
+                              |""".stripMargin
+                         )
                    } yield ()
                  }).as(Some(runtime))
               } else F.pure(none[Runtime])
@@ -96,12 +97,13 @@ object DeletedOrErroredRuntimeChecker {
         for {
           runtimeOpt <- deps.computeService
             .getInstance(runtime.googleProject, runtime.zone, InstanceName(runtime.runtimeName))
-          _ <- if (isDryRun) F.unit
-          else
-            runtimeOpt match {
-              case None    => dbReader.markRuntimeDeleted(runtime.id)
-              case Some(_) => F.unit
-            }
+          _ <-
+            if (isDryRun) F.unit
+            else
+              runtimeOpt match {
+                case None    => dbReader.markRuntimeDeleted(runtime.id)
+                case Some(_) => F.unit
+              }
         } yield runtimeOpt.fold[Option[Runtime]](Some(runtime))(_ => none[Runtime])
     }
 }

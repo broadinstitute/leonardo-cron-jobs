@@ -41,16 +41,16 @@ class DeletedOrErroredRuntimeCheckerSpec extends AnyFlatSpec with CronJobsTestSu
 
         override def insertClusterError(clusterId: Long, errorCode: Option[Int], errorMessage: String): IO[Unit] =
           if (dryRun) IO.raiseError(fail("this shouldn't be called in dryRun mode"))
-          else IO(errorCode shouldBe (None))
+          else IO(errorCode shouldBe None)
       }
       val computeService = new FakeGoogleComputeService {
-        override def getInstance(project: GoogleProject, zone: ZoneName, instanceName: InstanceName)(
-          implicit ev: Ask[IO, TraceId]
+        override def getInstance(project: GoogleProject, zone: ZoneName, instanceName: InstanceName)(implicit
+          ev: Ask[IO, TraceId]
         ): IO[Option[Instance]] = IO.pure(None)
       }
       val dataprocService = new BaseFakeGoogleDataprocService {
-        override def getCluster(project: GoogleProject, region: RegionName, clusterName: DataprocClusterName)(
-          implicit ev: Ask[IO, TraceId]
+        override def getCluster(project: GoogleProject, region: RegionName, clusterName: DataprocClusterName)(implicit
+          ev: Ask[IO, TraceId]
         ): IO[Option[Cluster]] = IO.pure(None)
       }
       val deps = initRuntimeCheckerDeps(computeService, dataprocService)
@@ -69,13 +69,13 @@ class DeletedOrErroredRuntimeCheckerSpec extends AnyFlatSpec with CronJobsTestSu
           if (dryRun) IO.raiseError(fail("this shouldn't be called in dryRun mode")) else IO.unit
       }
       val computeService = new FakeGoogleComputeService {
-        override def getInstance(project: GoogleProject, zone: ZoneName, instanceName: InstanceName)(
-          implicit ev: Ask[IO, TraceId]
+        override def getInstance(project: GoogleProject, zone: ZoneName, instanceName: InstanceName)(implicit
+          ev: Ask[IO, TraceId]
         ): IO[Option[Instance]] = IO.pure(Some(Instance.newBuilder().setStatus("Running").build()))
       }
       val dataprocService = new BaseFakeGoogleDataprocService {
-        override def getCluster(project: GoogleProject, region: RegionName, clusterName: DataprocClusterName)(
-          implicit ev: Ask[IO, TraceId]
+        override def getCluster(project: GoogleProject, region: RegionName, clusterName: DataprocClusterName)(implicit
+          ev: Ask[IO, TraceId]
         ): IO[Option[Cluster]] =
           IO.pure(
             Some(Cluster.newBuilder().setStatus(ClusterStatus.newBuilder().setState(State.RUNNING).build()).build())
@@ -102,8 +102,8 @@ class DeletedOrErroredRuntimeCheckerSpec extends AnyFlatSpec with CronJobsTestSu
           else IO(errorCode shouldBe (Some(3)))
       }
       val dataprocService = new BaseFakeGoogleDataprocService {
-        override def getCluster(project: GoogleProject, region: RegionName, clusterName: DataprocClusterName)(
-          implicit ev: Ask[IO, TraceId]
+        override def getCluster(project: GoogleProject, region: RegionName, clusterName: DataprocClusterName)(implicit
+          ev: Ask[IO, TraceId]
         ): IO[Option[Cluster]] = IO.pure(
           Some(Cluster.newBuilder().setStatus(ClusterStatus.newBuilder().setState(State.ERROR).build()).build())
         )
@@ -130,18 +130,18 @@ class DeletedOrErroredRuntimeCheckerSpec extends AnyFlatSpec with CronJobsTestSu
 
         override def insertClusterError(clusterId: Long, errorCode: Option[Int], errorMessage: String): IO[Unit] =
           if (dryRun) IO.raiseError(fail("this shouldn't be called in dryRun mode"))
-          else IO(errorMessage shouldBe ("\nBilling is disabled for this project\n"))
+          else IO(errorMessage shouldBe "\nBilling is disabled for this project\n")
       }
       val dataprocService = new BaseFakeGoogleDataprocService {
-        override def getCluster(project: GoogleProject, region: RegionName, clusterName: DataprocClusterName)(
-          implicit ev: Ask[IO, TraceId]
+        override def getCluster(project: GoogleProject, region: RegionName, clusterName: DataprocClusterName)(implicit
+          ev: Ask[IO, TraceId]
         ): IO[Option[Cluster]] = IO.pure(
           Some(Cluster.newBuilder().setStatus(ClusterStatus.newBuilder().setState(State.ERROR).build()).build())
         )
       }
       val billingService = new FakeGoogleBillingInterpreter {
         override def isBillingEnabled(project: GoogleProject)(implicit ev: Ask[IO, TraceId]): IO[Boolean] =
-          IO.pure((false))
+          IO.pure(false)
       }
       val deps = initRuntimeCheckerDeps(googleDataprocService = dataprocService, googleBillingService = billingService)
       val checker = DeletedOrErroredRuntimeChecker.impl(dbReader, deps)

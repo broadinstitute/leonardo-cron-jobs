@@ -23,10 +23,12 @@ object KubernetesClusterRemover {
   def impl[F[_]: Timer](
     dbReader: DbReader[F],
     deps: LeoPublisherDeps[F]
-  )(implicit F: Concurrent[F],
+  )(implicit
+    F: Concurrent[F],
     timer: Timer[F],
     logger: Logger[F],
-    ev: Ask[F, TraceId]): CheckRunner[F, KubernetesClusterToRemove] =
+    ev: Ask[F, TraceId]
+  ): CheckRunner[F, KubernetesClusterToRemove] =
     new CheckRunner[F, KubernetesClusterToRemove] {
       override def appName: String = janitor.appName
       override def configs = CheckRunnerConfigs(s"remove-kubernetes-clusters", shouldAlert = false)
@@ -34,15 +36,16 @@ object KubernetesClusterRemover {
       override def resourceToScan: fs2.Stream[F, KubernetesClusterToRemove] = dbReader.getKubernetesClustersToDelete
 
       // https://broadworkbench.atlassian.net/wiki/spaces/IA/pages/807436289/2020-09-17+Leonardo+Async+Processes
-      override def checkResource(c: KubernetesClusterToRemove, isDryRun: Boolean)(
-        implicit ev: Ask[F, TraceId]
+      override def checkResource(c: KubernetesClusterToRemove, isDryRun: Boolean)(implicit
+        ev: Ask[F, TraceId]
       ): F[Option[KubernetesClusterToRemove]] =
         for {
           now <- timer.clock.realTime(TimeUnit.MILLISECONDS)
-          _ <- if (!isDryRun) {
-            val msg = DeleteKubernetesClusterMessage(c.id, c.googleProject, TraceId(s"kubernetesClusterRemover-$now"))
-            deps.publisher.publishOne(msg)
-          } else F.unit
+          _ <-
+            if (!isDryRun) {
+              val msg = DeleteKubernetesClusterMessage(c.id, c.googleProject, TraceId(s"kubernetesClusterRemover-$now"))
+              deps.publisher.publishOne(msg)
+            } else F.unit
         } yield Some(c)
     }
 }

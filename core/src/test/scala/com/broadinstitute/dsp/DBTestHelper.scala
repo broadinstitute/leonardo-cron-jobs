@@ -26,8 +26,10 @@ object DBTestHelper {
       databaseConfig.password
     )
 
-  def transactorResource(implicit cs: ContextShift[IO],
-                         databaseConfig: DatabaseConfig): Resource[IO, HikariTransactor[IO]] =
+  def transactorResource(implicit
+    cs: ContextShift[IO],
+    databaseConfig: DatabaseConfig
+  ): Resource[IO, HikariTransactor[IO]] =
     for {
       xa <- DbTransactor.init[IO](databaseConfig)
       _ <- Resource.eval(truncateTables(xa))
@@ -42,23 +44,24 @@ object DBTestHelper {
   def insertDisk(disk: Disk, status: String = "Ready")(implicit xa: HikariTransactor[IO]): IO[Long] =
     insertDiskQuery(disk, status: String).withUniqueGeneratedKeys[Long]("id").transact(xa)
 
-  def insertK8sCluster(clusterId: KubernetesClusterId,
-                       status: String = "RUNNING")(implicit xa: HikariTransactor[IO]): IO[Long] =
+  def insertK8sCluster(clusterId: KubernetesClusterId, status: String = "RUNNING")(implicit
+    xa: HikariTransactor[IO]
+  ): IO[Long] =
     sql"""INSERT INTO KUBERNETES_CLUSTER
          (googleProject, clusterName, location, status, creator, createdDate, destroyedDate, dateAccessed, loadBalancerIp, networkName, subNetworkName, subNetworkIpRange, region, apiServerIp, ingressChart)
          VALUES (${clusterId.project}, ${clusterId.clusterName}, ${clusterId.location}, ${status}, "fake@broadinstitute.org", now(), now(), now(), "0.0.0.1", "network", "subnetwork", "0.0.0.1/20", ${regionName}, "35.202.56.6", "stable/nginx-ingress-1.41.3")
          """.update.withUniqueGeneratedKeys[Long]("id").transact(xa)
 
-  def insertNodepool(clusterId: Long, nodepoolName: String, isDefault: Boolean, status: String = "RUNNING")(
-    implicit xa: HikariTransactor[IO]
+  def insertNodepool(clusterId: Long, nodepoolName: String, isDefault: Boolean, status: String = "RUNNING")(implicit
+    xa: HikariTransactor[IO]
   ): IO[Long] =
     sql"""INSERT INTO NODEPOOL
          (clusterId, nodepoolName, status, creator, createdDate, destroyedDate, dateAccessed, machineType, numNodes, autoScalingMin, autoScalingMax, isDefault)
          VALUES (${clusterId}, ${nodepoolName}, ${status}, "fake@broadinstitute.org", now(), now(), now(), "n1-standard-1", 1, 0, 1, ${isDefault})
          """.update.withUniqueGeneratedKeys[Long]("id").transact(xa)
 
-  def insertRuntime(runtime: Runtime, runtimeConfigId: Long, createdDate: Instant = Instant.now())(
-    implicit xa: HikariTransactor[IO]
+  def insertRuntime(runtime: Runtime, runtimeConfigId: Long, createdDate: Instant = Instant.now())(implicit
+    xa: HikariTransactor[IO]
   ): IO[Long] =
     sql"""INSERT INTO CLUSTER
          (clusterName,
@@ -128,8 +131,8 @@ object DBTestHelper {
          """.update.withUniqueGeneratedKeys[Long]("id").transact(xa)
   }
 
-  def insertNamespace(clusterId: Long, namespaceName: NamespaceName)(
-    implicit xa: HikariTransactor[IO]
+  def insertNamespace(clusterId: Long, namespaceName: NamespaceName)(implicit
+    xa: HikariTransactor[IO]
   ): IO[Long] =
     sql"""INSERT INTO NAMESPACE
          (clusterId, namespaceName)
@@ -142,8 +145,9 @@ object DBTestHelper {
                 diskId: Long,
                 status: String = "RUNNING",
                 createdDate: Instant = Instant.now(),
-                destroyedDate: Instant = Instant.now())(
-    implicit xa: HikariTransactor[IO]
+                destroyedDate: Instant = Instant.now()
+  )(implicit
+    xa: HikariTransactor[IO]
   ): IO[Long] =
     sql"""INSERT INTO APP
          (nodepoolId, appType, appName, status, samResourceId, creator, createdDate, destroyedDate, dateAccessed, namespaceId, diskId, customEnvironmentVariables, googleServiceAccount, kubernetesServiceAccount, chart, `release`)

@@ -28,13 +28,13 @@ object Main
          shouldCheckDeletedOrErrorRuntimes,
          shouldCheckDeletedDisks,
          shouldCheckDeletedK8sClusters,
-         shouldCheckDeletedOrErroredNodepools).mapN {
-          (dryRun, runAll, runCheckDeletedRuntimes, checkDisks, runCheckDeletedK8sClusters, checkNodepools) =>
-            ZombieMonitor
-              .run[IO](dryRun, runAll, runCheckDeletedRuntimes, checkDisks, runCheckDeletedK8sClusters, checkNodepools)
-              .compile
-              .drain
-              .unsafeRunSync()
+         shouldCheckDeletedOrErroredNodepools
+        ).mapN { (dryRun, runAll, runCheckDeletedRuntimes, checkDisks, runCheckDeletedK8sClusters, checkNodepools) =>
+          ZombieMonitor
+            .run[IO](dryRun, runAll, runCheckDeletedRuntimes, checkDisks, runCheckDeletedK8sClusters, checkNodepools)
+            .compile
+            .drain
+            .unsafeRunSync()
         }
       }
     )

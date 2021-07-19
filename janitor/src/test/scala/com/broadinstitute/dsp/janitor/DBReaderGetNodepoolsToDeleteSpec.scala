@@ -56,7 +56,8 @@ class DBReaderGetNodepoolsToDeleteSpec extends AnyFlatSpec with CronJobsTestSuit
                          diskId,
                          "DELETED",
                          createdDateWithinGracePeriod,
-                         destroyedDateBeyondGracePeriod)
+                         destroyedDateBeyondGracePeriod
+          )
 
           nodepoolsToRemove <- dbReader.getNodepoolsToDelete.compile.toList
         } yield nodepoolsToRemove.map(_.nodepoolId) shouldBe List(nodepoolId)
@@ -82,7 +83,8 @@ class DBReaderGetNodepoolsToDeleteSpec extends AnyFlatSpec with CronJobsTestSuit
                          diskId,
                          "ERROR",
                          createdDateBeyondGracePeriod,
-                         destroyedDateWithinGracePeriod)
+                         destroyedDateWithinGracePeriod
+          )
           nodepoolsToRemove <- dbReader.getNodepoolsToDelete.compile.toList
         } yield nodepoolsToRemove.map(_.nodepoolId) shouldBe List(nodepoolId)
       }
@@ -122,7 +124,8 @@ class DBReaderGetNodepoolsToDeleteSpec extends AnyFlatSpec with CronJobsTestSuit
                          diskId,
                          "ERROR",
                          createdDateBeyondGracePeriod,
-                         destroyedDateBeyondGracePeriod)
+                         destroyedDateBeyondGracePeriod
+          )
           nodepoolsToRemove <- dbReader.getNodepoolsToDelete.compile.toList
         } yield nodepoolsToRemove shouldBe List.empty
       }
@@ -147,7 +150,8 @@ class DBReaderGetNodepoolsToDeleteSpec extends AnyFlatSpec with CronJobsTestSuit
                          diskId,
                          "RUNNING",
                          createdDateBeyondGracePeriod,
-                         destroyedDateBeyondGracePeriod)
+                         destroyedDateBeyondGracePeriod
+          )
 
           clustersToRemove <- dbReader.getKubernetesClustersToDelete.compile.toList
         } yield clustersToRemove shouldBe List.empty
@@ -173,7 +177,8 @@ class DBReaderGetNodepoolsToDeleteSpec extends AnyFlatSpec with CronJobsTestSuit
                          diskId,
                          "DELETED",
                          createdDateBeyondGracePeriod,
-                         destroyedDateWithinGracePeriod)
+                         destroyedDateWithinGracePeriod
+          )
 
           clustersToRemove <- dbReader.getKubernetesClustersToDelete.compile.toList
         } yield clustersToRemove shouldBe List.empty
@@ -199,7 +204,8 @@ class DBReaderGetNodepoolsToDeleteSpec extends AnyFlatSpec with CronJobsTestSuit
                          diskId,
                          "ERROR",
                          createdDateWithinGracePeriod,
-                         destroyedDateBeyondGracePeriod)
+                         destroyedDateBeyondGracePeriod
+          )
           clustersToRemove <- dbReader.getKubernetesClustersToDelete.compile.toList
         } yield clustersToRemove shouldBe List.empty
       }
