@@ -16,7 +16,7 @@ object Dependencies {
     "com.github.pureconfig" %% "pureconfig" % "0.15.0",
     "mysql" % "mysql-connector-java" % "8.0.23",
     "org.scalatest" %% "scalatest" % "3.2.7" % Test,
-    "com.monovore" %% "decline" % "2.0.0",
+    "com.monovore" %% "decline" % "2.1.0",
     "com.github.julien-truffaut" %% "monocle-core" % "3.0.0-M6",
     "com.github.julien-truffaut" %% "monocle-macro" % "3.0.0-M6",
     "org.broadinstitute.dsde.workbench" %% "workbench-opentelemetry" % openTelemetryVersion,
