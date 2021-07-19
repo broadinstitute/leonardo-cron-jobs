@@ -32,7 +32,7 @@ object RuntimeCheckerDeps {
       computeService <- GoogleComputeService.fromCredential(scopedCredential,
                                                             blocker,
                                                             blockerBound,
-                                                            RetryPredicates.standardRetryConfig
+                                                            RetryPredicates.standardGoogleRetryConfig
       )
       storageService <- GoogleStorageService.resource(config.pathToCredential.toString,
                                                       blocker,

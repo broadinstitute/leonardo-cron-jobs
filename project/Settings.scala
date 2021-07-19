@@ -79,13 +79,13 @@ object Settings {
   private lazy val commonSettings = List(
     organization := "com.broadinstitute.dsp",
     version := "0.0.1-SNAPSHOT",
-    scalaVersion := "2.13.5",
+    scalaVersion := "2.13.6",
     resolvers ++= commonResolvers,
     addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.10.3"),
     addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.1"),
     // Docker settings
     maintainer := "workbench-interactive-analysis@broadinstitute.org",
-    dockerBaseImage := "ghcr.io/graalvm/graalvm-ce:java11-21.1.0",
+    dockerBaseImage := "us.gcr.io/broad-dsp-gcr-public/base/jre:11-debian",
     dockerRepository := Some("us.gcr.io"),
     // Resolve trivy errors related to glibc (CVE-2019-9169)
     // TODO Hopefully this will be fixed in an upcoming version of graalvm-ce
@@ -93,7 +93,6 @@ object Settings {
     // Running yum as root or it fails
     Docker / daemonUserUid := None,
     Docker / daemonUser := "root",
-    dockerCommands += Cmd("RUN", "microdnf install -y yum && yum upgrade -y glibc-devel --allowerasing"),
     scalacOptions ++= commonCompilerSettings,
     // assembly merge
     assembly / assemblyMergeStrategy := Merging.customMergeStrategy((assembly / assemblyMergeStrategy).value),

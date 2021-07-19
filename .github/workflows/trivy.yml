@@ -37,6 +37,8 @@ jobs:
       - name: Build
         id: build
         run: |
+          set -o pipefail
+
           # build sources and store the log
           sbt -no-colors ${{ matrix.project }}/docker:publishLocal | tee build.log
 
