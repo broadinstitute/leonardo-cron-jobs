@@ -4,7 +4,7 @@ object Dependencies {
   val logbackVersion = "1.2.3"
   val workbenchGoogle2Version = "0.21-89d0d9e"
   val doobieVersion = "0.13.4"
-  val openTelemetryVersion = "0.1-52e271f"
+  val openTelemetryVersion = "0.2-8e97c7e8-SNAP"
 
   val core = Seq(
     "net.logstash.logback" % "logstash-logback-encoder" % "6.6",
