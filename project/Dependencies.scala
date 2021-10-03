@@ -13,7 +13,7 @@ object Dependencies {
     "org.tpolecat" %% "doobie-core" % doobieVersion,
     "org.tpolecat" %% "doobie-hikari" % doobieVersion,
     "org.tpolecat" %% "doobie-scalatest" % doobieVersion % Test,
-    "com.github.pureconfig" %% "pureconfig" % "0.16.0",
+    "com.github.pureconfig" %% "pureconfig" % "0.17.0",
     "mysql" % "mysql-connector-java" % "8.0.25",
     "org.scalatest" %% "scalatest" % "3.2.9" % Test,
     "com.monovore" %% "decline" % "2.1.0",
