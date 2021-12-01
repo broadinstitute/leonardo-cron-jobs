@@ -24,7 +24,7 @@ object DbReader {
 
   val deletedDisksQuery =
     sql"""
-           SELECT pd1.id, pd1.googleProject, pd1.name, pd1.zone, pd1.formattedBy
+           SELECT pd1.id, pd1.cloudContext, pd1.name, pd1.zone, pd1.formattedBy
            FROM PERSISTENT_DISK AS pd1
            WHERE pd1.status="Deleted" AND
            pd1.destroyedDate > now() - INTERVAL 30 DAY AND
@@ -32,16 +32,16 @@ object DbReader {
              (
                SELECT *
                FROM PERSISTENT_DISK pd2
-               WHERE pd1.googleProject = pd2.googleProject and pd1.name = pd2.name and pd2.status != "Deleted"
+               WHERE pd1.cloudContext = pd2.cloudContext and pd1.name = pd2.name and pd2.status != "Deleted"
               )
         """.query[Disk]
 
   val initBucketsToDeleteQuery =
-    sql"""SELECT googleProject, initBucket FROM CLUSTER WHERE status="Deleted";"""
+    sql"""SELECT cloudContext, initBucket FROM CLUSTER WHERE status="Deleted";"""
       .query[InitBucketToRemove]
 
   val deletedRuntimeQuery =
-    sql"""SELECT DISTINCT c1.id, googleProject, clusterName, rt.cloudService, c1.status, rt.zone, rt.region
+    sql"""SELECT DISTINCT c1.id, cloudContext, runtimeName, rt.cloudService, c1.status, rt.zone, rt.region
           FROM CLUSTER AS c1
           INNER JOIN RUNTIME_CONFIG AS rt ON c1.runtimeConfigId = rt.id
           WHERE
@@ -51,14 +51,14 @@ object DbReader {
               SELECT *
               FROM CLUSTER AS c2
               WHERE
-                c2.googleProject = c1.googleProject AND
-                c2.clusterName = c1.clusterName AND
+                c2.cloudContext = c1.cloudContext AND
+                c2.runtimeName = c1.runtimeName AND
                 (c2.status = "Stopped" OR c2.status = "Running")
           )"""
       .query[Runtime]
 
   val erroredRuntimeQuery =
-    sql"""SELECT DISTINCT c1.id, googleProject, clusterName, rt.cloudService, c1.status, rt.zone, rt.region
+    sql"""SELECT DISTINCT c1.id, cloudContext, runtimeName, rt.cloudService, c1.status, rt.zone, rt.region
           FROM CLUSTER AS c1
           INNER JOIN RUNTIME_CONFIG AS rt ON c1.runtimeConfigId = rt.id
           WHERE
@@ -67,14 +67,14 @@ object DbReader {
               SELECT *
               FROM CLUSTER AS c2
               WHERE
-                c2.googleProject = c1.googleProject AND
-                c2.clusterName=c1.clusterName AND
+                c2.cloudContext = c1.cloudContext AND
+                c2.runtimeName=c1.runtimeName AND
                 (c2.status = "Stopped" OR c2.status = "Running")
              )"""
       .query[Runtime]
 
   val stoppedRuntimeQuery =
-    sql"""SELECT DISTINCT c1.id, c1.googleProject, c1.clusterName, rt.cloudService, c1.status, rt.zone, rt.region
+    sql"""SELECT DISTINCT c1.id, c1.cloudContext, c1.runtimeName, rt.cloudService, c1.status, rt.zone, rt.region
           FROM CLUSTER AS c1
           INNER JOIN RUNTIME_CONFIG AS rt ON c1.runtimeConfigId = rt.id
           WHERE
@@ -83,8 +83,8 @@ object DbReader {
               SELECT *
               FROM CLUSTER AS c2
               WHERE
-                c2.googleProject = c1.googleProject AND
-                c2.clusterName = c1.clusterName AND
+                c2.cloudContext = c1.cloudContext AND
+                c2.runtimeName = c1.runtimeName AND
                 c2.status = "Running"
              )"""
       .query[Runtime]
@@ -106,7 +106,7 @@ object DbReader {
 
   // We're excluding cluster id 6220 because it's a known anomaly and user ed team has reached out to hufengzhou@g.harvard.edu
   val dataprocClusterWithWorkersQuery =
-    sql"""SELECT DISTINCT c1.id, googleProject, clusterName, rt.cloudService, c1.status, rt.region, rt.numberOfWorkers, rt.numberOfPreemptibleWorkers
+    sql"""SELECT DISTINCT c1.id, cloudContext, runtimeName, rt.cloudService, c1.status, rt.region, rt.numberOfWorkers, rt.numberOfPreemptibleWorkers
           FROM CLUSTER AS c1
           INNER JOIN RUNTIME_CONFIG AS rt ON c1.`runtimeConfigId`=rt.id
           WHERE
