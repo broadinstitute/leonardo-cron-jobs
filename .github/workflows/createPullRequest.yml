@@ -1,4 +1,4 @@
-name: Create terra-helm Pull Request
+name: Create terra-helmfile Pull Request
 
 on:
   push:
@@ -37,7 +37,7 @@ jobs:
           paths: zombie-monitor core
       - uses: actions/checkout@v2
         with:
-          repository: broadinstitute/terra-helm
+          repository: broadinstitute/terra-helmfile
 #          ref: ci  you can use this for testing a specific branch of terra-helm
       - name: update resource-validator hash
         uses: databiosphere/github-actions/actions/yq@master
