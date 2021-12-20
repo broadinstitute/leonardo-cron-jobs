@@ -8,8 +8,8 @@ object Dependencies {
 
   val core = Seq(
     "net.logstash.logback" % "logstash-logback-encoder" % "6.6",
-    "ch.qos.logback" % "logback-classic" % "1.2.7",
-    "ch.qos.logback" % "logback-core" % "1.2.7",
+    "ch.qos.logback" % "logback-classic" % "1.2.9",
+    "ch.qos.logback" % "logback-core" % "1.2.9",
     "org.tpolecat" %% "doobie-core" % doobieVersion,
     "org.tpolecat" %% "doobie-hikari" % doobieVersion,
     "org.tpolecat" %% "doobie-scalatest" % doobieVersion % Test,
