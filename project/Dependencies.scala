@@ -7,7 +7,7 @@ object Dependencies {
   val openTelemetryVersion = "0.1-52e271f"
 
   val core = Seq(
-    "net.logstash.logback" % "logstash-logback-encoder" % "6.6",
+    "net.logstash.logback" % "logstash-logback-encoder" % "7.0.1",
     "ch.qos.logback" % "logback-classic" % "1.2.9",
     "ch.qos.logback" % "logback-core" % "1.2.9",
     "org.tpolecat" %% "doobie-core" % doobieVersion,
@@ -25,7 +25,7 @@ object Dependencies {
     "org.broadinstitute.dsde.workbench" %% "workbench-google2" % workbenchGoogle2Version,
     "org.broadinstitute.dsde.workbench" %% "workbench-google2" % workbenchGoogle2Version % Test classifier "tests",
     "org.scalatestplus" %% "scalacheck-1-14" % "3.2.2.0" % Test,
-    "org.scalatestplus" %% "mockito-3-4" % "3.2.9.0" % Test, // https://github.com/scalatest/scalatestplus-selenium
+    "org.scalatestplus" %% "mockito-3-4" % "3.2.10.0" % Test, // https://github.com/scalatest/scalatestplus-selenium
     "ca.mrvisser" %% "sealerate" % "0.0.6"
   )
 

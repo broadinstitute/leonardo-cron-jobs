@@ -6,10 +6,10 @@ object Merging {
     case PathList("org", "bouncycastle", _ @_*)           => MergeStrategy.first
     case PathList("com", "google", "code", "gson", _ @_*) => MergeStrategy.first
     case "reference.conf"                                 => MergeStrategy.concat
+    case x if x.endsWith("/module-info.class") =>
+      MergeStrategy.discard // JDK 8 does not use the file module-info.class so it is safe to discard the file.
     case "module-info.class" =>
-      MergeStrategy.discard // JDK 8 does not use the file module-info.class so it is safe to discard the file.
-    case "META-INF/versions/9/module-info.class" =>
-      MergeStrategy.discard // JDK 8 does not use the file module-info.class so it is safe to discard the file.
+      MergeStrategy.discard
     case x => oldStrategy(x)
   }
 }
