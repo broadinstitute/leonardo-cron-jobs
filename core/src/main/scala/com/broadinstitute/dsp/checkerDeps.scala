@@ -41,7 +41,7 @@ object RuntimeCheckerDeps {
 
 sealed abstract class Runtime {
   def id: Long
-  def googleProject: GoogleProject
+  def cloudContext: CloudContext
   def runtimeName: String
   def cloudService: CloudService
   def status: String
@@ -57,6 +57,8 @@ object Runtime {
   ) extends Runtime {
     // this is the format we'll output in report, which can be easily consumed by scripts if necessary
     override def toString: String = s"$id,${googleProject.value},$runtimeName,$cloudService,$status,${zone.value}"
+
+    override def cloudContext: CloudContext = CloudContext.Gcp(googleProject)
   }
 
   final case class Dataproc(id: Long,
@@ -68,6 +70,7 @@ object Runtime {
   ) extends Runtime {
     // this is the format we'll output in report, which can be easily consumed by scripts if necessary
     override def toString: String = s"$id,${googleProject.value},$runtimeName,$cloudService,$status,${region.value}"
+    override def cloudContext: CloudContext = CloudContext.Gcp(googleProject)
   }
 
   def setStatus(runtime: Runtime, newStatus: String): Runtime = runtime match {

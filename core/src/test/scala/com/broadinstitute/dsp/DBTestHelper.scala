@@ -11,7 +11,6 @@ import org.broadinstitute.dsde.workbench.google2.{RegionName, ZoneName}
 import org.scalatest.Tag
 import DbReaderImplicits._
 import java.time.Instant
-import java.util.UUID
 
 object DBTestHelper {
   implicit val cloudServicePut: Put[CloudService] = Put[String].contramap(cloudService => cloudService.asString)
@@ -36,8 +35,8 @@ object DBTestHelper {
 
   def insertDiskQuery(disk: Disk, status: String) =
     sql"""INSERT INTO PERSISTENT_DISK
-         (googleProject, zone, name, googleId, samResourceId, status, creator, createdDate, destroyedDate, dateAccessed, sizeGb, type, blockSizeBytes, serviceAccount, formattedBy)
-         VALUES (${disk.googleProject}, ${disk.zone}, ${disk.diskName}, "fakeGoogleId", "fakeSamResourceId", ${status}, "fake@broadinstitute.org", now(), now(), now(), 50, "Standard", "4096", "pet@broadinsitute.org", "GCE")
+         (cloudContext, cloudProvider, zone, name, googleId, samResourceId, status, creator, createdDate, destroyedDate, dateAccessed, sizeGb, type, blockSizeBytes, serviceAccount, formattedBy)
+         VALUES (${disk.cloudContext.asString}, ${disk.cloudContext.cloudProvider}, ${disk.zone}, ${disk.diskName}, "fakeGoogleId", "fakeSamResourceId", ${status}, "fake@broadinstitute.org", now(), now(), now(), 50, "Standard", "4096", "pet@broadinsitute.org", "GCE")
          """.update
 
   def insertDisk(disk: Disk, status: String = "Ready")(implicit xa: HikariTransactor[IO]): IO[Long] =
@@ -63,8 +62,9 @@ object DBTestHelper {
     xa: HikariTransactor[IO]
   ): IO[Long] =
     sql"""INSERT INTO CLUSTER
-         (clusterName,
-         googleProject,
+         (runtimeName,
+         cloudContext,
+         cloudProvider,
          operationName,
          status,
          hostIp,
@@ -80,11 +80,11 @@ object DBTestHelper {
          kernelFoundBusyDate,
          welderEnabled,
          internalId,
-         runtimeConfigId,
-         googleId)
+         runtimeConfigId)
          VALUES (
          ${runtime.runtimeName},
-         ${runtime.googleProject},
+         ${runtime.cloudContext.asString},
+         "GCP",
          "op1",
          ${runtime.status},
          "fakeIp",
@@ -100,8 +100,7 @@ object DBTestHelper {
          now(),
          true,
          "internalId",
-         $runtimeConfigId,
-         ${UUID.randomUUID().toString})
+         $runtimeConfigId)
          """.update.withUniqueGeneratedKeys[Long]("id").transact(xa)
 
   def insertRuntimeConfig(cloudService: CloudService)(implicit xa: HikariTransactor[IO]): IO[Long] = {

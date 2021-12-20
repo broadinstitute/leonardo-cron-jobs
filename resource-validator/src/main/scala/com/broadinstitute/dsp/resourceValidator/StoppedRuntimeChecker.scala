@@ -2,14 +2,11 @@ package com.broadinstitute.dsp
 package resourceValidator
 
 import cats.Parallel
-import cats.effect.{Concurrent}
+import cats.effect.Concurrent
 import cats.mtl.Ask
 import cats.syntax.all._
-import com.google.cloud.compute.v1.Instance
-import fs2.Stream
-import org.broadinstitute.dsde.workbench.google2.{DataprocClusterName, InstanceName, RegionName}
+import org.broadinstitute.dsde.workbench.google2.{DataprocClusterName, InstanceName}
 import org.broadinstitute.dsde.workbench.model.TraceId
-import org.broadinstitute.dsde.workbench.model.google.GoogleProject
 import org.typelevel.log4cats.Logger
 
 // Implements CheckRunner[F[_], A]

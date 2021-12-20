@@ -57,7 +57,7 @@ object ActiveRuntimeChecker {
                    )
                  } yield ()
                }).as(Some(runtime))
-            case Some(cluster) if (cluster.getStatus.getState == com.google.cloud.dataproc.v1.ClusterStatus.State.STOPPED) =>
+            case Some(cluster) if (cluster.getStatus.getState == com.google.cloud.dataproc.v1.ClusterStatus.State.STOPPED) && runtime.status != "Stopped" =>
               (if (isDryRun) F.unit
               else {
                 dbReader.updateRuntimeStatus(runtime.id, "Stopped")
@@ -105,12 +105,12 @@ object ActiveRuntimeChecker {
             .getInstance(runtime.googleProject, runtime.zone, InstanceName(runtime.runtimeName))
           res <-
               runtimeOpt match {
-                case None    => if (isDryRun) F.pure(none[Runtime]) else dbReader.markRuntimeDeleted(runtime.id).as(runtime.some)
-                case Some(r) if r.getStatus == Instance.Status.RUNNING => F.pure(none[Runtime])
-                case Some(r) if r.getStatus == Instance.Status.STOPPED =>
-                  if (isDryRun) F.pure(runtime.some) else dbReader.updateRuntimeStatus(runtime.id, "Stopped").as(runtime.some)
+                case None    => if (isDryRun)  logger.info(s"Not updating DB ${runtime} to be Deleted").as(runtime.some) else dbReader.markRuntimeDeleted(runtime.id).as(runtime.some)
+                case Some(r) if runtime.status.toUpperCase == r.getStatus.toString => F.pure(none[Runtime])
+                case Some(r) if r.getStatus == Instance.Status.TERMINATED && runtime.status != "Stopped" =>
+                  if (isDryRun) logger.info(s"Not updating ${runtime} to be Stopped").as(runtime.some) else dbReader.updateRuntimeStatus(runtime.id, "Stopped").as(runtime.some)
                 case Some(r) =>
-                    logger.error(s"${runtime} is Running in Leonardo, but it's actually in ${r.getStatus} status in Google").as(runtime.some)
+                    logger.info(s"${runtime} is ${runtime.status} in Leonardo, but it's actually in ${r.getStatus} status in Google").as(none[Runtime])
               }
         } yield res
     }

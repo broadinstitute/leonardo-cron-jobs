@@ -24,7 +24,7 @@ object DbReader {
 
   val deletedDisksQuery =
     sql"""
-           SELECT pd1.id, pd1.cloudContext, pd1.name, pd1.zone, pd1.formattedBy
+           SELECT pd1.id, pd1.cloudContext, pd1.cloudProvider, pd1.name, pd1.zone, pd1.formattedBy
            FROM PERSISTENT_DISK AS pd1
            WHERE pd1.status="Deleted" AND
            pd1.destroyedDate > now() - INTERVAL 30 DAY AND
@@ -41,7 +41,7 @@ object DbReader {
       .query[InitBucketToRemove]
 
   val deletedRuntimeQuery =
-    sql"""SELECT DISTINCT c1.id, cloudContext, runtimeName, rt.cloudService, c1.status, rt.zone, rt.region
+    sql"""SELECT DISTINCT c1.id, cloudContext, c1.cloudProvider, runtimeName, rt.cloudService, c1.status, rt.zone, rt.region
           FROM CLUSTER AS c1
           INNER JOIN RUNTIME_CONFIG AS rt ON c1.runtimeConfigId = rt.id
           WHERE
@@ -58,7 +58,7 @@ object DbReader {
       .query[Runtime]
 
   val erroredRuntimeQuery =
-    sql"""SELECT DISTINCT c1.id, cloudContext, runtimeName, rt.cloudService, c1.status, rt.zone, rt.region
+    sql"""SELECT DISTINCT c1.id, cloudContext, cloudProvider, runtimeName, rt.cloudService, c1.status, rt.zone, rt.region
           FROM CLUSTER AS c1
           INNER JOIN RUNTIME_CONFIG AS rt ON c1.runtimeConfigId = rt.id
           WHERE
@@ -74,7 +74,7 @@ object DbReader {
       .query[Runtime]
 
   val stoppedRuntimeQuery =
-    sql"""SELECT DISTINCT c1.id, c1.cloudContext, c1.runtimeName, rt.cloudService, c1.status, rt.zone, rt.region
+    sql"""SELECT DISTINCT c1.id, c1.cloudContext, c1.cloudProvider, c1.runtimeName, rt.cloudService, c1.status, rt.zone, rt.region
           FROM CLUSTER AS c1
           INNER JOIN RUNTIME_CONFIG AS rt ON c1.runtimeConfigId = rt.id
           WHERE

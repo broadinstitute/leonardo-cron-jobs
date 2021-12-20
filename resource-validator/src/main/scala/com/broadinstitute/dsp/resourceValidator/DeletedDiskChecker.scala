@@ -5,6 +5,7 @@ import cats.Parallel
 import cats.effect.Concurrent
 import cats.mtl.Ask
 import cats.syntax.all._
+import kotlin.NotImplementedError
 import org.broadinstitute.dsde.workbench.google2.DiskName
 import org.broadinstitute.dsde.workbench.model.TraceId
 import org.typelevel.log4cats.Logger
@@ -25,7 +26,11 @@ object DeletedDiskChecker {
         ev: Ask[F, TraceId]
       ): F[Option[Disk]] =
         for {
-          diskOpt <- deps.googleDiskService.getDisk(disk.googleProject, disk.zone, disk.diskName)
+          googleProject <- disk.cloudContext match {
+            case CloudContext.Azure(_) => F.raiseError(new NotImplementedError())
+            case CloudContext.Gcp(p) => F.pure(p)
+          }
+          diskOpt <- deps.googleDiskService.getDisk(googleProject, disk.zone, disk.diskName)
           _ <-
             if (!isDryRun) {
               if (disk.formattedBy.getOrElse(None) == "GALAXY") {
@@ -33,11 +38,11 @@ object DeletedDiskChecker {
                 val postgresDiskName = DiskName(s"${dataDiskName.value}-gxy-postres-disk")
                 diskOpt.traverse { _ =>
                   List(postgresDiskName, dataDiskName).parTraverse(dn =>
-                    deps.googleDiskService.deleteDisk(disk.googleProject, disk.zone, dn)
+                    deps.googleDiskService.deleteDisk(googleProject, disk.zone, dn)
                   )
                 }
               } else
-                diskOpt.traverse(_ => deps.googleDiskService.deleteDisk(disk.googleProject, disk.zone, disk.diskName))
+                diskOpt.traverse(_ => deps.googleDiskService.deleteDisk(googleProject, disk.zone, disk.diskName))
             } else F.pure(None)
         } yield diskOpt.map(_ => disk)
     }

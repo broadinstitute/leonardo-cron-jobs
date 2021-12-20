@@ -28,13 +28,13 @@ object DbReader {
   implicit def apply[F[_]](implicit ev: DbReader[F]): DbReader[F] = ev
 
   val activeDisksQuery =
-    sql"""select id, cloudContext, name, zone, formattedBy from PERSISTENT_DISK where status != "Deleted" and status != "Error";
+    sql"""select id, cloudContext, cloudProvider, name, zone, formattedBy from PERSISTENT_DISK where status != "Deleted" and status != "Error";
         """.query[Disk]
 
   // We only check runtimes that have been created for more than 1 hour because a newly "Creating" runtime may not exist in Google yet
   val activeRuntimeQuery =
     sql"""
-         SELECT DISTINCT c1.id, cloudContext, runtimeName, rt.cloudService, c1.status, rt.zone, rt.region
+         SELECT DISTINCT c1.id, cloudContext, cloudProvider, runtimeName, rt.cloudService, c1.status, rt.zone, rt.region
             FROM CLUSTER AS c1
             INNER JOIN RUNTIME_CONFIG AS rt ON c1.`runtimeConfigId`=rt.id
             WHERE c1.status!="Deleted" AND c1.status!="Error" AND createdDate < now() - INTERVAL 1 HOUR
