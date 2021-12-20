@@ -43,7 +43,7 @@ object ZombieMonitor {
         else Stream.empty
       deleteRuntimeCheckerProcess =
         if (shouldRunAll || shouldCheckDeletedRuntimes)
-          Stream.eval(DeletedOrErroredRuntimeChecker.impl(deps.dbReader, deps.runtimeCheckerDeps).run(isDryRun))
+          Stream.eval(ActiveRuntimeChecker.impl(deps.dbReader, deps.runtimeCheckerDeps).run(isDryRun))
         else Stream.empty
       deletek8sClusterCheckerProcess =
         if (shouldRunAll || shouldCheckDeletedK8sClusters)

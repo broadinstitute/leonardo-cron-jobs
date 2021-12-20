@@ -31,7 +31,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.broadinstitute.dsde.workbench.openTelemetry.FakeOpenTelemetryMetricsInterpreter
 import cats.effect.unsafe.implicits.global
 
-class DeletedOrErroredRuntimeCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
+class ActiveRuntimeCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
   it should "report a runtime if it doesn't exist in google but is still active in leonardo DB" in {
     forAll { (runtime: Runtime, dryRun: Boolean) =>
       val dbReader = new FakeDbReader {
@@ -55,7 +55,41 @@ class DeletedOrErroredRuntimeCheckerSpec extends AnyFlatSpec with CronJobsTestSu
         ): IO[Option[Cluster]] = IO.pure(None)
       }
       val deps = initRuntimeCheckerDeps(computeService, dataprocService)
-      val checker = DeletedOrErroredRuntimeChecker.impl(dbReader, deps)
+      val checker = ActiveRuntimeChecker.impl(dbReader, deps)
+      val res = checker.checkResource(runtime, dryRun)
+      res.unsafeRunSync() shouldBe Some(runtime)
+    }
+  }
+
+  it should "report a runtime if it's Stopped in google but is still active in leonardo DB" in {
+    forAll { (runtime: Runtime, dryRun: Boolean) =>
+      val dbReader = new FakeDbReader {
+        override def getRuntimeCandidate: Stream[IO, Runtime] =
+          Stream.emit(runtime)
+        override def markRuntimeDeleted(id: Long): IO[Unit] =
+          IO.raiseError(fail("this shouldn't be called"))
+
+        override def insertClusterError(clusterId: Long, errorCode: Option[Int], errorMessage: String): IO[Unit] =
+          IO.raiseError(fail("this shouldn't be called"))
+
+        override def updateRuntimeStatus(id: Long, status: String): IO[Unit] = {
+          if (dryRun) IO.raiseError(fail("this shouldn't be called in dryRun mode")) else IO {
+            status shouldBe("Stopped")
+          }
+        }
+      }
+      val dataprocService = new BaseFakeGoogleDataprocService {
+        override def getCluster(project: GoogleProject, region: RegionName, clusterName: DataprocClusterName)(implicit
+          ev: Ask[IO, TraceId]
+        ): IO[Option[Cluster]] = IO.pure(Some(Cluster.newBuilder().setStatus(ClusterStatus.newBuilder().setState(ClusterStatus.State.STOPPED)).build()))
+      }
+      val computeService = new FakeGoogleComputeService {
+        override def getInstance(project: GoogleProject, zone: ZoneName, instanceName: InstanceName)(implicit
+                                                                                                     ev: Ask[IO, TraceId]
+        ): IO[Option[Instance]] = IO.pure(Some(Instance.newBuilder().setStatus(Instance.Status.STOPPED).build()))
+      }
+      val deps = initRuntimeCheckerDeps(computeService, dataprocService)
+      val checker = ActiveRuntimeChecker.impl(dbReader, deps)
       val res = checker.checkResource(runtime, dryRun)
       res.unsafeRunSync() shouldBe Some(runtime)
     }
@@ -83,7 +117,7 @@ class DeletedOrErroredRuntimeCheckerSpec extends AnyFlatSpec with CronJobsTestSu
           )
       }
       val deps = initRuntimeCheckerDeps(computeService, dataprocService)
-      val checker = DeletedOrErroredRuntimeChecker.impl(dbReader, deps)
+      val checker = ActiveRuntimeChecker.impl(dbReader, deps)
       val res = checker.checkResource(runtime, dryRun)
       res.unsafeRunSync() shouldBe None
     }
@@ -110,7 +144,7 @@ class DeletedOrErroredRuntimeCheckerSpec extends AnyFlatSpec with CronJobsTestSu
         )
       }
       val deps = initRuntimeCheckerDeps(googleDataprocService = dataprocService)
-      val checker = DeletedOrErroredRuntimeChecker.impl(dbReader, deps)
+      val checker = ActiveRuntimeChecker.impl(dbReader, deps)
       val res = checker.checkResource(runtime, dryRun)
       res.unsafeRunSync() shouldBe Some(runtime)
     }
@@ -145,7 +179,7 @@ class DeletedOrErroredRuntimeCheckerSpec extends AnyFlatSpec with CronJobsTestSu
           IO.pure(false)
       }
       val deps = initRuntimeCheckerDeps(googleDataprocService = dataprocService, googleBillingService = billingService)
-      val checker = DeletedOrErroredRuntimeChecker.impl(dbReader, deps)
+      val checker = ActiveRuntimeChecker.impl(dbReader, deps)
       val res = checker.checkResource(runtime, dryRun)
       res.unsafeRunSync() shouldBe Some(runtime)
     }

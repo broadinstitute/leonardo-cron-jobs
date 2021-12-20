@@ -4,6 +4,7 @@ package zombieMonitor
 import cats.effect.Concurrent
 import cats.mtl.Ask
 import cats.syntax.all._
+import com.google.cloud.compute.v1.Instance
 import fs2.Stream
 import org.broadinstitute.dsde.workbench.google2.{DataprocClusterName, InstanceName}
 import org.broadinstitute.dsde.workbench.model.TraceId
@@ -15,7 +16,7 @@ import org.typelevel.log4cats.Logger
  * 2. if exists but in Error status in google, update DB to "Error"
  * 3. else, do nothing
  */
-object DeletedOrErroredRuntimeChecker {
+object ActiveRuntimeChecker {
   def impl[F[_]](
     dbReader: DbReader[F],
     deps: RuntimeCheckerDeps[F]
@@ -56,6 +57,11 @@ object DeletedOrErroredRuntimeChecker {
                    )
                  } yield ()
                }).as(Some(runtime))
+            case Some(cluster) if (cluster.getStatus.getState == com.google.cloud.dataproc.v1.ClusterStatus.State.STOPPED) =>
+              (if (isDryRun) F.unit
+              else {
+                dbReader.updateRuntimeStatus(runtime.id, "Stopped")
+              }).as(Some(runtime))
             case Some(cluster) =>
               if (cluster.getStatus.getState == com.google.cloud.dataproc.v1.ClusterStatus.State.ERROR) {
                 (if (isDryRun) F.unit
@@ -97,13 +103,15 @@ object DeletedOrErroredRuntimeChecker {
         for {
           runtimeOpt <- deps.computeService
             .getInstance(runtime.googleProject, runtime.zone, InstanceName(runtime.runtimeName))
-          _ <-
-            if (isDryRun) F.unit
-            else
+          res <-
               runtimeOpt match {
-                case None    => dbReader.markRuntimeDeleted(runtime.id)
-                case Some(_) => F.unit
+                case None    => if (isDryRun) F.pure(none[Runtime]) else dbReader.markRuntimeDeleted(runtime.id).as(runtime.some)
+                case Some(r) if r.getStatus == Instance.Status.RUNNING => F.pure(none[Runtime])
+                case Some(r) if r.getStatus == Instance.Status.STOPPED =>
+                  if (isDryRun) F.pure(runtime.some) else dbReader.updateRuntimeStatus(runtime.id, "Stopped").as(runtime.some)
+                case Some(r) =>
+                    logger.error(s"${runtime} is Running in Leonardo, but it's actually in ${r.getStatus} status in Google").as(runtime.some)
               }
-        } yield runtimeOpt.fold[Option[Runtime]](Some(runtime))(_ => none[Runtime])
+        } yield res
     }
 }

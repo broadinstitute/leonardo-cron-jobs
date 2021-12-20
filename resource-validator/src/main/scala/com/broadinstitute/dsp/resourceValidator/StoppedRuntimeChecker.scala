@@ -68,12 +68,7 @@ object StoppedRuntimeChecker {
           runningClusterOpt <- clusterOpt.flatTraverse { cluster =>
             if (cluster.getStatus.getState.name.toUpperCase == "RUNNING") {
               for {
-                // When we stop Dataproc clusters, we actually stop the underlying instances since it is not
-                // possible to stop Dataproc clusters otherwise. Therefore here, we are also checking that there is
-                // at least one underlying instance that is RUNNING.
-                runningInstanceExists <- containsRunningInstance(project, runtime.region, clusterName)
                 rt <-
-                  if (runningInstanceExists) {
                     if (isDryRun)
                       logger
                         .warn(s"Cluster (${runtime}) has running instance(s). It needs to be stopped.")
@@ -87,35 +82,10 @@ object StoppedRuntimeChecker {
                         .stopCluster(project, runtime.region, clusterName, metadata = None, true)
                         .void
                         .as(runtime.some)
-                  } else F.pure(none[Runtime.Dataproc])
               } yield rt
             } else F.pure(none[Runtime.Dataproc])
           }
         } yield runningClusterOpt: Option[Runtime]
       }
-
-      private def containsRunningInstance(project: GoogleProject,
-                                          region: RegionName,
-                                          cluster: DataprocClusterName
-      ): F[Boolean] =
-        for {
-          instances <- deps.dataprocService.getClusterInstances(project, region, cluster)
-
-          doesThereExistARunningInstance <- Stream
-            .emits(instances.toList)
-            .covary[F]
-            .parEvalMapUnordered(5) { case (dataprocZonePreemptible, instances) =>
-              instances.toList
-                .parTraverse { instance =>
-                  deps.computeService
-                    .getInstance(project, dataprocZonePreemptible.zone, instance)
-                    .handleErrorWith(_ => F.pure(none[Instance]))
-                }
-                .map(_.flatten)
-            }
-            .exists(_.exists(_.getStatus == "RUNNING"))
-            .compile
-            .lastOrError
-        } yield doesThereExistARunningInstance
     }
 }
