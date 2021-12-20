@@ -14,7 +14,7 @@ import com.broadinstitute.dsp.Generators._
 
 class DataprocWorkerCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
 
-  //we don't want to duplicate the purpose of the deleted runtime checker here
+  // we don't want to duplicate the purpose of the deleted runtime checker here
   it should "return None if cluster doesn't exist in google" in {
     val dataprocService = new BaseFakeGoogleDataprocService {
       override def getCluster(project: GoogleProject, region: RegionName, clusterName: DataprocClusterName)(implicit
