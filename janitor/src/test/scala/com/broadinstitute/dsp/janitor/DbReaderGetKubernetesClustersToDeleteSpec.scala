@@ -1,9 +1,9 @@
 package com.broadinstitute.dsp
 package janitor
 
+import cats.effect.unsafe.implicits.global
 import com.broadinstitute.dsp.DBTestHelper._
 import com.broadinstitute.dsp.Generators._
-import com.broadinstitute.dsp.{CronJobsTestSuite, Disk}
 import doobie.scalatest.IOChecker
 import org.broadinstitute.dsde.workbench.google2.GKEModels.KubernetesClusterId
 import org.broadinstitute.dsde.workbench.google2.KubernetesSerializableName.NamespaceName

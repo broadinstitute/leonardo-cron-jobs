@@ -1,7 +1,7 @@
 package com.broadinstitute.dsp
 package janitor
 
-import cats.effect.{Concurrent, Timer}
+import cats.effect.{Concurrent}
 import cats.mtl.Ask
 import cats.syntax.all._
 import org.broadinstitute.dsde.workbench.google2.GoogleStorageService
@@ -10,12 +10,11 @@ import org.broadinstitute.dsde.workbench.model.google.GcsBucketName
 import org.typelevel.log4cats.Logger
 
 object StagingBucketRemover {
-  def impl[F[_]: Timer](
+  def impl[F[_]](
     dbReader: DbReader[F],
     deps: CheckRunnerDeps[F]
   )(implicit
     F: Concurrent[F],
-    timer: Timer[F],
     logger: Logger[F],
     ev: Ask[F, TraceId]
   ): CheckRunner[F, BucketToRemove] =

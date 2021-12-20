@@ -11,6 +11,7 @@ import org.broadinstitute.dsde.workbench.google2.mock.{FakeGooglePublisher, Fake
 import org.broadinstitute.dsde.workbench.model.TraceId
 import org.broadinstitute.dsde.workbench.openTelemetry.FakeOpenTelemetryMetricsInterpreter
 import org.scalatest.flatspec.AnyFlatSpec
+import cats.effect.unsafe.implicits.global
 
 final class NodepoolRemoverSpec extends AnyFlatSpec with CronJobsTestSuite {
   it should "send DeleteNodepoolMessage when nodepools are detected to be auto-deleted" in {

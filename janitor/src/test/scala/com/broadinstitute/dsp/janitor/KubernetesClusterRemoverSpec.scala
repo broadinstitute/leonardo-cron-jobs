@@ -11,7 +11,7 @@ import org.broadinstitute.dsde.workbench.google2.mock.{FakeGooglePublisher, Fake
 import org.broadinstitute.dsde.workbench.model.TraceId
 import org.broadinstitute.dsde.workbench.openTelemetry.FakeOpenTelemetryMetricsInterpreter
 import org.scalatest.flatspec.AnyFlatSpec
-
+import cats.effect.unsafe.implicits.global
 final class KubernetesClusterRemoverSpec extends AnyFlatSpec with CronJobsTestSuite {
   it should "send DeleteKubernetesClusterMessage when clusters are detected to be auto-deleted" in {
     forAll { (clusterToRemove: KubernetesClusterToRemove, dryRun: Boolean) =>

@@ -1,18 +1,16 @@
 package com.broadinstitute.dsp
 
-import java.nio.charset.Charset
-import java.time.Instant
-import java.util.concurrent.TimeUnit
-
-import cats.effect.{Concurrent, Timer}
-import cats.syntax.all._
+import cats.effect.Async
 import cats.mtl.Ask
+import cats.syntax.all._
 import fs2.Stream
-import org.typelevel.log4cats.Logger
 import org.broadinstitute.dsde.workbench.google2.{GcsBlobName, GooglePublisher, GoogleStorageService}
 import org.broadinstitute.dsde.workbench.model.TraceId
 import org.broadinstitute.dsde.workbench.model.google.GcsBucketName
 import org.broadinstitute.dsde.workbench.openTelemetry.OpenTelemetryMetrics
+import org.typelevel.log4cats.Logger
+
+import java.nio.charset.Charset
 
 trait CheckRunner[F[_], A] {
   def appName: String
@@ -29,13 +27,13 @@ trait CheckRunner[F[_], A] {
 
   def run(
     isDryRun: Boolean
-  )(implicit timer: Timer[F], F: Concurrent[F], logger: Logger[F], ev: Ask[F, TraceId]): F[Unit] =
+  )(implicit F: Async[F], logger: Logger[F], ev: Ask[F, TraceId]): F[Unit] =
     for {
-      now <- timer.clock.realTime(TimeUnit.MILLISECONDS)
+      now <- F.realTimeInstant
       blobName =
         if (isDryRun)
-          GcsBlobName(s"${appName}/${configs.checkType}/dry-run-${Instant.ofEpochMilli(now)}")
-        else GcsBlobName(s"${appName}/${configs.checkType}/action-${Instant.ofEpochMilli(now)}")
+          GcsBlobName(s"${appName}/${configs.checkType}/dry-run-${now}")
+        else GcsBlobName(s"${appName}/${configs.checkType}/action-${now}")
       _ <- (resourceToScan
         .parEvalMapUnordered(50)(rt => checkResource(rt, isDryRun).handleErrorWith(_ => F.pure(None)))
         .unNone

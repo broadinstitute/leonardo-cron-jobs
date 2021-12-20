@@ -1,33 +1,31 @@
 package com.broadinstitute.dsp
 package janitor
 
-import java.util.UUID
 import cats.Parallel
-import cats.effect.concurrent.Semaphore
-import cats.effect.{Blocker, Concurrent, ConcurrentEffect, ContextShift, ExitCode, Resource, Timer}
+import cats.effect.std.Semaphore
+import cats.effect.{Async, ExitCode, Resource}
 import cats.mtl.Ask
+import com.broadinstitute.dsp.JsonCodec.serviceDataEncoder
 import com.google.pubsub.v1.ProjectTopicName
 import fs2.Stream
-import org.typelevel.log4cats.StructuredLogger
-import org.typelevel.log4cats.slf4j.Slf4jLogger
+import io.circe.syntax.EncoderOps
 import org.broadinstitute.dsde.workbench.google2.{GooglePublisher, PublisherConfig}
 import org.broadinstitute.dsde.workbench.model.TraceId
 import org.broadinstitute.dsde.workbench.openTelemetry.OpenTelemetryMetrics
-import com.broadinstitute.dsp.JsonCodec.serviceDataEncoder
-import io.circe.syntax.EncoderOps
+import org.typelevel.log4cats.StructuredLogger
+import org.typelevel.log4cats.slf4j.Slf4jLogger
+
+import java.util.UUID
 
 object Janitor {
   val loggingContext = Map(
     "serviceContext" -> ServiceData(Some(getClass.getPackage.getImplementationVersion)).asJson.toString
   )
-  def run[F[_]: ConcurrentEffect: Parallel](isDryRun: Boolean,
-                                            shouldCheckAll: Boolean,
-                                            shouldCheckKubernetesClustersToBeRemoved: Boolean,
-                                            shouldCheckNodepoolsToBeRemoved: Boolean,
-                                            shouldCheckStagingBucketsToBeRemoved: Boolean
-  )(implicit
-    timer: Timer[F],
-    cs: ContextShift[F]
+  def run[F[_]: Async: Parallel](isDryRun: Boolean,
+                                 shouldCheckAll: Boolean,
+                                 shouldCheckKubernetesClustersToBeRemoved: Boolean,
+                                 shouldCheckNodepoolsToBeRemoved: Boolean,
+                                 shouldCheckStagingBucketsToBeRemoved: Boolean
   ): Stream[F, Nothing] = {
     implicit val logger =
       StructuredLogger.withContext[F](Slf4jLogger.getLogger[F])(loggingContext)
@@ -59,14 +57,13 @@ object Janitor {
     } yield ExitCode.Success
   }.drain
 
-  private def initDependencies[F[_]: Concurrent: ContextShift: StructuredLogger: Parallel: Timer](
+  private def initDependencies[F[_]: Async: StructuredLogger: Parallel](
     appConfig: AppConfig
   ): Resource[F, JanitorDeps[F]] =
     for {
-      blocker <- Blocker[F]
       blockerBound <- Resource.eval(Semaphore[F](250))
-      metrics <- OpenTelemetryMetrics.resource(appConfig.pathToCredential, "leonardo-cron-jobs", blocker)
-      runtimeCheckerDeps <- RuntimeCheckerDeps.init(appConfig.runtimeCheckerConfig, blocker, metrics, blockerBound)
+      metrics <- OpenTelemetryMetrics.resource(appConfig.pathToCredential, "leonardo-cron-jobs")
+      runtimeCheckerDeps <- RuntimeCheckerDeps.init(appConfig.runtimeCheckerConfig, metrics, blockerBound)
       publisherConfig = PublisherConfig(
         appConfig.pathToCredential.toString,
         ProjectTopicName.of(appConfig.leonardoPubsub.googleProject.value, appConfig.leonardoPubsub.topicName)
@@ -77,13 +74,12 @@ object Janitor {
       val checkRunnerDeps = runtimeCheckerDeps.checkRunnerDeps
       val kubernetesClusterToRemoveDeps = LeoPublisherDeps(googlePublisher, checkRunnerDeps)
       val dbReader = DbReader.impl(xa)
-      JanitorDeps(runtimeCheckerDeps, kubernetesClusterToRemoveDeps, dbReader, blocker)
+      JanitorDeps(runtimeCheckerDeps, kubernetesClusterToRemoveDeps, dbReader)
     }
 }
 
 final case class JanitorDeps[F[_]](
   runtimeCheckerDeps: RuntimeCheckerDeps[F],
   leoPublisherDeps: LeoPublisherDeps[F],
-  dbReader: DbReader[F],
-  blocker: Blocker
+  dbReader: DbReader[F]
 )

@@ -29,6 +29,7 @@ import org.broadinstitute.dsde.workbench.model.TraceId
 import org.broadinstitute.dsde.workbench.model.google.GoogleProject
 import org.scalatest.flatspec.AnyFlatSpec
 import org.broadinstitute.dsde.workbench.openTelemetry.FakeOpenTelemetryMetricsInterpreter
+import cats.effect.unsafe.implicits.global
 
 class DeletedOrErroredRuntimeCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
   it should "report a runtime if it doesn't exist in google but is still active in leonardo DB" in {
@@ -71,7 +72,7 @@ class DeletedOrErroredRuntimeCheckerSpec extends AnyFlatSpec with CronJobsTestSu
       val computeService = new FakeGoogleComputeService {
         override def getInstance(project: GoogleProject, zone: ZoneName, instanceName: InstanceName)(implicit
           ev: Ask[IO, TraceId]
-        ): IO[Option[Instance]] = IO.pure(Some(Instance.newBuilder().setStatus("Running").build()))
+        ): IO[Option[Instance]] = IO.pure(Some(Instance.newBuilder().setStatus(Instance.Status.RUNNING).build()))
       }
       val dataprocService = new BaseFakeGoogleDataprocService {
         override def getCluster(project: GoogleProject, region: RegionName, clusterName: DataprocClusterName)(implicit

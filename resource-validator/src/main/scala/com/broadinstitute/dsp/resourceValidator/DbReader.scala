@@ -1,11 +1,11 @@
 package com.broadinstitute.dsp
 package resourceValidator
 
-import cats.effect.{Async, _}
+import cats.effect.Async
+import com.broadinstitute.dsp.DbReaderImplicits._
 import doobie._
 import doobie.implicits._
 import fs2.Stream
-import DbReaderImplicits._
 import org.broadinstitute.dsde.workbench.model.google.{GcsBucketName, GoogleProject}
 
 trait DbReader[F[_]] {
@@ -116,7 +116,7 @@ object DbReader {
          """
       .query[RuntimeWithWorkers]
 
-  def impl[F[_]: ContextShift](xa: Transactor[F])(implicit F: Async[F]): DbReader[F] = new DbReader[F] {
+  def impl[F[_]](xa: Transactor[F])(implicit F: Async[F]): DbReader[F] = new DbReader[F] {
 
     /**
      * AOU reuses runtime names, hence exclude any aou runtimes that have the same names that're still "alive"

@@ -1,19 +1,19 @@
 package com.broadinstitute.dsp
 package zombieMonitor
 
-import cats.effect.{Concurrent, Timer}
-import cats.syntax.all._
+import cats.effect.Concurrent
 import cats.mtl.Ask
+import cats.syntax.all._
 import fs2.Stream
-import org.typelevel.log4cats.Logger
 import org.broadinstitute.dsde.workbench.model.TraceId
+import org.typelevel.log4cats.Logger
 
 /**
  * Similar to `DeletedDiskChecker` in `resource-validator`, but this process all disks and check if they still exists in google.
  * If not, we update leonardo DB to reflect that they're deleted
  */
 object DeletedDiskChecker {
-  def impl[F[_]: Timer](
+  def impl[F[_]](
     dbReader: DbReader[F],
     deps: DiskCheckerDeps[F]
   )(implicit F: Concurrent[F], logger: Logger[F], ev: Ask[F, TraceId]): CheckRunner[F, Disk] =

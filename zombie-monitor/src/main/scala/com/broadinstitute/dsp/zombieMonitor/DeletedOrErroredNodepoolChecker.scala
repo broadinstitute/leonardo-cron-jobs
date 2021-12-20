@@ -1,12 +1,12 @@
 package com.broadinstitute.dsp
 package zombieMonitor
 
-import cats.effect.{Concurrent, Timer}
-import cats.syntax.all._
+import cats.effect.Concurrent
 import cats.mtl.Ask
+import cats.syntax.all._
 import fs2.Stream
-import org.typelevel.log4cats.Logger
 import org.broadinstitute.dsde.workbench.model.TraceId
+import org.typelevel.log4cats.Logger
 
 /**
  * Scans through all active nodepools, and update DB accordingly when necessary
@@ -16,7 +16,7 @@ import org.broadinstitute.dsde.workbench.model.TraceId
  * - if nodepool exist in non ERROR state, do nothing and don't report the nodepool
  */
 object DeletedOrErroredNodepoolChecker {
-  def impl[F[_]: Timer](
+  def impl[F[_]](
     dbReader: DbReader[F],
     deps: KubernetesClusterCheckerDeps[F]
   )(implicit F: Concurrent[F], logger: Logger[F], ev: Ask[F, TraceId]): CheckRunner[F, NodepoolToScan] =

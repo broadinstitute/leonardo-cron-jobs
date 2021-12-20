@@ -7,13 +7,13 @@ import com.broadinstitute.dsp.Generators._
 import com.google.cloud.compute.v1
 import com.google.cloud.compute.v1.Operation
 import fs2.Stream
-import org.broadinstitute.dsde.workbench.google2.mock.FakeGoogleStorageInterpreter
-import org.broadinstitute.dsde.workbench.google2.{DiskName, GoogleDiskService, MockGoogleDiskService, ZoneName}
+import org.broadinstitute.dsde.workbench.google2.mock.{FakeGoogleStorageInterpreter, MockGoogleDiskService}
+import org.broadinstitute.dsde.workbench.google2.{DiskName, GoogleDiskService, ZoneName}
 import org.broadinstitute.dsde.workbench.model.TraceId
 import org.broadinstitute.dsde.workbench.model.google.GoogleProject
 import org.scalatest.flatspec.AnyFlatSpec
 import org.broadinstitute.dsde.workbench.openTelemetry.FakeOpenTelemetryMetricsInterpreter
-
+import cats.effect.unsafe.implicits.global
 class DeletedDiskCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
   it should "return None if disk no longer exists in Google" in {
     val diskService = new MockGoogleDiskService {

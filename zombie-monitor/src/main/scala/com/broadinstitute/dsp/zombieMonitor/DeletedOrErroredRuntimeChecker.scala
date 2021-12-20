@@ -1,13 +1,13 @@
 package com.broadinstitute.dsp
 package zombieMonitor
 
-import cats.effect.{Concurrent, Timer}
-import cats.syntax.all._
+import cats.effect.Concurrent
 import cats.mtl.Ask
+import cats.syntax.all._
 import fs2.Stream
-import org.typelevel.log4cats.Logger
 import org.broadinstitute.dsde.workbench.google2.{DataprocClusterName, InstanceName}
 import org.broadinstitute.dsde.workbench.model.TraceId
+import org.typelevel.log4cats.Logger
 
 /**
  * Take a `Stream` of active runtimes, and check their status in google
@@ -16,7 +16,7 @@ import org.broadinstitute.dsde.workbench.model.TraceId
  * 3. else, do nothing
  */
 object DeletedOrErroredRuntimeChecker {
-  def impl[F[_]: Timer](
+  def impl[F[_]](
     dbReader: DbReader[F],
     deps: RuntimeCheckerDeps[F]
   )(implicit F: Concurrent[F], logger: Logger[F], ev: Ask[F, TraceId]): CheckRunner[F, Runtime] =

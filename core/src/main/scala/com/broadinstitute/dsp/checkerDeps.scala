@@ -1,51 +1,38 @@
 package com.broadinstitute.dsp
 
-import java.nio.file.Path
 import cats.Parallel
-import cats.effect.concurrent.Semaphore
-import cats.effect.{Blocker, Concurrent, ContextShift, Resource, Timer}
-import org.typelevel.log4cats.StructuredLogger
+import cats.effect.std.Semaphore
+import cats.effect.{Async, Resource}
 import org.broadinstitute.dsde.workbench.google2.util.RetryPredicates
-import org.broadinstitute.dsde.workbench.google2.{
-  GKEService,
-  GoogleBillingService,
-  GoogleComputeService,
-  GoogleDataprocService,
-  GoogleDiskService,
-  GooglePublisher,
-  GoogleStorageService,
-  RegionName,
-  ZoneName
-}
+import org.broadinstitute.dsde.workbench.google2.{GKEService, GoogleBillingService, GoogleComputeService, GoogleDataprocService, GoogleDiskService, GooglePublisher, GoogleStorageService, RegionName, ZoneName}
 import org.broadinstitute.dsde.workbench.model.google.{GcsBucketName, GoogleProject}
 import org.broadinstitute.dsde.workbench.openTelemetry.OpenTelemetryMetrics
+import org.typelevel.log4cats.StructuredLogger
+
+import java.nio.file.Path
 
 object RuntimeCheckerDeps {
-  def init[F[_]: Concurrent: ContextShift: StructuredLogger: Parallel: Timer](
+  def init[F[_]: Async: StructuredLogger: Parallel](
     config: RuntimeCheckerConfig,
-    blocker: Blocker,
     metrics: OpenTelemetryMetrics[F],
     blockerBound: Semaphore[F]
   ): Resource[F, RuntimeCheckerDeps[F]] =
     for {
       scopedCredential <- initGoogleCredentials(config.pathToCredential)
       computeService <- GoogleComputeService.fromCredential(scopedCredential,
-                                                            blocker,
                                                             blockerBound,
                                                             RetryPredicates.standardGoogleRetryConfig
       )
       storageService <- GoogleStorageService.resource(config.pathToCredential.toString,
-                                                      blocker,
                                                       Some(blockerBound),
                                                       None
       )
       dataprocService <- GoogleDataprocService.fromCredential(computeService,
                                                               scopedCredential,
-                                                              blocker,
                                                               supportedRegions,
                                                               blockerBound
       )
-      billingService <- GoogleBillingService.fromCredential(scopedCredential, blocker, blockerBound)
+      billingService <- GoogleBillingService.fromCredential(scopedCredential, blockerBound)
     } yield {
       val checkRunnerDeps = CheckRunnerDeps(config.reportDestinationBucket, storageService, metrics)
       RuntimeCheckerDeps(computeService, dataprocService, checkRunnerDeps, billingService)

@@ -2,16 +2,16 @@ package com.broadinstitute.dsp
 package resourceValidator
 
 import cats.Parallel
-import cats.effect.{Concurrent, Timer}
-import cats.syntax.all._
+import cats.effect.Concurrent
 import cats.mtl.Ask
+import cats.syntax.all._
 import org.broadinstitute.dsde.workbench.google2.DiskName
-import org.typelevel.log4cats.Logger
 import org.broadinstitute.dsde.workbench.model.TraceId
+import org.typelevel.log4cats.Logger
 
 // Implements CheckRunner[F[_], A]
 object DeletedDiskChecker {
-  def impl[F[_]: Timer: Parallel](
+  def impl[F[_]: Parallel](
     dbReader: DbReader[F],
     deps: DiskCheckerDeps[F]
   )(implicit F: Concurrent[F], logger: Logger[F], ev: Ask[F, TraceId]): CheckRunner[F, Disk] =

@@ -1,12 +1,12 @@
 package com.broadinstitute.dsp
 package zombieMonitor
 
-import cats.effect.{Async, _}
-import fs2.Stream
-import DbReaderImplicits._
+import cats.effect.Async
+import cats.syntax.all._
+import com.broadinstitute.dsp.DbReaderImplicits._
 import doobie._
 import doobie.implicits._
-import cats.syntax.all._
+import fs2.Stream
 
 trait DbReader[F[_]] {
   def getDisksToDeleteCandidate: Stream[F, Disk]
@@ -109,7 +109,7 @@ object DbReader {
       update CLUSTER set deletedFrom = $deletedFrom where id = $runtimeId
       """.update
 
-  def impl[F[_]: ContextShift](xa: Transactor[F])(implicit F: Async[F]): DbReader[F] = new DbReader[F] {
+  def impl[F[_]](xa: Transactor[F])(implicit F: Async[F]): DbReader[F] = new DbReader[F] {
     override def getRuntimeCandidate: Stream[F, Runtime] = activeRuntimeQuery.stream.transact(xa)
 
     override def getDisksToDeleteCandidate: Stream[F, Disk] =

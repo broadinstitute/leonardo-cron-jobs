@@ -16,7 +16,7 @@ import doobie.scalatest.IOChecker
 import org.broadinstitute.dsde.workbench.google2.GKEModels.KubernetesClusterId
 import org.broadinstitute.dsde.workbench.google2.KubernetesSerializableName.NamespaceName
 import org.scalatest.flatspec.AnyFlatSpec
-
+import cats.effect.unsafe.implicits.global
 import java.time.Instant
 
 /**

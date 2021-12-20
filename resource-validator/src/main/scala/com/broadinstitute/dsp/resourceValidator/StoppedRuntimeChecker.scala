@@ -2,7 +2,7 @@ package com.broadinstitute.dsp
 package resourceValidator
 
 import cats.Parallel
-import cats.effect.{Concurrent, Timer}
+import cats.effect.{Concurrent}
 import cats.mtl.Ask
 import cats.syntax.all._
 import com.google.cloud.compute.v1.Instance
@@ -14,7 +14,7 @@ import org.typelevel.log4cats.Logger
 
 // Implements CheckRunner[F[_], A]
 object StoppedRuntimeChecker {
-  def iml[F[_]: Timer: Parallel](
+  def iml[F[_]:  Parallel](
     dbReader: DbReader[F],
     deps: RuntimeCheckerDeps[F]
   )(implicit F: Concurrent[F], logger: Logger[F], ev: Ask[F, TraceId]): CheckRunner[F, Runtime] =
@@ -84,7 +84,7 @@ object StoppedRuntimeChecker {
                       ) >> deps.dataprocService
                         // In contrast to in Leo, we're not setting the shutdown script metadata before stopping the instance
                         // in order to keep things simple since our main goal here is to prevent unintended cost to users.
-                        .stopCluster(project, runtime.region, clusterName, metadata = None)
+                        .stopCluster(project, runtime.region, clusterName, metadata = None, true)
                         .void
                         .as(runtime.some)
                   } else F.pure(none[Runtime.Dataproc])

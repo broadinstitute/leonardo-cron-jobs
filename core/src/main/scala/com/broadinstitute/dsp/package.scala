@@ -1,6 +1,6 @@
 package com.broadinstitute
 
-import cats.effect.{Resource, Sync, Timer}
+import cats.effect.{Resource, Sync}
 import com.google.auth.oauth2.{GoogleCredentials, ServiceAccountCredentials}
 import org.broadinstitute.dsde.workbench.google2.RegionName
 
@@ -36,7 +36,7 @@ package object dsp {
     "australia-southeast1"
   ).map(s => RegionName(s))
 
-  def initGoogleCredentials[F[_]: Sync: Timer](
+  def initGoogleCredentials[F[_]: Sync](
     pathToCredential: Path
   ): Resource[F, GoogleCredentials] =
     for {

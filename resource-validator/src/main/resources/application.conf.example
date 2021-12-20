@@ -1,3 +1,0 @@
-leonardo-pubsub.google-project = "broad-dsde-dev" # or project you want to test against
-
-report-destination-bucket = "<YOUR-TESTING-BUCKET>" # if you're using leonardo's dev SA for local testing, make sure to give leonardo's dev SA write permission to this bucket

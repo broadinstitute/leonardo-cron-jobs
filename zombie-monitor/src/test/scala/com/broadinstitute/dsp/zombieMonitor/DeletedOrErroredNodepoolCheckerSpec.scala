@@ -10,6 +10,7 @@ import org.broadinstitute.dsde.workbench.google2.mock.{FakeGoogleStorageInterpre
 import org.broadinstitute.dsde.workbench.model.TraceId
 import org.scalatest.flatspec.AnyFlatSpec
 import org.broadinstitute.dsde.workbench.openTelemetry.FakeOpenTelemetryMetricsInterpreter
+import cats.effect.unsafe.implicits.global
 
 class DeletedOrErroredNodepoolCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
   it should "report nodepool if it doesn't exist in google but still active in leonardo DB" in {

@@ -1,23 +1,20 @@
 package com.broadinstitute.dsp
 package resourceValidator
 
-import java.util.concurrent.TimeUnit
-
-import cats.effect.{Concurrent, Timer}
-import cats.syntax.all._
+import cats.effect.Async
 import cats.mtl.Ask
-import org.typelevel.log4cats.Logger
+import cats.syntax.all._
+import com.broadinstitute.dsp.JsonCodec._
 import org.broadinstitute.dsde.workbench.google2.GKEModels.{KubernetesClusterId, NodepoolId}
 import org.broadinstitute.dsde.workbench.model.TraceId
-
-import JsonCodec._
+import org.typelevel.log4cats.Logger
 
 object DeletedOrErroredNodepoolChecker {
 
-  def impl[F[_]: Timer](
+  def impl[F[_]](
     dbReader: DbReader[F],
     deps: NodepoolCheckerDeps[F]
-  )(implicit F: Concurrent[F], timer: Timer[F], logger: Logger[F], ev: Ask[F, TraceId]): CheckRunner[F, Nodepool] =
+  )(implicit F: Async[F], logger: Logger[F], ev: Ask[F, TraceId]): CheckRunner[F, Nodepool] =
     new CheckRunner[F, Nodepool] {
       override def appName: String = resourceValidator.appName
 
@@ -35,7 +32,7 @@ object DeletedOrErroredNodepoolChecker {
         ev: Ask[F, TraceId]
       ): F[Option[Nodepool]] =
         for {
-          now <- timer.clock.realTime(TimeUnit.MILLISECONDS)
+          now <- F.realTimeInstant
           nodepoolOpt <- deps.gkeService.getNodepool(
             NodepoolId(KubernetesClusterId(nodepool.googleProject, nodepool.location, nodepool.clusterName),
                        nodepool.nodepoolName

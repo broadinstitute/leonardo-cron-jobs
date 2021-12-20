@@ -1,24 +1,24 @@
 package com.broadinstitute.dsp
 
-import java.time.Instant
-import java.util.UUID
-import cats.effect.{ContextShift, IO, Resource}
+import cats.effect.{IO, Resource}
+import doobie.Put
 import doobie.hikari.HikariTransactor
 import doobie.implicits._
-import DbReaderImplicits._
-import doobie.Put
 import doobie.util.transactor.Transactor
 import org.broadinstitute.dsde.workbench.google2.GKEModels.KubernetesClusterId
 import org.broadinstitute.dsde.workbench.google2.KubernetesSerializableName.NamespaceName
 import org.broadinstitute.dsde.workbench.google2.{RegionName, ZoneName}
 import org.scalatest.Tag
+import DbReaderImplicits._
+import java.time.Instant
+import java.util.UUID
 
 object DBTestHelper {
   implicit val cloudServicePut: Put[CloudService] = Put[String].contramap(cloudService => cloudService.asString)
   val zoneName = ZoneName("us-central1-a")
   val regionName = RegionName("us-central1")
 
-  def yoloTransactor(implicit cs: ContextShift[IO], databaseConfig: DatabaseConfig): Transactor[IO] =
+  def yoloTransactor(implicit databaseConfig: DatabaseConfig): Transactor[IO] =
     Transactor.fromDriverManager[IO](
       "com.mysql.cj.jdbc.Driver", // driver classname
       databaseConfig.url,
@@ -27,7 +27,6 @@ object DBTestHelper {
     )
 
   def transactorResource(implicit
-    cs: ContextShift[IO],
     databaseConfig: DatabaseConfig
   ): Resource[IO, HikariTransactor[IO]] =
     for {

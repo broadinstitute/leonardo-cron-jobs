@@ -1,7 +1,7 @@
 package com.broadinstitute.dsp
 package janitor
 
-import cats.effect.{Async, _}
+import cats.effect.Async
 import doobie._
 import doobie.implicits._
 import fs2.Stream
@@ -101,7 +101,7 @@ object DbReader {
         """
       .query[BucketToRemove]
 
-  def impl[F[_]: ContextShift](xa: Transactor[F])(implicit F: Async[F]): DbReader[F] = new DbReader[F] {
+  def impl[F[_]](xa: Transactor[F])(implicit F: Async[F]): DbReader[F] = new DbReader[F] {
     override def getKubernetesClustersToDelete: Stream[F, KubernetesClusterToRemove] =
       kubernetesClustersToDeleteQuery.stream.transact(xa)
 

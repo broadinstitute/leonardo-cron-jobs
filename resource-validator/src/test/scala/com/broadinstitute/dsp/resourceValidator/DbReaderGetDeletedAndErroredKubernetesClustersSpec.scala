@@ -7,7 +7,7 @@ import doobie.scalatest.IOChecker
 import org.broadinstitute.dsde.workbench.google2.GKEModels.{KubernetesClusterId, KubernetesClusterName}
 import org.broadinstitute.dsde.workbench.model.google.GoogleProject
 import org.scalatest.flatspec.AnyFlatSpec
-
+import cats.effect.unsafe.implicits.global
 class DbReaderGetDeletedAndErroredKubernetesClustersSpec extends AnyFlatSpec with CronJobsTestSuite with IOChecker {
   implicit val config = ConfigSpec.config.database
   val transactor = yoloTransactor

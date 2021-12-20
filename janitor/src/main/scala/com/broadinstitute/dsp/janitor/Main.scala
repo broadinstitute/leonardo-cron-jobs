@@ -3,18 +3,14 @@ package janitor
 
 import cats.effect.IO
 import cats.syntax.all._
-import com.monovore.decline.{CommandApp, _}
-import scala.concurrent.ExecutionContext.global
-
+import com.monovore.decline._
+import cats.effect.unsafe.implicits.global
 object Main
     extends CommandApp(
       name = "janitor",
       header = "Clean up prod resources deemed not utilized",
       version = "0.0.1",
       main = {
-        implicit val cs = IO.contextShift(global)
-        implicit val timer = IO.timer(global)
-
         val enableDryRun = Opts.flag("dryRun", "Default to true").orFalse.withDefault(true)
         val shouldCheckAll = Opts.flag("all", "run all checks").orFalse
 

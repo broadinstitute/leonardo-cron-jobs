@@ -2,8 +2,8 @@ package com.broadinstitute.dsp
 package zombieMonitor
 
 import cats.Parallel
-import cats.effect.concurrent.Semaphore
-import cats.effect.{Blocker, Concurrent, ConcurrentEffect, ContextShift, ExitCode, Resource, Timer}
+import cats.effect.std.Semaphore
+import cats.effect.{Async, ExitCode, Resource}
 import cats.mtl.Ask
 import com.broadinstitute.dsp.JsonCodec.serviceDataEncoder
 import fs2.Stream
@@ -21,15 +21,12 @@ object ZombieMonitor {
     "serviceContext" -> ServiceData(Some(getClass.getPackage.getImplementationVersion)).asJson.toString
   )
 
-  def run[F[_]: ConcurrentEffect: Parallel](isDryRun: Boolean,
-                                            shouldRunAll: Boolean,
-                                            shouldCheckDeletedRuntimes: Boolean,
-                                            shouldCheckDeletedDisks: Boolean,
-                                            shouldCheckDeletedK8sClusters: Boolean,
-                                            shouldCheckDeletedOrErroredNodepool: Boolean
-  )(implicit
-    T: Timer[F],
-    C: ContextShift[F]
+  def run[F[_]: Async: Parallel](isDryRun: Boolean,
+                                 shouldRunAll: Boolean,
+                                 shouldCheckDeletedRuntimes: Boolean,
+                                 shouldCheckDeletedDisks: Boolean,
+                                 shouldCheckDeletedK8sClusters: Boolean,
+                                 shouldCheckDeletedOrErroredNodepool: Boolean
   ): Stream[F, Nothing] = {
     implicit val logger =
       StructuredLogger.withContext[F](Slf4jLogger.getLogger[F])(loggingContext)
@@ -71,27 +68,21 @@ object ZombieMonitor {
     } yield ExitCode.Success
   }.drain
 
-  private def initDependencies[F[_]: Concurrent: ContextShift: StructuredLogger: Parallel: Timer](
+  private def initDependencies[F[_]: Async: StructuredLogger: Parallel](
     appConfig: AppConfig
   ): Resource[F, ZombieMonitorDeps[F]] =
     for {
-      blocker <- Blocker[F]
       blockerBound <- Resource.eval(Semaphore[F](250))
-      metrics <- OpenTelemetryMetrics.resource(appConfig.pathToCredential, "leonardo-cron-jobs", blocker)
-      runtimeCheckerDeps <- RuntimeCheckerDeps.init(appConfig.runtimeCheckerConfig, blocker, metrics, blockerBound)
-      diskService <- GoogleDiskService.resource(appConfig.pathToCredential.toString, blocker, blockerBound)
-      gkeService <- GKEService.resource(appConfig.pathToCredential, blocker, blockerBound)
+      metrics <- OpenTelemetryMetrics.resource(appConfig.pathToCredential, "leonardo-cron-jobs")
+      runtimeCheckerDeps <- RuntimeCheckerDeps.init(appConfig.runtimeCheckerConfig, metrics, blockerBound)
+      diskService <- GoogleDiskService.resource(appConfig.pathToCredential.toString, blockerBound)
+      gkeService <- GKEService.resource(appConfig.pathToCredential, blockerBound)
       xa <- DbTransactor.init(appConfig.database)
     } yield {
       val dbReader = DbReader.impl(xa)
       val checkRunnerDeps = runtimeCheckerDeps.checkRunnerDeps
       val k8sCheckerDeps = KubernetesClusterCheckerDeps(checkRunnerDeps, gkeService)
-      ZombieMonitorDeps(DiskCheckerDeps(checkRunnerDeps, diskService),
-                        runtimeCheckerDeps,
-                        k8sCheckerDeps,
-                        dbReader,
-                        blocker
-      )
+      ZombieMonitorDeps(DiskCheckerDeps(checkRunnerDeps, diskService), runtimeCheckerDeps, k8sCheckerDeps, dbReader)
     }
 }
 
@@ -99,6 +90,5 @@ final case class ZombieMonitorDeps[F[_]](
   diskCheckerDeps: DiskCheckerDeps[F],
   runtimeCheckerDeps: RuntimeCheckerDeps[F],
   kubernetesClusterCheckerDeps: KubernetesClusterCheckerDeps[F],
-  dbReader: DbReader[F],
-  blocker: Blocker
+  dbReader: DbReader[F]
 )

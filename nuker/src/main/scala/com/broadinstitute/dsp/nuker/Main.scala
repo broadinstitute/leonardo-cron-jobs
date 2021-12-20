@@ -3,8 +3,8 @@ package nuker
 
 import cats.effect.IO
 import cats.syntax.all._
-import com.monovore.decline.{CommandApp, _}
-import scala.concurrent.ExecutionContext.global
+import com.monovore.decline._
+import cats.effect.unsafe.implicits.global
 
 object Main
     extends CommandApp(
@@ -12,9 +12,6 @@ object Main
       header = "Clean up cloud resources created by Leonardo in dev/qa projects",
       version = "0.0.1",
       main = {
-        implicit val cs = IO.contextShift(global)
-        implicit val timer = IO.timer(global)
-
         val enableDryRun = Opts.flag("dryRun", "Default to true").orFalse.withDefault(true)
         val shouldRunAll = Opts.flag("all", "run all checks").orFalse
         val shouldDeletePubsubTopics =

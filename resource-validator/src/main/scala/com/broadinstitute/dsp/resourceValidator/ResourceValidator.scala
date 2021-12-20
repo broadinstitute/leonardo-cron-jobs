@@ -2,8 +2,8 @@ package com.broadinstitute.dsp
 package resourceValidator
 
 import cats.Parallel
-import cats.effect.concurrent.Semaphore
-import cats.effect.{Blocker, Concurrent, ConcurrentEffect, ContextShift, ExitCode, Resource, Timer}
+import cats.effect.std.Semaphore
+import cats.effect._
 import cats.mtl.Ask
 import com.broadinstitute.dsp.JsonCodec.serviceDataEncoder
 import com.google.pubsub.v1.ProjectTopicName
@@ -22,19 +22,16 @@ object ResourceValidator {
     "serviceContext" -> ServiceData(Some(getClass.getPackage.getImplementationVersion)).asJson.toString
   )
 
-  def run[F[_]: ConcurrentEffect: Parallel](isDryRun: Boolean,
-                                            shouldCheckAll: Boolean,
-                                            shouldCheckDeletedRuntimes: Boolean,
-                                            shouldCheckErroredRuntimes: Boolean,
-                                            shouldCheckStoppedRuntimes: Boolean,
-                                            shouldCheckDeletedKubernetesCluster: Boolean,
-                                            shouldCheckDeletedNodepool: Boolean,
-                                            shouldCheckDeletedDisks: Boolean,
-                                            shouldCheckInitBuckets: Boolean,
-                                            shouldCheckDataprocWorkers: Boolean
-  )(implicit
-    T: Timer[F],
-    C: ContextShift[F]
+  def run[F[_]: Async: Parallel](isDryRun: Boolean,
+                                 shouldCheckAll: Boolean,
+                                 shouldCheckDeletedRuntimes: Boolean,
+                                 shouldCheckErroredRuntimes: Boolean,
+                                 shouldCheckStoppedRuntimes: Boolean,
+                                 shouldCheckDeletedKubernetesCluster: Boolean,
+                                 shouldCheckDeletedNodepool: Boolean,
+                                 shouldCheckDeletedDisks: Boolean,
+                                 shouldCheckInitBuckets: Boolean,
+                                 shouldCheckDataprocWorkers: Boolean
   ): Stream[F, Nothing] = {
     implicit val logger =
       StructuredLogger.withContext[F](Slf4jLogger.getLogger[F])(loggingContext)
@@ -104,20 +101,19 @@ object ResourceValidator {
     } yield ExitCode.Success
   }.drain
 
-  private def initDependencies[F[_]: Concurrent: ContextShift: StructuredLogger: Parallel: Timer](
+  private def initDependencies[F[_]: Async: StructuredLogger: Parallel](
     appConfig: AppConfig
   ): Resource[F, ResourcevalidatorServerDeps[F]] =
     for {
-      blocker <- Blocker[F]
       blockerBound <- Resource.eval(Semaphore[F](250))
-      metrics <- OpenTelemetryMetrics.resource(appConfig.pathToCredential, "leonardo-cron-jobs", blocker)
-      runtimeCheckerDeps <- RuntimeCheckerDeps.init(appConfig.runtimeCheckerConfig, blocker, metrics, blockerBound)
-      diskService <- GoogleDiskService.resource(appConfig.pathToCredential.toString, blocker, blockerBound)
+      metrics <- OpenTelemetryMetrics.resource(appConfig.pathToCredential, "leonardo-cron-jobs")
+      runtimeCheckerDeps <- RuntimeCheckerDeps.init(appConfig.runtimeCheckerConfig, metrics, blockerBound)
+      diskService <- GoogleDiskService.resource(appConfig.pathToCredential.toString, blockerBound)
       publisherConfig = PublisherConfig(
         appConfig.pathToCredential.toString,
         ProjectTopicName.of(appConfig.leonardoPubsub.googleProject.value, appConfig.leonardoPubsub.topicName)
       )
-      gkeService <- GKEService.resource(appConfig.pathToCredential, blocker, blockerBound)
+      gkeService <- GKEService.resource(appConfig.pathToCredential, blockerBound)
       googlePublisher <- GooglePublisher.resource[F](publisherConfig)
       xa <- DbTransactor.init(appConfig.database)
     } yield {
@@ -130,8 +126,7 @@ object ResourceValidator {
                                   diskCheckerDeps,
                                   kubernetesClusterCheckerDeps,
                                   nodepoolCheckerDeps,
-                                  dbReader,
-                                  blocker
+                                  dbReader
       )
     }
 }
@@ -141,6 +136,5 @@ final case class ResourcevalidatorServerDeps[F[_]](
   deletedDiskCheckerDeps: DiskCheckerDeps[F],
   kubernetesClusterCheckerDeps: KubernetesClusterCheckerDeps[F],
   nodepoolCheckerDeps: NodepoolCheckerDeps[F],
-  dbReader: DbReader[F],
-  blocker: Blocker
+  dbReader: DbReader[F]
 )

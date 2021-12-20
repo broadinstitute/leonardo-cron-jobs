@@ -1,20 +1,19 @@
 package com.broadinstitute.dsp
 package zombieMonitor
 
-import java.util.concurrent.TimeUnit
-import java.util.{Calendar, GregorianCalendar}
-
+import cats.effect.IO
+import cats.effect.unsafe.implicits.global
 import com.broadinstitute.dsp.DBTestHelper._
 import com.broadinstitute.dsp.Generators._
+import doobie.implicits._
 import doobie.scalatest.IOChecker
 import org.broadinstitute.dsde.workbench.google2.DiskName
 import org.broadinstitute.dsde.workbench.google2.GKEModels.{KubernetesClusterId, KubernetesClusterName}
+import org.broadinstitute.dsde.workbench.google2.KubernetesSerializableName.NamespaceName
 import org.broadinstitute.dsde.workbench.model.google.GoogleProject
 import org.scalatest.flatspec.AnyFlatSpec
-import doobie.implicits._
-import org.broadinstitute.dsde.workbench.google2.KubernetesSerializableName.NamespaceName
-import java.time.Instant
 
+import java.util.{Calendar, GregorianCalendar}
 /**
  * Not running these tests in CI yet since we'll need to set up mysql container and Leonardo tables in CI. Punt for now
  * For running these tests locally, you can
@@ -71,9 +70,9 @@ final class DbReaderSpec extends AnyFlatSpec with CronJobsTestSuite with IOCheck
       val res = transactorResource.use { implicit xa =>
         val dbReader = DbReader.impl(xa)
         for {
-          now <- timer.clock.realTime(TimeUnit.MILLISECONDS)
+          now <- IO.realTimeInstant
           runtimeConfigId <- insertRuntimeConfig(runtime.cloudService)
-          _ <- insertRuntime(runtime, runtimeConfigId, Instant.ofEpochMilli(now))
+          _ <- insertRuntime(runtime, runtimeConfigId, now)
           runtimes <- dbReader.getRuntimeCandidate.compile.toList
         } yield runtimes shouldBe List.empty
       }
