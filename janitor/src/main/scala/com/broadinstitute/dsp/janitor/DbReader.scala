@@ -92,7 +92,7 @@ object DbReader {
    */
   val stagingBucketsToDeleteQuery =
     sql"""
-        SELECT googleProject, stagingBucket
+        SELECT cloudContext, stagingBucket
         FROM CLUSTER
         WHERE
           status="Deleted" AND
