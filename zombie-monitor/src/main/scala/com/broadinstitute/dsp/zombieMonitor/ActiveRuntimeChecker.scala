@@ -57,11 +57,12 @@ object ActiveRuntimeChecker {
                    )
                  } yield ()
                }).as(Some(runtime))
-            case Some(cluster) if (cluster.getStatus.getState == com.google.cloud.dataproc.v1.ClusterStatus.State.STOPPED) && runtime.status != "Stopped" =>
+            case Some(cluster)
+                if (cluster.getStatus.getState == com.google.cloud.dataproc.v1.ClusterStatus.State.STOPPED) && runtime.status != "Stopped" =>
               (if (isDryRun) F.unit
-              else {
-                dbReader.updateRuntimeStatus(runtime.id, "Stopped")
-              }).as(Some(runtime))
+               else {
+                 dbReader.updateRuntimeStatus(runtime.id, "Stopped")
+               }).as(Some(runtime))
             case Some(cluster) =>
               if (cluster.getStatus.getState == com.google.cloud.dataproc.v1.ClusterStatus.State.ERROR) {
                 (if (isDryRun) F.unit
@@ -104,14 +105,21 @@ object ActiveRuntimeChecker {
           runtimeOpt <- deps.computeService
             .getInstance(runtime.googleProject, runtime.zone, InstanceName(runtime.runtimeName))
           res <-
-              runtimeOpt match {
-                case None    => if (isDryRun)  logger.info(s"Not updating DB ${runtime} to be Deleted").as(runtime.some) else dbReader.markRuntimeDeleted(runtime.id).as(runtime.some)
-                case Some(r) if runtime.status.toUpperCase == r.getStatus.toString => F.pure(none[Runtime])
-                case Some(r) if r.getStatus == Instance.Status.TERMINATED && runtime.status != "Stopped" =>
-                  if (isDryRun) logger.info(s"Not updating ${runtime} to be Stopped").as(runtime.some) else dbReader.updateRuntimeStatus(runtime.id, "Stopped").as(runtime.some)
-                case Some(r) =>
-                    logger.info(s"${runtime} is ${runtime.status} in Leonardo, but it's actually in ${r.getStatus} status in Google").as(none[Runtime])
-              }
+            runtimeOpt match {
+              case None =>
+                if (isDryRun) logger.info(s"Not updating DB ${runtime} to be Deleted").as(runtime.some)
+                else dbReader.markRuntimeDeleted(runtime.id).as(runtime.some)
+              case Some(r) if runtime.status.toUpperCase == r.getStatus.toString => F.pure(none[Runtime])
+              case Some(r) if r.getStatus == Instance.Status.TERMINATED && runtime.status != "Stopped" =>
+                if (isDryRun) logger.info(s"Not updating ${runtime} to be Stopped").as(runtime.some)
+                else dbReader.updateRuntimeStatus(runtime.id, "Stopped").as(runtime.some)
+              case Some(r) =>
+                logger
+                  .info(
+                    s"${runtime} is ${runtime.status} in Leonardo, but it's actually in ${r.getStatus} status in Google"
+                  )
+                  .as(none[Runtime])
+            }
         } yield res
     }
 }

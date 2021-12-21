@@ -5,13 +5,15 @@ import cats.Parallel
 import cats.effect.Concurrent
 import cats.mtl.Ask
 import cats.syntax.all._
+import com.google.cloud.compute.v1.Instance
+import com.google.cloud.dataproc.v1.ClusterStatus
 import org.broadinstitute.dsde.workbench.google2.{DataprocClusterName, InstanceName}
 import org.broadinstitute.dsde.workbench.model.TraceId
 import org.typelevel.log4cats.Logger
 
 // Implements CheckRunner[F[_], A]
 object StoppedRuntimeChecker {
-  def iml[F[_]:  Parallel](
+  def iml[F[_]: Parallel](
     dbReader: DbReader[F],
     deps: RuntimeCheckerDeps[F]
   )(implicit F: Concurrent[F], logger: Logger[F], ev: Ask[F, TraceId]): CheckRunner[F, Runtime] =
@@ -38,7 +40,7 @@ object StoppedRuntimeChecker {
           runtimeOpt <- deps.computeService
             .getInstance(runtime.googleProject, runtime.zone, InstanceName(runtime.runtimeName))
           runningRuntimeOpt <- runtimeOpt.flatTraverse { rt =>
-            if (rt.getStatus == "RUNNING")
+            if (rt.getStatus == Instance.Status.RUNNING)
               if (isDryRun)
                 logger.warn(s"${runtime} is running. It needs to be stopped.").as[Option[Runtime]](Some(runtime))
               else
@@ -63,22 +65,22 @@ object StoppedRuntimeChecker {
           clusterOpt <- deps.dataprocService
             .getCluster(runtime.googleProject, runtime.region, DataprocClusterName(runtime.runtimeName))
           runningClusterOpt <- clusterOpt.flatTraverse { cluster =>
-            if (cluster.getStatus.getState.name.toUpperCase == "RUNNING") {
+            if (cluster.getStatus.getState == ClusterStatus.State.RUNNING) {
               for {
                 rt <-
-                    if (isDryRun)
-                      logger
-                        .warn(s"Cluster (${runtime}) has running instance(s). It needs to be stopped.")
-                        .as(runtime.some)
-                    else
-                      logger.warn(
-                        s"Cluster (${runtime}) has running instances(s). Going to stop it."
-                      ) >> deps.dataprocService
-                        // In contrast to in Leo, we're not setting the shutdown script metadata before stopping the instance
-                        // in order to keep things simple since our main goal here is to prevent unintended cost to users.
-                        .stopCluster(project, runtime.region, clusterName, metadata = None, true)
-                        .void
-                        .as(runtime.some)
+                  if (isDryRun)
+                    logger
+                      .warn(s"Dry run: Cluster (${runtime}) is Running It needs to be stopped.")
+                      .as(runtime.some)
+                  else
+                    logger.warn(
+                      s"Cluster (${runtime}) has running instances(s). Going to stop it."
+                    ) >> deps.dataprocService
+                      // In contrast to in Leo, we're not setting the shutdown script metadata before stopping the instance
+                      // in order to keep things simple since our main goal here is to prevent unintended cost to users.
+                      .stopCluster(project, runtime.region, clusterName, metadata = None, true)
+                      .void
+                      .as(runtime.some)
               } yield rt
             } else F.pure(none[Runtime.Dataproc])
           }

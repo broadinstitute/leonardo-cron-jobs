@@ -4,7 +4,17 @@ import cats.Parallel
 import cats.effect.std.Semaphore
 import cats.effect.{Async, Resource}
 import org.broadinstitute.dsde.workbench.google2.util.RetryPredicates
-import org.broadinstitute.dsde.workbench.google2.{GKEService, GoogleBillingService, GoogleComputeService, GoogleDataprocService, GoogleDiskService, GooglePublisher, GoogleStorageService, RegionName, ZoneName}
+import org.broadinstitute.dsde.workbench.google2.{
+  GKEService,
+  GoogleBillingService,
+  GoogleComputeService,
+  GoogleDataprocService,
+  GoogleDiskService,
+  GooglePublisher,
+  GoogleStorageService,
+  RegionName,
+  ZoneName
+}
 import org.broadinstitute.dsde.workbench.model.google.{GcsBucketName, GoogleProject}
 import org.broadinstitute.dsde.workbench.openTelemetry.OpenTelemetryMetrics
 import org.typelevel.log4cats.StructuredLogger
@@ -23,10 +33,7 @@ object RuntimeCheckerDeps {
                                                             blockerBound,
                                                             RetryPredicates.standardGoogleRetryConfig
       )
-      storageService <- GoogleStorageService.resource(config.pathToCredential.toString,
-                                                      Some(blockerBound),
-                                                      None
-      )
+      storageService <- GoogleStorageService.resource(config.pathToCredential.toString, Some(blockerBound), None)
       dataprocService <- GoogleDataprocService.fromCredential(computeService,
                                                               scopedCredential,
                                                               supportedRegions,

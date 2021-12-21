@@ -12,9 +12,9 @@ import org.broadinstitute.dsde.workbench.openTelemetry.OpenTelemetryMetrics
 import org.typelevel.log4cats.Logger
 
 class PubsubTopicAndSubscriptionCleaner[F[_]](config: PubsubTopicCleanerConfig,
-                                                     topicAdmin: GoogleTopicAdmin[F],
-                                                     subcriptionAdmin: GoogleSubscriptionAdmin[F],
-                                                     metrics: OpenTelemetryMetrics[F]
+                                              topicAdmin: GoogleTopicAdmin[F],
+                                              subcriptionAdmin: GoogleSubscriptionAdmin[F],
+                                              metrics: OpenTelemetryMetrics[F]
 )(implicit
   F: Async[F],
   logger: Logger[F]
@@ -64,9 +64,9 @@ class PubsubTopicAndSubscriptionCleaner[F[_]](config: PubsubTopicCleanerConfig,
 
 object PubsubTopicAndSubscriptionCleaner {
   def apply[F[_]](config: PubsubTopicCleanerConfig,
-                         topicAdmin: GoogleTopicAdmin[F],
-                         subscriptionAdmin: GoogleSubscriptionAdmin[F],
-                         metrics: OpenTelemetryMetrics[F]
+                  topicAdmin: GoogleTopicAdmin[F],
+                  subscriptionAdmin: GoogleSubscriptionAdmin[F],
+                  metrics: OpenTelemetryMetrics[F]
   )(implicit
     F: Async[F],
     logger: Logger[F]

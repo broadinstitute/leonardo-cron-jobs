@@ -3,7 +3,12 @@ package com.broadinstitute.dsp
 import ca.mrvisser.sealerate
 import io.circe.Encoder
 import org.broadinstitute.dsde.workbench.google2.{DiskName, Location, ZoneName}
-import org.broadinstitute.dsde.workbench.google2.GKEModels.{KubernetesClusterId, KubernetesClusterName, NodepoolId, NodepoolName}
+import org.broadinstitute.dsde.workbench.google2.GKEModels.{
+  KubernetesClusterId,
+  KubernetesClusterName,
+  NodepoolId,
+  NodepoolName
+}
 import org.broadinstitute.dsde.workbench.model.TraceId
 import org.broadinstitute.dsde.workbench.model.google.{GcsBucketName, GoogleProject}
 import org.broadinstitute.dsde.workbench.google2.JsonCodec.{googleProjectEncoder, traceIdEncoder}
@@ -91,7 +96,6 @@ object RemovableNodepoolStatus {
   val stringToStatus: Map[String, RemovableNodepoolStatus] =
     sealerate.collect[RemovableNodepoolStatus].map(a => (a.asString, a)).toMap
 }
-
 
 sealed abstract class CloudProvider extends Product with Serializable {
   def asString: String

@@ -12,8 +12,7 @@ object Generators {
     cloudService <- genCloudService
     project <- genGoogleProject
     runtimeName <- Gen.uuid.map(_.toString)
-    status <- possibleStatuses.fold(
-      Gen.oneOf("Running", "Creating", "Deleted", "Error"))(s => Gen.oneOf(s.toList))
+    status <- possibleStatuses.fold(Gen.oneOf("Running", "Creating", "Deleted", "Error"))(s => Gen.oneOf(s.toList))
   } yield cloudService match {
     case CloudService.Dataproc =>
       Runtime.Dataproc(id, project, runtimeName, cloudService, status, DBTestHelper.regionName)
@@ -31,7 +30,12 @@ object Generators {
     project <- genGoogleProject
     diskName <- genDiskName
     zone <- genZoneName
-  } yield Disk(id, CloudContext.Gcp(project), diskName, zone, formattedBy = Some("GCE")) //TODO: update generator once we support Azure
+  } yield Disk(id,
+               CloudContext.Gcp(project),
+               diskName,
+               zone,
+               formattedBy = Some("GCE")
+  ) // TODO: update generator once we support Azure
 
   val genInitBucket: Gen[InitBucketToRemove] = for {
     project <- genGoogleProject

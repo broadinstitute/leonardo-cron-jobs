@@ -11,7 +11,15 @@ import com.google.cloud.dataproc.v1.{Cluster, ClusterOperationMetadata, ClusterS
 import fs2.Stream
 import org.broadinstitute.dsde.workbench.google2.DataprocRole.{Master, SecondaryWorker, Worker}
 import org.broadinstitute.dsde.workbench.google2.mock.{BaseFakeGoogleDataprocService, FakeGoogleComputeService}
-import org.broadinstitute.dsde.workbench.google2.{DataprocClusterName, DataprocOperation, DataprocRoleZonePreemptibility, InstanceName, OperationName, RegionName, ZoneName}
+import org.broadinstitute.dsde.workbench.google2.{
+  DataprocClusterName,
+  DataprocOperation,
+  DataprocRoleZonePreemptibility,
+  InstanceName,
+  OperationName,
+  RegionName,
+  ZoneName
+}
 import org.broadinstitute.dsde.workbench.model.TraceId
 import org.broadinstitute.dsde.workbench.model.google.GoogleProject
 import com.broadinstitute.dsp.resourceValidator.StoppedRuntimeCheckerSpec._
@@ -59,7 +67,7 @@ final class StoppedRuntimeCheckerSpec extends AnyFlatSpec with CronJobsTestSuite
         override def getInstance(project: GoogleProject, zone: ZoneName, instanceName: InstanceName)(implicit
           ev: Ask[IO, TraceId]
         ): IO[Option[Instance]] = {
-          val instance = Instance.newBuilder().setStatus(Instance.Status.valueOf(runtime.status.toUpperCase)).build()
+          val instance = Instance.newBuilder().setStatus(Instance.Status.RUNNING).build()
           IO.pure(Some(instance))
         }
 
@@ -72,14 +80,19 @@ final class StoppedRuntimeCheckerSpec extends AnyFlatSpec with CronJobsTestSuite
         override def getCluster(project: GoogleProject, region: RegionName, clusterName: DataprocClusterName)(implicit
           ev: Ask[IO, TraceId]
         ): IO[Option[Cluster]] =
-          IO.pure(Some(makeClusterWithStatus(runtime.status.toUpperCase)))
+          IO.pure(Some(makeClusterWithStatus("RUNNING")))
 
         override def getClusterInstances(project: GoogleProject, region: RegionName, clusterName: DataprocClusterName)(
           implicit ev: Ask[IO, TraceId]
         ) =
           IO.pure(dataprocRoleZonePreemptibilityInstances)
 
-        override def stopCluster(project: GoogleProject, region: RegionName, clusterName: DataprocClusterName, metadata: Option[Map[String, String]], isFullStop: Boolean)(implicit ev: Ask[IO, TraceId]): IO[Option[DataprocOperation]] =
+        override def stopCluster(project: GoogleProject,
+                                 region: RegionName,
+                                 clusterName: DataprocClusterName,
+                                 metadata: Option[Map[String, String]],
+                                 isFullStop: Boolean
+        )(implicit ev: Ask[IO, TraceId]): IO[Option[DataprocOperation]] =
           if (dryRun) IO.raiseError(fail("this shouldn't be called")) else IO.pure(Some(defaultDataprocOperation))
       }
 
@@ -88,12 +101,8 @@ final class StoppedRuntimeCheckerSpec extends AnyFlatSpec with CronJobsTestSuite
 
       val stoppedRuntimeChecker = StoppedRuntimeChecker.iml(dbReader, runtimeCheckerDeps)
       val res = stoppedRuntimeChecker.checkResource(runtime, dryRun)
-      val expectedRes =
-        if (runtime.status.toUpperCase == "RUNNING") Some(runtime)
-        else None
 
-      res.unsafeRunSync() shouldBe expectedRes
-
+      res.unsafeRunSync() shouldBe Some(runtime)
     }
   }
 }

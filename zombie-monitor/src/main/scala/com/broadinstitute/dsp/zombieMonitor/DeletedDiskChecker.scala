@@ -29,7 +29,7 @@ object DeletedDiskChecker {
         for {
           googleProject <- disk.cloudContext match {
             case CloudContext.Azure(_) => F.raiseError(new NotImplementedError())
-            case CloudContext.Gcp(p) => F.pure(p)
+            case CloudContext.Gcp(p)   => F.pure(p)
           }
           diskOpt <- deps.googleDiskService.getDisk(googleProject, disk.zone, disk.diskName)
           _ <-

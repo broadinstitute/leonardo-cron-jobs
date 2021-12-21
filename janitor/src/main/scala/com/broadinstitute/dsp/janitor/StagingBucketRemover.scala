@@ -1,7 +1,7 @@
 package com.broadinstitute.dsp
 package janitor
 
-import cats.effect.{Concurrent}
+import cats.effect.Concurrent
 import cats.mtl.Ask
 import cats.syntax.all._
 import org.broadinstitute.dsde.workbench.google2.GoogleStorageService

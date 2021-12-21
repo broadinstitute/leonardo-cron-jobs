@@ -15,8 +15,8 @@ import java.util.UUID
 
 object Nuker {
   def run[F[_]: Async: Parallel](isDryRun: Boolean,
-                                            shouldRunAll: Boolean,
-                                            shouldDeletePubsubTopics: Boolean
+                                 shouldRunAll: Boolean,
+                                 shouldDeletePubsubTopics: Boolean
   ): Stream[F, Nothing] = {
     implicit def getLogger[F[_]: Sync] = Slf4jLogger.getLogger[F]
     implicit val traceId = Ask.const(TraceId(UUID.randomUUID()))
