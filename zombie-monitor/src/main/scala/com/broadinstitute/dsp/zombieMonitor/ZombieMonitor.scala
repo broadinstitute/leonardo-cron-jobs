@@ -1,19 +1,20 @@
 package com.broadinstitute.dsp
 package zombieMonitor
 
-import java.util.UUID
 import cats.Parallel
 import cats.effect.concurrent.Semaphore
-import cats.effect.{Blocker, Concurrent, ConcurrentEffect, ContextShift, ExitCode, IO, Resource, Sync, Timer}
+import cats.effect.{Blocker, Concurrent, ConcurrentEffect, ContextShift, ExitCode, Resource, Timer}
 import cats.mtl.Ask
+import com.broadinstitute.dsp.JsonCodec.serviceDataEncoder
 import fs2.Stream
-import org.typelevel.log4cats.StructuredLogger
-import org.typelevel.log4cats.slf4j.Slf4jLogger
+import io.circe.syntax.EncoderOps
 import org.broadinstitute.dsde.workbench.google2.{GKEService, GoogleDiskService}
 import org.broadinstitute.dsde.workbench.model.TraceId
 import org.broadinstitute.dsde.workbench.openTelemetry.OpenTelemetryMetrics
-import com.broadinstitute.dsp.JsonCodec.serviceDataEncoder
-import io.circe.syntax.EncoderOps
+import org.typelevel.log4cats.StructuredLogger
+import org.typelevel.log4cats.slf4j.Slf4jLogger
+
+import java.util.UUID
 
 object ZombieMonitor {
   val loggingContext = Map(
