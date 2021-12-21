@@ -37,8 +37,8 @@ object ZombieMonitor {
       config <- Stream.fromEither(Config.appConfig)
       deps <- Stream.resource(initDependencies(config))
       _ <-
-        if (isDryRun) Stream.eval(getLogger.info("Running in dry run mode"))
-        else Stream.eval(getLogger.info("Running in non dry run mode"))
+        if (isDryRun) Stream.eval(logger.info("Running in dry run mode"))
+        else Stream.eval(logger.info("Running in non dry run mode"))
       deleteDiskCheckerProcess =
         if (shouldRunAll || shouldCheckDeletedDisks)
           Stream.eval(DeletedDiskChecker.impl(deps.dbReader, deps.diskCheckerDeps).run(isDryRun))
