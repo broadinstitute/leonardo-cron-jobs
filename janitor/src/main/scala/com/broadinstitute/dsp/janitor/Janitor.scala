@@ -13,8 +13,13 @@ import org.typelevel.log4cats.slf4j.Slf4jLogger
 import org.broadinstitute.dsde.workbench.google2.{GooglePublisher, PublisherConfig}
 import org.broadinstitute.dsde.workbench.model.TraceId
 import org.broadinstitute.dsde.workbench.openTelemetry.OpenTelemetryMetrics
+import com.broadinstitute.dsp.JsonCodec.serviceDataEncoder
+import io.circe.syntax.EncoderOps
 
 object Janitor {
+  val loggingContext = Map(
+    "serviceContext" -> ServiceData(Some(getClass.getPackage.getImplementationVersion)).asJson.toString
+  )
   def run[F[_]: ConcurrentEffect: Parallel](isDryRun: Boolean,
                                             shouldCheckAll: Boolean,
                                             shouldCheckKubernetesClustersToBeRemoved: Boolean,
@@ -24,7 +29,8 @@ object Janitor {
     timer: Timer[F],
     cs: ContextShift[F]
   ): Stream[F, Nothing] = {
-    implicit def getLogger[F[_]: Sync] = Slf4jLogger.getLogger[F]
+    implicit val logger =
+      StructuredLogger.withContext[F](Slf4jLogger.getLogger[F])(loggingContext)
     implicit val traceId = Ask.const(TraceId(UUID.randomUUID()))
 
     for {

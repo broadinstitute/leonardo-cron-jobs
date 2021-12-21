@@ -102,4 +102,13 @@ object JsonCodec {
     Encoder.forProduct4("messageType", "nodepoolId", "googleProject", "traceId")(x =>
       (x.messageType, x.nodepoolId, x.googleProject, x.traceId)
     )
+
+  implicit val serviceDataEncoder: Encoder[ServiceData] = Encoder.forProduct2(
+    "service",
+    "version"
+  )(x => (x.name, x.version))
+}
+
+final case class ServiceData(version: Option[String]) {
+  val name = "leonardo-cron-jobs"
 }

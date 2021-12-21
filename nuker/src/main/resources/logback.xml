@@ -1,9 +1,28 @@
 <configuration debug="true">
-  <appender class="ch.qos.logback.core.ConsoleAppender" name="CONSOLE">
-    <encoder class="net.logstash.logback.encoder.LogstashEncoder">
-      <fieldNames>
-        <level>severity</level>
-      </fieldNames>
+  <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
+      <providers>
+        <omitEmptyFields>true</omitEmptyFields>
+
+        <timestamp/>
+        <version/>
+        <loggerName/>
+        <mdc>
+          <excludeMdcKeyName>serviceContext</excludeMdcKeyName>
+        </mdc>
+        <threadName/>
+        <stackTrace/>
+
+        <pattern>
+          <pattern>
+            {
+            "severity": "%level",
+            "serviceContext": "#tryJson{%mdc{serviceContext}}",
+            "message": "#tryJson{%message}"
+            }
+          </pattern>
+        </pattern>
+      </providers>
     </encoder>
   </appender>
 
