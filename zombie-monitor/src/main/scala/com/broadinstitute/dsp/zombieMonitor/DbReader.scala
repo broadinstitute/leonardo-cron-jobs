@@ -58,8 +58,8 @@ object DbReader {
 
   def markK8sClusterDeletedQuery(id: Int) =
     sql"""
-          UPDATE NODEPOOL
-          INNER JOIN KUBERNETES_CLUSTER ON KUBERNETES_CLUSTER.id = NODEPOOL.clusterId
+          UPDATE KUBERNETES_CLUSTER
+          LEFT JOIN NODEPOOL ON KUBERNETES_CLUSTER.id = NODEPOOL.clusterId
           LEFT JOIN APP ON APP.nodepoolId = NODEPOOL.id
           SET diskId = NULL, KUBERNETES_CLUSTER.status = "DELETED", KUBERNETES_CLUSTER.destroyedDate = now(), NODEPOOL.status = "DELETED", NODEPOOL.destroyedDate=now()
           where KUBERNETES_CLUSTER.id = $id""".update

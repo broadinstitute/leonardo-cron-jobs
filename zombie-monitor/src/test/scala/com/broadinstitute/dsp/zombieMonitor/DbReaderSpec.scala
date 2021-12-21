@@ -159,6 +159,39 @@ final class DbReaderSpec extends AnyFlatSpec with CronJobsTestSuite with IOCheck
     }
   }
 
+  it should "update k8s cluster when there's no nodepool or app row" taggedAs DbTest in {
+    forAll { (cluster: KubernetesClusterId) =>
+      val res = transactorResource.use { implicit xa =>
+        val dbReader = DbReader.impl(xa)
+        for {
+          clusterId <- insertK8sCluster(cluster)
+          _ <- dbReader.markK8sClusterDeleted(clusterId)
+          status <- getK8sClusterStatus(clusterId)
+        } yield status shouldBe "DELETED"
+      }
+      res.unsafeRunSync()
+    }
+  }
+
+  it should "update k8s cluster and nodepool when there's no App record" taggedAs DbTest in {
+    forAll { (cluster: KubernetesClusterId) =>
+      val res = transactorResource.use { implicit xa =>
+        val dbReader = DbReader.impl(xa)
+        for {
+          clusterId <- insertK8sCluster(cluster)
+          nodepoolId <- insertNodepool(clusterId, "nodepool1", false)
+          _ <- dbReader.markK8sClusterDeleted(clusterId)
+          status <- getK8sClusterStatus(clusterId)
+          nodepoolStatus <- getNodepoolStatus(nodepoolId)
+        } yield {
+          status shouldBe "DELETED"
+          nodepoolStatus shouldBe "DELETED"
+        }
+      }
+      res.unsafeRunSync()
+    }
+  }
+
   it should "update nodepool status properly" taggedAs DbTest in {
     forAll { (cluster: KubernetesClusterId) =>
       val res = transactorResource.use { implicit xa =>
