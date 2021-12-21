@@ -4,7 +4,7 @@ package janitor
 import java.util.UUID
 import cats.Parallel
 import cats.effect.concurrent.Semaphore
-import cats.effect.{Blocker, Concurrent, ConcurrentEffect, ContextShift, ExitCode, Resource, Sync, Timer}
+import cats.effect.{Blocker, Concurrent, ConcurrentEffect, ContextShift, ExitCode, Resource, Timer}
 import cats.mtl.Ask
 import com.google.pubsub.v1.ProjectTopicName
 import fs2.Stream
