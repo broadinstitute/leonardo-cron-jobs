@@ -3,19 +3,25 @@ package resourceValidator
 
 import cats.Parallel
 import cats.effect.concurrent.Semaphore
-import cats.effect.{Blocker, Concurrent, ConcurrentEffect, ContextShift, ExitCode, Resource, Sync, Timer}
+import cats.effect.{Blocker, Concurrent, ConcurrentEffect, ContextShift, ExitCode, Resource, Timer}
 import cats.mtl.Ask
+import com.broadinstitute.dsp.JsonCodec.serviceDataEncoder
 import com.google.pubsub.v1.ProjectTopicName
 import fs2.Stream
-import org.typelevel.log4cats.StructuredLogger
-import org.typelevel.log4cats.slf4j.Slf4jLogger
+import io.circe.syntax.EncoderOps
 import org.broadinstitute.dsde.workbench.google2.{GKEService, GoogleDiskService, GooglePublisher, PublisherConfig}
 import org.broadinstitute.dsde.workbench.model.TraceId
 import org.broadinstitute.dsde.workbench.openTelemetry.OpenTelemetryMetrics
+import org.typelevel.log4cats.StructuredLogger
+import org.typelevel.log4cats.slf4j.Slf4jLogger
 
 import java.util.UUID
 
 object ResourceValidator {
+  val loggingContext = Map(
+    "serviceContext" -> ServiceData(Some(getClass.getPackage.getImplementationVersion)).asJson.toString
+  )
+
   def run[F[_]: ConcurrentEffect: Parallel](isDryRun: Boolean,
                                             shouldCheckAll: Boolean,
                                             shouldCheckDeletedRuntimes: Boolean,
@@ -30,7 +36,8 @@ object ResourceValidator {
     T: Timer[F],
     C: ContextShift[F]
   ): Stream[F, Nothing] = {
-    implicit def getLogger[F[_]: Sync] = Slf4jLogger.getLogger[F]
+    implicit val logger =
+      StructuredLogger.withContext[F](Slf4jLogger.getLogger[F])(loggingContext)
     implicit val traceId = Ask.const(TraceId(UUID.randomUUID()))
 
     for {

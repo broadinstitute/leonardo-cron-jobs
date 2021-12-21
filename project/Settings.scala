@@ -1,7 +1,7 @@
+import Version.versionSettings
 import com.typesafe.sbt.SbtNativePackager.Universal
 import com.typesafe.sbt.SbtNativePackager.autoImport._
 import com.typesafe.sbt.packager.Keys.{daemonUser, daemonUserUid, scriptClasspath}
-import com.typesafe.sbt.packager.docker.{Cmd, DockerChmodType}
 import com.typesafe.sbt.packager.docker.DockerPlugin.autoImport._
 import sbt.Keys._
 import sbt._
@@ -78,7 +78,6 @@ object Settings {
 
   private lazy val commonSettings = List(
     organization := "com.broadinstitute.dsp",
-    version := "0.0.1-SNAPSHOT",
     scalaVersion := "2.13.7",
     resolvers ++= commonResolvers,
     addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.10.3"),
@@ -97,7 +96,7 @@ object Settings {
     // assembly merge
     assembly / assemblyMergeStrategy := Merging.customMergeStrategy((assembly / assemblyMergeStrategy).value),
     assembly / test := {}
-  )
+  ) ++ versionSettings
 
   lazy val coreSettings = commonSettings ++ List(
     libraryDependencies ++= Dependencies.core
