@@ -61,7 +61,7 @@ object DbReader {
           UPDATE NODEPOOL
           INNER JOIN KUBERNETES_CLUSTER ON KUBERNETES_CLUSTER.id = NODEPOOL.clusterId
           LEFT JOIN APP ON APP.nodepoolId = NODEPOOL.id
-          SET diskId = NULL, KUBERNETES_CLUSTER.status = "DELETED", KUBERNETES_CLUSTER.destroyedDate = now()
+          SET diskId = NULL, KUBERNETES_CLUSTER.status = "DELETED", KUBERNETES_CLUSTER.destroyedDate = now(), NODEPOOL.status = "DELETED", NODEPOOL.destroyedDate=now()
           where KUBERNETES_CLUSTER.id = $id""".update
 
   def markNodepoolDeletedQuery(id: Long) =
