@@ -14,7 +14,6 @@ jobs:
       - uses: actions/checkout@v2
         with:
           fetch-depth: '10'
-          token: ${{ secrets.REPO_ACCESS_TOKEN }}
       - name: Set commit short hash
         id: setHash
         run: |
@@ -39,6 +38,7 @@ jobs:
       - uses: actions/checkout@v2
         with:
           repository: broadinstitute/terra-helmfile
+          token: ${{ secrets.REPO_ACCESS_TOKEN }}
 #          ref: ci  you can use this for testing a specific branch of terra-helm
       - name: update resource-validator hash
         uses: databiosphere/github-actions/actions/yq@master
