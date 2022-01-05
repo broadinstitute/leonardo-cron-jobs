@@ -13,6 +13,7 @@ import org.broadinstitute.dsde.workbench.model.google.{GcsBucketName, GoogleProj
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatestplus.mockito.MockitoSugar
 import org.broadinstitute.dsde.workbench.openTelemetry.FakeOpenTelemetryMetricsInterpreter
+import cats.effect.unsafe.implicits.global
 
 class InitBucketCheckerSpec extends AnyFlatSpec with CronJobsTestSuite with MockitoSugar {
   val mockBucket = mock[Bucket]

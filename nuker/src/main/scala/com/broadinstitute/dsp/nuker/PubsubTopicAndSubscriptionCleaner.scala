@@ -1,29 +1,27 @@
 package com.broadinstitute.dsp
 package nuker
 
-import java.util.concurrent.TimeUnit
-
-import cats.effect.{Concurrent, Timer}
+import cats.effect.Async
 import cats.mtl.Ask
 import com.google.pubsub.v1.{ProjectSubscriptionName, TopicName}
 import fs2.Stream
-import org.typelevel.log4cats.Logger
 import org.broadinstitute.dsde.workbench.google2.{GoogleSubscriptionAdmin, GoogleTopicAdmin}
 import org.broadinstitute.dsde.workbench.model.TraceId
 import org.broadinstitute.dsde.workbench.model.google.GoogleProject
 import org.broadinstitute.dsde.workbench.openTelemetry.OpenTelemetryMetrics
+import org.typelevel.log4cats.Logger
 
-class PubsubTopicAndSubscriptionCleaner[F[_]: Timer](config: PubsubTopicCleanerConfig,
-                                                     topicAdmin: GoogleTopicAdmin[F],
-                                                     subcriptionAdmin: GoogleSubscriptionAdmin[F],
-                                                     metrics: OpenTelemetryMetrics[F]
+class PubsubTopicAndSubscriptionCleaner[F[_]](config: PubsubTopicCleanerConfig,
+                                              topicAdmin: GoogleTopicAdmin[F],
+                                              subcriptionAdmin: GoogleSubscriptionAdmin[F],
+                                              metrics: OpenTelemetryMetrics[F]
 )(implicit
-  F: Concurrent[F],
+  F: Async[F],
   logger: Logger[F]
 ) {
   def run(isDryRun: Boolean): F[Unit] = {
     val res = for {
-      now <- Stream.eval(Timer[F].clock.realTime(TimeUnit.MILLISECONDS))
+      now <- Stream.eval(F.realTimeInstant)
       traceId = TraceId(s"pubsubTopicCleaner-${now}")
       implicit0(ev: Ask[F, TraceId]) = Ask.const[F, TraceId](traceId)
       deleteTopicStream = for {
@@ -65,12 +63,12 @@ class PubsubTopicAndSubscriptionCleaner[F[_]: Timer](config: PubsubTopicCleanerC
 }
 
 object PubsubTopicAndSubscriptionCleaner {
-  def apply[F[_]: Timer](config: PubsubTopicCleanerConfig,
-                         topicAdmin: GoogleTopicAdmin[F],
-                         subscriptionAdmin: GoogleSubscriptionAdmin[F],
-                         metrics: OpenTelemetryMetrics[F]
+  def apply[F[_]](config: PubsubTopicCleanerConfig,
+                  topicAdmin: GoogleTopicAdmin[F],
+                  subscriptionAdmin: GoogleSubscriptionAdmin[F],
+                  metrics: OpenTelemetryMetrics[F]
   )(implicit
-    F: Concurrent[F],
+    F: Async[F],
     logger: Logger[F]
   ): PubsubTopicAndSubscriptionCleaner[F] =
     new PubsubTopicAndSubscriptionCleaner(config, topicAdmin, subscriptionAdmin, metrics)

@@ -25,12 +25,12 @@ object CloudService {
   }
 }
 final case class Disk(id: Long,
-                      googleProject: GoogleProject,
+                      cloudContext: CloudContext,
                       diskName: DiskName,
                       zone: ZoneName,
                       formattedBy: Option[String]
 ) {
-  override def toString: String = s"${id}/${googleProject.value},${diskName.value},${zone.value}"
+  override def toString: String = s"${id}/${cloudContext.asStringWithProvider},${diskName.value},${zone.value}"
 }
 
 //init buckets are different than staging buckets because we store them with gs://[GcsBucketName]/
@@ -95,6 +95,38 @@ object RemovableNodepoolStatus {
   val removableStatuses = sealerate.values[RemovableNodepoolStatus]
   val stringToStatus: Map[String, RemovableNodepoolStatus] =
     sealerate.collect[RemovableNodepoolStatus].map(a => (a.asString, a)).toMap
+}
+
+sealed abstract class CloudProvider extends Product with Serializable {
+  def asString: String
+}
+object CloudProvider {
+  final case object Gcp extends CloudProvider {
+    override val asString = "GCP"
+  }
+  final case object Azure extends CloudProvider {
+    override val asString = "AZURE"
+  }
+
+  val stringToCloudProvider = sealerate.values[CloudProvider].map(p => (p.asString, p)).toMap
+}
+
+sealed abstract class CloudContext extends Product with Serializable {
+  def asString: String
+  def asStringWithProvider: String
+  def cloudProvider: CloudProvider
+}
+object CloudContext {
+  final case class Gcp(value: GoogleProject) extends CloudContext {
+    override val asString = value.value
+    override val asStringWithProvider = s"Gcp/${value.value}"
+    override def cloudProvider: CloudProvider = CloudProvider.Gcp
+  }
+  final case class Azure(value: String) extends CloudContext {
+    override val asString = value
+    override val asStringWithProvider = s"Azure/${value}"
+    override def cloudProvider: CloudProvider = CloudProvider.Azure
+  }
 }
 
 object JsonCodec {

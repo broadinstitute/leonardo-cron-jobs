@@ -1,24 +1,23 @@
 package com.broadinstitute.dsp
 
-import java.time.Instant
-import java.util.UUID
-import cats.effect.{ContextShift, IO, Resource}
+import cats.effect.{IO, Resource}
+import doobie.Put
 import doobie.hikari.HikariTransactor
 import doobie.implicits._
-import DbReaderImplicits._
-import doobie.Put
 import doobie.util.transactor.Transactor
 import org.broadinstitute.dsde.workbench.google2.GKEModels.KubernetesClusterId
 import org.broadinstitute.dsde.workbench.google2.KubernetesSerializableName.NamespaceName
 import org.broadinstitute.dsde.workbench.google2.{RegionName, ZoneName}
 import org.scalatest.Tag
+import DbReaderImplicits._
+import java.time.Instant
 
 object DBTestHelper {
   implicit val cloudServicePut: Put[CloudService] = Put[String].contramap(cloudService => cloudService.asString)
   val zoneName = ZoneName("us-central1-a")
   val regionName = RegionName("us-central1")
 
-  def yoloTransactor(implicit cs: ContextShift[IO], databaseConfig: DatabaseConfig): Transactor[IO] =
+  def yoloTransactor(implicit databaseConfig: DatabaseConfig): Transactor[IO] =
     Transactor.fromDriverManager[IO](
       "com.mysql.cj.jdbc.Driver", // driver classname
       databaseConfig.url,
@@ -27,7 +26,6 @@ object DBTestHelper {
     )
 
   def transactorResource(implicit
-    cs: ContextShift[IO],
     databaseConfig: DatabaseConfig
   ): Resource[IO, HikariTransactor[IO]] =
     for {
@@ -37,8 +35,8 @@ object DBTestHelper {
 
   def insertDiskQuery(disk: Disk, status: String) =
     sql"""INSERT INTO PERSISTENT_DISK
-         (googleProject, zone, name, googleId, samResourceId, status, creator, createdDate, destroyedDate, dateAccessed, sizeGb, type, blockSizeBytes, serviceAccount, formattedBy)
-         VALUES (${disk.googleProject}, ${disk.zone}, ${disk.diskName}, "fakeGoogleId", "fakeSamResourceId", ${status}, "fake@broadinstitute.org", now(), now(), now(), 50, "Standard", "4096", "pet@broadinsitute.org", "GCE")
+         (cloudContext, cloudProvider, zone, name, googleId, samResourceId, status, creator, createdDate, destroyedDate, dateAccessed, sizeGb, type, blockSizeBytes, serviceAccount, formattedBy)
+         VALUES (${disk.cloudContext.asString}, ${disk.cloudContext.cloudProvider}, ${disk.zone}, ${disk.diskName}, "fakeGoogleId", "fakeSamResourceId", ${status}, "fake@broadinstitute.org", now(), now(), now(), 50, "Standard", "4096", "pet@broadinsitute.org", "GCE")
          """.update
 
   def insertDisk(disk: Disk, status: String = "Ready")(implicit xa: HikariTransactor[IO]): IO[Long] =
@@ -64,8 +62,9 @@ object DBTestHelper {
     xa: HikariTransactor[IO]
   ): IO[Long] =
     sql"""INSERT INTO CLUSTER
-         (clusterName,
-         googleProject,
+         (runtimeName,
+         cloudContext,
+         cloudProvider,
          operationName,
          status,
          hostIp,
@@ -81,11 +80,11 @@ object DBTestHelper {
          kernelFoundBusyDate,
          welderEnabled,
          internalId,
-         runtimeConfigId,
-         googleId)
+         runtimeConfigId)
          VALUES (
          ${runtime.runtimeName},
-         ${runtime.googleProject},
+         ${runtime.cloudContext.asString},
+         "GCP",
          "op1",
          ${runtime.status},
          "fakeIp",
@@ -101,8 +100,7 @@ object DBTestHelper {
          now(),
          true,
          "internalId",
-         $runtimeConfigId,
-         ${UUID.randomUUID().toString})
+         $runtimeConfigId)
          """.update.withUniqueGeneratedKeys[Long]("id").transact(xa)
 
   def insertRuntimeConfig(cloudService: CloudService)(implicit xa: HikariTransactor[IO]): IO[Long] = {

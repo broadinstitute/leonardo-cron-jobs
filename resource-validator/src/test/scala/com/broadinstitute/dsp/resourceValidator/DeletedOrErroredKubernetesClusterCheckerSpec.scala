@@ -11,6 +11,7 @@ import org.broadinstitute.dsde.workbench.google2.GKEModels.KubernetesClusterId
 import org.broadinstitute.dsde.workbench.google2.mock.MockGKEService
 import org.broadinstitute.dsde.workbench.model.TraceId
 import org.scalatest.flatspec.AnyFlatSpec
+import cats.effect.unsafe.implicits.global
 
 class DeletedOrErroredKubernetesClusterCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
   it should "return None if kubernetes cluster no longer exists in Google" in {

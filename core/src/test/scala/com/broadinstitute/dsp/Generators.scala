@@ -1,17 +1,18 @@
 package com.broadinstitute.dsp
 
+import cats.data.NonEmptyList
 import org.broadinstitute.dsde.workbench.google2.GKEModels.{KubernetesClusterId, KubernetesClusterName}
 import org.scalacheck.{Arbitrary, Gen}
 import org.broadinstitute.dsde.workbench.google2.Generators._
 
 object Generators {
   val genCloudService: Gen[CloudService] = Gen.oneOf(CloudService.Gce, CloudService.Dataproc)
-  val genRuntime: Gen[Runtime] = for {
+  def genRuntime(possibleStatuses: Option[NonEmptyList[String]]): Gen[Runtime] = for {
     id <- Gen.chooseNum(0, 100)
     cloudService <- genCloudService
     project <- genGoogleProject
     runtimeName <- Gen.uuid.map(_.toString)
-    status <- Gen.oneOf("Running", "Creating", "Deleted", "Error")
+    status <- possibleStatuses.fold(Gen.oneOf("Running", "Creating", "Deleted", "Error"))(s => Gen.oneOf(s.toList))
   } yield cloudService match {
     case CloudService.Dataproc =>
       Runtime.Dataproc(id, project, runtimeName, cloudService, status, DBTestHelper.regionName)
@@ -29,7 +30,12 @@ object Generators {
     project <- genGoogleProject
     diskName <- genDiskName
     zone <- genZoneName
-  } yield Disk(id, project, diskName, zone, formattedBy = Some("GCE"))
+  } yield Disk(id,
+               CloudContext.Gcp(project),
+               diskName,
+               zone,
+               formattedBy = Some("GCE")
+  ) // TODO: update generator once we support Azure
 
   val genInitBucket: Gen[InitBucketToRemove] = for {
     project <- genGoogleProject
@@ -76,7 +82,7 @@ object Generators {
   } yield status
 
   val arbDataprocRuntime: Arbitrary[Runtime.Dataproc] = Arbitrary(genDataprocRuntime)
-  implicit val arbRuntime: Arbitrary[Runtime] = Arbitrary(genRuntime)
+  implicit val arbRuntime: Arbitrary[Runtime] = Arbitrary(genRuntime(None))
   implicit val arbCloudService: Arbitrary[CloudService] = Arbitrary(genCloudService)
   implicit val arbDisk: Arbitrary[Disk] = Arbitrary(genDisk)
   implicit val arbInitBucket: Arbitrary[InitBucketToRemove] = Arbitrary(genInitBucket)

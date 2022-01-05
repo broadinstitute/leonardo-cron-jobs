@@ -1,6 +1,6 @@
 package com.broadinstitute.dsp.janitor
 
-import cats.effect.{Concurrent, Timer}
+import cats.effect.Async
 import cats.mtl.Ask
 import cats.syntax.all._
 import com.broadinstitute.dsp._
@@ -10,8 +10,6 @@ import org.broadinstitute.dsde.workbench.model.TraceId
 import org.broadinstitute.dsde.workbench.model.google.GoogleProject
 import org.typelevel.log4cats.Logger
 
-import java.util.concurrent.TimeUnit
-
 // This file will likely be moved out of resource-validator later
 // See https://broadworkbench.atlassian.net/wiki/spaces/IA/pages/807436289/2020-09-17+Leonardo+Async+Processes?focusedCommentId=807632911#comment-807632911
 object KubernetesClusterRemover {
@@ -20,12 +18,11 @@ object KubernetesClusterRemover {
       (x.messageType, x.clusterId, x.project, x.traceId)
     )
 
-  def impl[F[_]: Timer](
+  def impl[F[_]](
     dbReader: DbReader[F],
     deps: LeoPublisherDeps[F]
   )(implicit
-    F: Concurrent[F],
-    timer: Timer[F],
+    F: Async[F],
     logger: Logger[F],
     ev: Ask[F, TraceId]
   ): CheckRunner[F, KubernetesClusterToRemove] =
@@ -40,7 +37,7 @@ object KubernetesClusterRemover {
         ev: Ask[F, TraceId]
       ): F[Option[KubernetesClusterToRemove]] =
         for {
-          now <- timer.clock.realTime(TimeUnit.MILLISECONDS)
+          now <- F.realTimeInstant
           _ <-
             if (!isDryRun) {
               val msg = DeleteKubernetesClusterMessage(c.id, c.googleProject, TraceId(s"kubernetesClusterRemover-$now"))

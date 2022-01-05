@@ -1,19 +1,19 @@
 package com.broadinstitute.dsp
 package zombieMonitor
 
-import java.util.concurrent.TimeUnit
-import java.util.{Calendar, GregorianCalendar}
-
+import cats.effect.IO
+import cats.effect.unsafe.implicits.global
 import com.broadinstitute.dsp.DBTestHelper._
 import com.broadinstitute.dsp.Generators._
+import doobie.implicits._
 import doobie.scalatest.IOChecker
 import org.broadinstitute.dsde.workbench.google2.DiskName
 import org.broadinstitute.dsde.workbench.google2.GKEModels.{KubernetesClusterId, KubernetesClusterName}
+import org.broadinstitute.dsde.workbench.google2.KubernetesSerializableName.NamespaceName
 import org.broadinstitute.dsde.workbench.model.google.GoogleProject
 import org.scalatest.flatspec.AnyFlatSpec
-import doobie.implicits._
-import org.broadinstitute.dsde.workbench.google2.KubernetesSerializableName.NamespaceName
-import java.time.Instant
+
+import java.util.{Calendar, GregorianCalendar}
 
 /**
  * Not running these tests in CI yet since we'll need to set up mysql container and Leonardo tables in CI. Punt for now
@@ -71,9 +71,9 @@ final class DbReaderSpec extends AnyFlatSpec with CronJobsTestSuite with IOCheck
       val res = transactorResource.use { implicit xa =>
         val dbReader = DbReader.impl(xa)
         for {
-          now <- timer.clock.realTime(TimeUnit.MILLISECONDS)
+          now <- IO.realTimeInstant
           runtimeConfigId <- insertRuntimeConfig(runtime.cloudService)
-          _ <- insertRuntime(runtime, runtimeConfigId, Instant.ofEpochMilli(now))
+          _ <- insertRuntime(runtime, runtimeConfigId, now)
           runtimes <- dbReader.getRuntimeCandidate.compile.toList
         } yield runtimes shouldBe List.empty
       }
@@ -153,6 +153,39 @@ final class DbReaderSpec extends AnyFlatSpec with CronJobsTestSuite with IOCheck
         } yield {
           status shouldBe "DELETED"
           pdId shouldBe None
+        }
+      }
+      res.unsafeRunSync()
+    }
+  }
+
+  it should "update k8s cluster when there's no nodepool or app row" taggedAs DbTest in {
+    forAll { (cluster: KubernetesClusterId) =>
+      val res = transactorResource.use { implicit xa =>
+        val dbReader = DbReader.impl(xa)
+        for {
+          clusterId <- insertK8sCluster(cluster)
+          _ <- dbReader.markK8sClusterDeleted(clusterId)
+          status <- getK8sClusterStatus(clusterId)
+        } yield status shouldBe "DELETED"
+      }
+      res.unsafeRunSync()
+    }
+  }
+
+  it should "update k8s cluster and nodepool when there's no App record" taggedAs DbTest in {
+    forAll { (cluster: KubernetesClusterId) =>
+      val res = transactorResource.use { implicit xa =>
+        val dbReader = DbReader.impl(xa)
+        for {
+          clusterId <- insertK8sCluster(cluster)
+          nodepoolId <- insertNodepool(clusterId, "nodepool1", false)
+          _ <- dbReader.markK8sClusterDeleted(clusterId)
+          status <- getK8sClusterStatus(clusterId)
+          nodepoolStatus <- getNodepoolStatus(nodepoolId)
+        } yield {
+          status shouldBe "DELETED"
+          nodepoolStatus shouldBe "DELETED"
         }
       }
       res.unsafeRunSync()

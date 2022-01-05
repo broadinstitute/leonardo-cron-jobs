@@ -1,10 +1,8 @@
 package com.broadinstitute.dsp
 
-import java.nio.file.Path
 import cats.Parallel
-import cats.effect.concurrent.Semaphore
-import cats.effect.{Blocker, Concurrent, ContextShift, Resource, Timer}
-import org.typelevel.log4cats.StructuredLogger
+import cats.effect.std.Semaphore
+import cats.effect.{Async, Resource}
 import org.broadinstitute.dsde.workbench.google2.util.RetryPredicates
 import org.broadinstitute.dsde.workbench.google2.{
   GKEService,
@@ -19,33 +17,29 @@ import org.broadinstitute.dsde.workbench.google2.{
 }
 import org.broadinstitute.dsde.workbench.model.google.{GcsBucketName, GoogleProject}
 import org.broadinstitute.dsde.workbench.openTelemetry.OpenTelemetryMetrics
+import org.typelevel.log4cats.StructuredLogger
+
+import java.nio.file.Path
 
 object RuntimeCheckerDeps {
-  def init[F[_]: Concurrent: ContextShift: StructuredLogger: Parallel: Timer](
+  def init[F[_]: Async: StructuredLogger: Parallel](
     config: RuntimeCheckerConfig,
-    blocker: Blocker,
     metrics: OpenTelemetryMetrics[F],
     blockerBound: Semaphore[F]
   ): Resource[F, RuntimeCheckerDeps[F]] =
     for {
       scopedCredential <- initGoogleCredentials(config.pathToCredential)
       computeService <- GoogleComputeService.fromCredential(scopedCredential,
-                                                            blocker,
                                                             blockerBound,
                                                             RetryPredicates.standardGoogleRetryConfig
       )
-      storageService <- GoogleStorageService.resource(config.pathToCredential.toString,
-                                                      blocker,
-                                                      Some(blockerBound),
-                                                      None
-      )
+      storageService <- GoogleStorageService.resource(config.pathToCredential.toString, Some(blockerBound), None)
       dataprocService <- GoogleDataprocService.fromCredential(computeService,
                                                               scopedCredential,
-                                                              blocker,
                                                               supportedRegions,
                                                               blockerBound
       )
-      billingService <- GoogleBillingService.fromCredential(scopedCredential, blocker, blockerBound)
+      billingService <- GoogleBillingService.fromCredential(scopedCredential, blockerBound)
     } yield {
       val checkRunnerDeps = CheckRunnerDeps(config.reportDestinationBucket, storageService, metrics)
       RuntimeCheckerDeps(computeService, dataprocService, checkRunnerDeps, billingService)
@@ -54,7 +48,7 @@ object RuntimeCheckerDeps {
 
 sealed abstract class Runtime {
   def id: Long
-  def googleProject: GoogleProject
+  def cloudContext: CloudContext
   def runtimeName: String
   def cloudService: CloudService
   def status: String
@@ -70,6 +64,8 @@ object Runtime {
   ) extends Runtime {
     // this is the format we'll output in report, which can be easily consumed by scripts if necessary
     override def toString: String = s"$id,${googleProject.value},$runtimeName,$cloudService,$status,${zone.value}"
+
+    override def cloudContext: CloudContext = CloudContext.Gcp(googleProject)
   }
 
   final case class Dataproc(id: Long,
@@ -81,6 +77,7 @@ object Runtime {
   ) extends Runtime {
     // this is the format we'll output in report, which can be easily consumed by scripts if necessary
     override def toString: String = s"$id,${googleProject.value},$runtimeName,$cloudService,$status,${region.value}"
+    override def cloudContext: CloudContext = CloudContext.Gcp(googleProject)
   }
 
   def setStatus(runtime: Runtime, newStatus: String): Runtime = runtime match {

@@ -1,12 +1,12 @@
 package com.broadinstitute.dsp
 package zombieMonitor
 
-import cats.effect.{Async, _}
-import fs2.Stream
-import DbReaderImplicits._
+import cats.effect.Async
+import cats.syntax.all._
+import com.broadinstitute.dsp.DbReaderImplicits._
 import doobie._
 import doobie.implicits._
-import cats.syntax.all._
+import fs2.Stream
 
 trait DbReader[F[_]] {
   def getDisksToDeleteCandidate: Stream[F, Disk]
@@ -28,13 +28,13 @@ object DbReader {
   implicit def apply[F[_]](implicit ev: DbReader[F]): DbReader[F] = ev
 
   val activeDisksQuery =
-    sql"""select id, cloudContext, name, zone, formattedBy from PERSISTENT_DISK where status != "Deleted" and status != "Error";
+    sql"""select id, cloudContext, cloudProvider, name, zone, formattedBy from PERSISTENT_DISK where status != "Deleted" and status != "Error";
         """.query[Disk]
 
   // We only check runtimes that have been created for more than 1 hour because a newly "Creating" runtime may not exist in Google yet
   val activeRuntimeQuery =
     sql"""
-         SELECT DISTINCT c1.id, cloudContext, runtimeName, rt.cloudService, c1.status, rt.zone, rt.region
+         SELECT DISTINCT c1.id, cloudContext, cloudProvider, runtimeName, rt.cloudService, c1.status, rt.zone, rt.region
             FROM CLUSTER AS c1
             INNER JOIN RUNTIME_CONFIG AS rt ON c1.`runtimeConfigId`=rt.id
             WHERE c1.status!="Deleted" AND c1.status!="Error" AND createdDate < now() - INTERVAL 1 HOUR
@@ -58,11 +58,11 @@ object DbReader {
 
   def markK8sClusterDeletedQuery(id: Int) =
     sql"""
-          UPDATE NODEPOOL
-          INNER JOIN KUBERNETES_CLUSTER ON KUBERNETES_CLUSTER.id = NODEPOOL.clusterId
-          INNER JOIN APP ON APP.nodepoolId = NODEPOOL.id
-          SET diskId = NULL, KUBERNETES_CLUSTER.status = "DELETED", KUBERNETES_CLUSTER.destroyedDate = now()
-          where KUBERNETES_CLUSTER.id = $id           """.update
+          UPDATE KUBERNETES_CLUSTER
+          LEFT JOIN NODEPOOL ON KUBERNETES_CLUSTER.id = NODEPOOL.clusterId
+          LEFT JOIN APP ON APP.nodepoolId = NODEPOOL.id
+          SET diskId = NULL, KUBERNETES_CLUSTER.status = "DELETED", KUBERNETES_CLUSTER.destroyedDate = now(), NODEPOOL.status = "DELETED", NODEPOOL.destroyedDate=now()
+          where KUBERNETES_CLUSTER.id = $id""".update
 
   def markNodepoolDeletedQuery(id: Long) =
     sql"""
@@ -109,7 +109,7 @@ object DbReader {
       update CLUSTER set deletedFrom = $deletedFrom where id = $runtimeId
       """.update
 
-  def impl[F[_]: ContextShift](xa: Transactor[F])(implicit F: Async[F]): DbReader[F] = new DbReader[F] {
+  def impl[F[_]](xa: Transactor[F])(implicit F: Async[F]): DbReader[F] = new DbReader[F] {
     override def getRuntimeCandidate: Stream[F, Runtime] = activeRuntimeQuery.stream.transact(xa)
 
     override def getDisksToDeleteCandidate: Stream[F, Disk] =

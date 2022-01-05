@@ -1,18 +1,18 @@
 package com.broadinstitute.dsp
 package janitor
 
-import cats.effect.{Concurrent, Timer}
-import cats.syntax.all._
+import cats.effect.Concurrent
 import cats.mtl.Ask
-import org.typelevel.log4cats.Logger
+import cats.syntax.all._
+import com.broadinstitute.dsp.JsonCodec._
 import org.broadinstitute.dsde.workbench.model.TraceId
-import JsonCodec._
+import org.typelevel.log4cats.Logger
 
 object NodepoolRemover {
-  def impl[F[_]: Timer](
+  def impl[F[_]](
     dbReader: DbReader[F],
     deps: LeoPublisherDeps[F]
-  )(implicit F: Concurrent[F], timer: Timer[F], logger: Logger[F], ev: Ask[F, TraceId]): CheckRunner[F, Nodepool] =
+  )(implicit F: Concurrent[F], logger: Logger[F], ev: Ask[F, TraceId]): CheckRunner[F, Nodepool] =
     new CheckRunner[F, Nodepool] {
       override def appName: String = janitor.appName
       override def configs = CheckRunnerConfigs(s"remove-kubernetes-nodepools", shouldAlert = false)

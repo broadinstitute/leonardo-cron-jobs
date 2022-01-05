@@ -1,9 +1,9 @@
 package com.broadinstitute.dsp
 package zombieMonitor
 
+import cats.implicits._
 import cats.effect.IO
 import cats.mtl.Ask
-import com.broadinstitute.dsp.Generators._
 import com.google.cloud.compute.v1.Instance
 import com.google.cloud.dataproc.v1.ClusterStatus.State
 import com.google.cloud.dataproc.v1.{Cluster, ClusterStatus}
@@ -29,9 +29,14 @@ import org.broadinstitute.dsde.workbench.model.TraceId
 import org.broadinstitute.dsde.workbench.model.google.GoogleProject
 import org.scalatest.flatspec.AnyFlatSpec
 import org.broadinstitute.dsde.workbench.openTelemetry.FakeOpenTelemetryMetricsInterpreter
+import cats.effect.unsafe.implicits.global
+import com.broadinstitute.dsp.Generators.{arbDataprocRuntime, genRuntime}
+import org.scalacheck.Arbitrary
 
-class DeletedOrErroredRuntimeCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
+class ActiveRuntimeCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
   it should "report a runtime if it doesn't exist in google but is still active in leonardo DB" in {
+    implicit val arbA = Arbitrary(genRuntime(List("Running", "Creating").toNel))
+
     forAll { (runtime: Runtime, dryRun: Boolean) =>
       val dbReader = new FakeDbReader {
         override def getRuntimeCandidate: Stream[IO, Runtime] =
@@ -54,13 +59,53 @@ class DeletedOrErroredRuntimeCheckerSpec extends AnyFlatSpec with CronJobsTestSu
         ): IO[Option[Cluster]] = IO.pure(None)
       }
       val deps = initRuntimeCheckerDeps(computeService, dataprocService)
-      val checker = DeletedOrErroredRuntimeChecker.impl(dbReader, deps)
+      val checker = ActiveRuntimeChecker.impl(dbReader, deps)
+      val res = checker.checkResource(runtime, dryRun)
+      res.unsafeRunSync() shouldBe Some(runtime)
+    }
+  }
+
+  it should "report a runtime if it's Stopped in google but is still active in leonardo DB" in {
+    import com.broadinstitute.dsp.Generators.arbRuntime
+    forAll { (runtime: Runtime, dryRun: Boolean) =>
+      val dbReader = new FakeDbReader {
+        override def getRuntimeCandidate: Stream[IO, Runtime] =
+          Stream.emit(runtime)
+        override def markRuntimeDeleted(id: Long): IO[Unit] =
+          IO.raiseError(fail("this shouldn't be called"))
+
+        override def insertClusterError(clusterId: Long, errorCode: Option[Int], errorMessage: String): IO[Unit] =
+          IO.raiseError(fail("this shouldn't be called"))
+
+        override def updateRuntimeStatus(id: Long, status: String): IO[Unit] =
+          if (dryRun) IO.raiseError(fail("this shouldn't be called in dryRun mode"))
+          else
+            IO {
+              status shouldBe "Stopped"
+            }
+      }
+      val dataprocService = new BaseFakeGoogleDataprocService {
+        override def getCluster(project: GoogleProject, region: RegionName, clusterName: DataprocClusterName)(implicit
+          ev: Ask[IO, TraceId]
+        ): IO[Option[Cluster]] = IO.pure(
+          Some(Cluster.newBuilder().setStatus(ClusterStatus.newBuilder().setState(ClusterStatus.State.STOPPED)).build())
+        )
+      }
+      val computeService = new FakeGoogleComputeService {
+        override def getInstance(project: GoogleProject, zone: ZoneName, instanceName: InstanceName)(implicit
+          ev: Ask[IO, TraceId]
+        ): IO[Option[Instance]] = IO.pure(Some(Instance.newBuilder().setStatus(Instance.Status.TERMINATED).build()))
+      }
+      val deps = initRuntimeCheckerDeps(computeService, dataprocService)
+      val checker = ActiveRuntimeChecker.impl(dbReader, deps)
       val res = checker.checkResource(runtime, dryRun)
       res.unsafeRunSync() shouldBe Some(runtime)
     }
   }
 
   it should "not a report runtime if it still exists in google and is active in leonardo DB" in {
+    import com.broadinstitute.dsp.Generators.arbRuntime
+
     forAll { (runtime: Runtime, dryRun: Boolean) =>
       val dbReader = new FakeDbReader {
         override def getRuntimeCandidate: Stream[IO, Runtime] =
@@ -71,7 +116,7 @@ class DeletedOrErroredRuntimeCheckerSpec extends AnyFlatSpec with CronJobsTestSu
       val computeService = new FakeGoogleComputeService {
         override def getInstance(project: GoogleProject, zone: ZoneName, instanceName: InstanceName)(implicit
           ev: Ask[IO, TraceId]
-        ): IO[Option[Instance]] = IO.pure(Some(Instance.newBuilder().setStatus("Running").build()))
+        ): IO[Option[Instance]] = IO.pure(Some(Instance.newBuilder().setStatus(Instance.Status.RUNNING).build()))
       }
       val dataprocService = new BaseFakeGoogleDataprocService {
         override def getCluster(project: GoogleProject, region: RegionName, clusterName: DataprocClusterName)(implicit
@@ -82,7 +127,7 @@ class DeletedOrErroredRuntimeCheckerSpec extends AnyFlatSpec with CronJobsTestSu
           )
       }
       val deps = initRuntimeCheckerDeps(computeService, dataprocService)
-      val checker = DeletedOrErroredRuntimeChecker.impl(dbReader, deps)
+      val checker = ActiveRuntimeChecker.impl(dbReader, deps)
       val res = checker.checkResource(runtime, dryRun)
       res.unsafeRunSync() shouldBe None
     }
@@ -109,7 +154,7 @@ class DeletedOrErroredRuntimeCheckerSpec extends AnyFlatSpec with CronJobsTestSu
         )
       }
       val deps = initRuntimeCheckerDeps(googleDataprocService = dataprocService)
-      val checker = DeletedOrErroredRuntimeChecker.impl(dbReader, deps)
+      val checker = ActiveRuntimeChecker.impl(dbReader, deps)
       val res = checker.checkResource(runtime, dryRun)
       res.unsafeRunSync() shouldBe Some(runtime)
     }
@@ -144,7 +189,7 @@ class DeletedOrErroredRuntimeCheckerSpec extends AnyFlatSpec with CronJobsTestSu
           IO.pure(false)
       }
       val deps = initRuntimeCheckerDeps(googleDataprocService = dataprocService, googleBillingService = billingService)
-      val checker = DeletedOrErroredRuntimeChecker.impl(dbReader, deps)
+      val checker = ActiveRuntimeChecker.impl(dbReader, deps)
       val res = checker.checkResource(runtime, dryRun)
       res.unsafeRunSync() shouldBe Some(runtime)
     }

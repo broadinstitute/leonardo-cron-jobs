@@ -12,7 +12,7 @@ import org.broadinstitute.dsde.workbench.google2.mock.{FakeGooglePublisher, Mock
 import org.broadinstitute.dsde.workbench.model.TraceId
 import com.google.container.v1.NodePool
 import org.scalatest.flatspec.AnyFlatSpec
-
+import cats.effect.unsafe.implicits.global
 class DeletedOrErroredNodepoolCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
 
   it should "not publish to subscriber if dryRun" in {

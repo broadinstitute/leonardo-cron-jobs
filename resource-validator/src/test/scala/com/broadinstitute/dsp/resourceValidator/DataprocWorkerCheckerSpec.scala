@@ -11,7 +11,7 @@ import org.broadinstitute.dsde.workbench.model.TraceId
 import org.broadinstitute.dsde.workbench.model.google.GoogleProject
 import org.scalatest.flatspec.AnyFlatSpec
 import com.broadinstitute.dsp.Generators._
-
+import cats.effect.unsafe.implicits.global
 class DataprocWorkerCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
 
   // we don't want to duplicate the purpose of the deleted runtime checker here

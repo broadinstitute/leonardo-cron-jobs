@@ -1,23 +1,16 @@
 package com.broadinstitute.dsp.resourceValidator
 
-import cats.effect.{Concurrent, Timer}
+import cats.effect.Concurrent
 import cats.mtl.Ask
 import cats.syntax.all._
-import com.broadinstitute.dsp.{
-  resourceValidator,
-  CheckRunner,
-  CheckRunnerConfigs,
-  CheckRunnerDeps,
-  RuntimeCheckerDeps,
-  RuntimeWithWorkers
-}
-import org.typelevel.log4cats.Logger
+import com.broadinstitute.dsp._
 import org.broadinstitute.dsde.workbench.google2.DataprocClusterName
 import org.broadinstitute.dsde.workbench.model.TraceId
+import org.typelevel.log4cats.Logger
 
 object DataprocWorkerChecker {
   val unfixableAnomalyCheckType = "unfixable-dataproc-workers"
-  def impl[F[_]: Timer](
+  def impl[F[_]](
     dbReader: DbReader[F],
     deps: RuntimeCheckerDeps[F]
   )(implicit F: Concurrent[F], logger: Logger[F], ev: Ask[F, TraceId]): CheckRunner[F, RuntimeWithWorkers] =
