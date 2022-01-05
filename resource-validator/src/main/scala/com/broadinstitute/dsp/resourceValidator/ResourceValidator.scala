@@ -1,4 +1,3 @@
-// noop change, revert before merging
 package com.broadinstitute.dsp
 package resourceValidator
 
