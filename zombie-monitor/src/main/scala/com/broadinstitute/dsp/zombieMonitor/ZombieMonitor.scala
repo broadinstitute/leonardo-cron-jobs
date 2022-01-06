@@ -3,7 +3,7 @@ package zombieMonitor
 
 import cats.Parallel
 import cats.effect.std.Semaphore
-import cats.effect.{Async, ExitCode, Resource}
+import cats.effect.{Async, Resource}
 import cats.mtl.Ask
 import com.broadinstitute.dsp.JsonCodec.serviceDataEncoder
 import fs2.Stream
@@ -67,7 +67,7 @@ object ZombieMonitor {
       ).covary[F]
 
       _ <- processes.parJoin(4) // Number of checkers in 'processes'
-    } yield ExitCode.Success
+    } yield ()
   }.drain
 
   private def initDependencies[F[_]: Async: StructuredLogger: Parallel](

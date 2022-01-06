@@ -1,9 +1,10 @@
 import sbt._
 
 object Dependencies {
-  val workbenchGoogle2Version = "0.23-03a7abb"
+  val workbenchGoogle2Version = "0.23-919aaa00-SNAP"
   val doobieVersion = "1.0.0-RC1"
   val openTelemetryVersion = "0.2-03a7abb"
+  val declineVersion = "2.2.0"
 
   val core = Seq(
     "net.logstash.logback" % "logstash-logback-encoder" % "7.0.1",
@@ -15,7 +16,8 @@ object Dependencies {
     "com.github.pureconfig" %% "pureconfig" % "0.17.1",
     "mysql" % "mysql-connector-java" % "8.0.27",
     "org.scalatest" %% "scalatest" % "3.2.10" % Test,
-    "com.monovore" %% "decline" % "2.2.0",
+    "com.monovore" %% "decline" % declineVersion,
+    "com.monovore" %% "decline-effect" % declineVersion,
     "dev.optics" %% "monocle-core" % "3.1.0",
     "dev.optics" %% "monocle-macro" % "3.1.0",
     "org.broadinstitute.dsde.workbench" %% "workbench-opentelemetry" % openTelemetryVersion,
