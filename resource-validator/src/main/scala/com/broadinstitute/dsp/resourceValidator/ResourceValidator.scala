@@ -98,7 +98,7 @@ object ResourceValidator {
       ).covary[F]
 
       _ <- processes.parJoin(8) // Number of checkers in 'processes'
-    } yield ExitCode.Success
+    } yield ()
   }.drain
 
   private def initDependencies[F[_]: Async: StructuredLogger: Parallel](
