@@ -43,4 +43,5 @@ package object dsp {
       credentialFile <- org.broadinstitute.dsde.workbench.util2.readFile[F](pathToCredential.toString)
       credential <- Resource.eval(Sync[F].delay(ServiceAccountCredentials.fromStream(credentialFile)))
     } yield credential.createScoped(Seq("https://www.googleapis.com/auth/cloud-platform").asJava)
+
 }
