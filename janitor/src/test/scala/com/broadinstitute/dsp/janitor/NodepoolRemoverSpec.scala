@@ -7,7 +7,11 @@ import com.broadinstitute.dsp.Generators._
 import fs2.Stream
 import io.circe.Encoder
 import org.broadinstitute.dsde.workbench.google2.GooglePublisher
-import org.broadinstitute.dsde.workbench.google2.mock.{FakeGoogleBillingInterpreter, FakeGooglePublisher, FakeGoogleStorageInterpreter}
+import org.broadinstitute.dsde.workbench.google2.mock.{
+  FakeGoogleBillingInterpreter,
+  FakeGooglePublisher,
+  FakeGoogleStorageInterpreter
+}
 import org.broadinstitute.dsde.workbench.model.TraceId
 import org.broadinstitute.dsde.workbench.openTelemetry.FakeOpenTelemetryMetricsInterpreter
 import org.scalatest.flatspec.AnyFlatSpec

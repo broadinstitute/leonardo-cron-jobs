@@ -7,7 +7,11 @@ import com.broadinstitute.dsp.Generators._
 import fs2.Stream
 import io.circe.Encoder
 import org.broadinstitute.dsde.workbench.google2.{GoogleBillingService, GooglePublisher}
-import org.broadinstitute.dsde.workbench.google2.mock.{FakeGoogleBillingInterpreter, FakeGooglePublisher, FakeGoogleStorageInterpreter}
+import org.broadinstitute.dsde.workbench.google2.mock.{
+  FakeGoogleBillingInterpreter,
+  FakeGooglePublisher,
+  FakeGoogleStorageInterpreter
+}
 import org.broadinstitute.dsde.workbench.model.TraceId
 import org.broadinstitute.dsde.workbench.openTelemetry.FakeOpenTelemetryMetricsInterpreter
 import org.scalatest.flatspec.AnyFlatSpec
@@ -48,8 +52,9 @@ final class KubernetesClusterRemoverSpec extends AnyFlatSpec with CronJobsTestSu
 
   it should "do nothing if billing is not enabled" in {
     forAll { (clusterToRemove: KubernetesClusterToRemove, dryRun: Boolean) =>
-      val billingService = new FakeGoogleBillingInterpreter{
-        override def isBillingEnabled(project: GoogleProject)(implicit ev: Ask[IO, TraceId]): IO[Boolean] = IO.pure(false)
+      val billingService = new FakeGoogleBillingInterpreter {
+        override def isBillingEnabled(project: GoogleProject)(implicit ev: Ask[IO, TraceId]): IO[Boolean] =
+          IO.pure(false)
       }
       val dbReader = new FakeDbReader {
         override def getKubernetesClustersToDelete: Stream[IO, KubernetesClusterToRemove] =
@@ -72,7 +77,9 @@ final class KubernetesClusterRemoverSpec extends AnyFlatSpec with CronJobsTestSu
     }
   }
 
-  private def initDeps(publisher: GooglePublisher[IO], billingService: GoogleBillingService[IO] = FakeGoogleBillingInterpreter): LeoPublisherDeps[IO] = {
+  private def initDeps(publisher: GooglePublisher[IO],
+                       billingService: GoogleBillingService[IO] = FakeGoogleBillingInterpreter
+  ): LeoPublisherDeps[IO] = {
     val checkRunnerDeps =
       CheckRunnerDeps(ConfigSpec.config.reportDestinationBucket,
                       FakeGoogleStorageInterpreter,

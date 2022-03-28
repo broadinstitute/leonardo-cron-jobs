@@ -44,7 +44,7 @@ object KubernetesClusterRemover {
               val msg = DeleteKubernetesClusterMessage(c.id, c.googleProject, TraceId(s"kubernetesClusterRemover-$now"))
               deps.publisher.publishOne(msg)
             } else F.unit
-          res = if(isBillingEnabled) Some(c) else None
+          res = if (isBillingEnabled) Some(c) else None
         } yield res
     }
 }
