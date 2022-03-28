@@ -3,7 +3,7 @@ import sbt._
 object Dependencies {
   val workbenchGoogle2Version = "0.23-3b927f8"
   val doobieVersion = "1.0.0-RC2"
-  val openTelemetryVersion = "0.2-03a7abb"
+  val openTelemetryVersion = "0.3-97318e4"
   val declineVersion = "2.2.0"
 
   val core = Seq(
