@@ -9,7 +9,7 @@ import com.broadinstitute.dsp.JsonCodec.serviceDataEncoder
 import com.google.pubsub.v1.ProjectTopicName
 import fs2.Stream
 import io.circe.syntax.EncoderOps
-import org.broadinstitute.dsde.workbench.google2.{GooglePublisher, PublisherConfig}
+import org.broadinstitute.dsde.workbench.google2.{GoogleBillingService, GooglePublisher, PublisherConfig}
 import org.broadinstitute.dsde.workbench.model.TraceId
 import org.broadinstitute.dsde.workbench.openTelemetry.OpenTelemetryMetrics
 import org.typelevel.log4cats.StructuredLogger
@@ -69,10 +69,12 @@ object Janitor {
         ProjectTopicName.of(appConfig.leonardoPubsub.googleProject.value, appConfig.leonardoPubsub.topicName)
       )
       googlePublisher <- GooglePublisher.resource[F](publisherConfig)
+      scopedCredential <- initGoogleCredentials(appConfig.pathToCredential)
+      billingService <- GoogleBillingService.fromCredential(scopedCredential, blockerBound)
       xa <- DbTransactor.init(appConfig.database)
     } yield {
       val checkRunnerDeps = runtimeCheckerDeps.checkRunnerDeps
-      val kubernetesClusterToRemoveDeps = LeoPublisherDeps(googlePublisher, checkRunnerDeps)
+      val kubernetesClusterToRemoveDeps = LeoPublisherDeps(googlePublisher, checkRunnerDeps, billingService)
       val dbReader = DbReader.impl(xa)
       JanitorDeps(runtimeCheckerDeps, kubernetesClusterToRemoveDeps, dbReader)
     }

@@ -38,12 +38,14 @@ object KubernetesClusterRemover {
       ): F[Option[KubernetesClusterToRemove]] =
         for {
           now <- F.realTimeInstant
+          isBillingEnabled <- deps.billingService.isBillingEnabled(c.googleProject)
           _ <-
-            if (!isDryRun) {
+            if (!isDryRun && isBillingEnabled) {
               val msg = DeleteKubernetesClusterMessage(c.id, c.googleProject, TraceId(s"kubernetesClusterRemover-$now"))
               deps.publisher.publishOne(msg)
             } else F.unit
-        } yield Some(c)
+          res = if (isBillingEnabled) Some(c) else None
+        } yield res
     }
 }
 
