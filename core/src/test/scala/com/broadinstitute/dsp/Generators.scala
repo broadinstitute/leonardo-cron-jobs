@@ -6,7 +6,7 @@ import org.scalacheck.{Arbitrary, Gen}
 import org.broadinstitute.dsde.workbench.google2.Generators._
 
 object Generators {
-  val genCloudService: Gen[CloudService] = Gen.oneOf(CloudService.Gce, CloudService.Dataproc)
+  val genCloudService: Gen[CloudService] = Gen.oneOf(CloudService.Gce, CloudService.Dataproc, CloudService.AzureVM)
   def genRuntime(possibleStatuses: Option[NonEmptyList[String]]): Gen[Runtime] = for {
     id <- Gen.chooseNum(0, 100)
     cloudService <- genCloudService
@@ -18,6 +18,8 @@ object Generators {
       Runtime.Dataproc(id, project, runtimeName, cloudService, status, DBTestHelper.regionName)
     case CloudService.Gce =>
       Runtime.Gce(id, project, runtimeName, cloudService, status, DBTestHelper.zoneName)
+    case CloudService.AzureVM =>
+      Runtime.AzureVM(id, runtimeName, cloudService, status)
   }
   val genDataprocRuntime: Gen[Runtime.Dataproc] = for {
     id <- Gen.chooseNum(0, 100)
@@ -35,7 +37,7 @@ object Generators {
                diskName,
                zone,
                formattedBy = Some("GCE")
-  ) // TODO: update generator once we support Azure
+  )
 
   val genInitBucket: Gen[InitBucketToRemove] = for {
     project <- genGoogleProject

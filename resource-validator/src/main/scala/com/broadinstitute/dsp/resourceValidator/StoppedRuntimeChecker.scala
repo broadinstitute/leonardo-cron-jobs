@@ -31,6 +31,9 @@ object StoppedRuntimeChecker {
             checkDataprocCluster(x, isDryRun)
           case x: Runtime.Gce =>
             checkGceRuntime(x, isDryRun)
+          case x: Runtime.AzureVM =>
+            //TODO: IA-3289 Implement check Azure VM
+            logger.info(s"Azure VM is not supported yet").as(None)
         }
 
       private def checkGceRuntime(runtime: Runtime.Gce, isDryRun: Boolean)(implicit

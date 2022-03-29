@@ -14,6 +14,7 @@ object DbReaderImplicits {
   implicit val cloudServiceGet: Get[CloudService] = Get[String].temap {
     case "DATAPROC" => CloudService.Dataproc.asRight[String]
     case "GCE"      => CloudService.Gce.asRight[String]
+    case "AZURE_VM" => CloudService.AzureVM.asRight[String]
     case x          => s"invalid cloudService value $x".asLeft[CloudService]
   }
 

@@ -55,6 +55,18 @@ sealed abstract class Runtime {
 }
 
 object Runtime {
+  // TODO: IA-3289 update parameters once we support azure clean up
+  final case class AzureVM(id: Long,
+                       runtimeName: String,
+                       cloudService: CloudService,
+                       status: String
+                      ) extends Runtime {
+    // this is the format we'll output in report, which can be easily consumed by scripts if necessary
+    override def toString: String = s"$id,$runtimeName,$cloudService,$status"
+
+    override def cloudContext: CloudContext = CloudContext.Azure("")
+  }
+
   final case class Gce(id: Long,
                        googleProject: GoogleProject,
                        runtimeName: String,
@@ -83,11 +95,14 @@ object Runtime {
   def setStatus(runtime: Runtime, newStatus: String): Runtime = runtime match {
     case x: Runtime.Dataproc => x.copy(status = newStatus)
     case x: Runtime.Gce      => x.copy(status = newStatus)
+    case x: Runtime.AzureVM  => x.copy(status= newStatus)
   }
 
   def setId(runtime: Runtime, newId: Long): Runtime = runtime match {
     case x: Runtime.Dataproc => x.copy(id = newId)
     case x: Runtime.Gce      => x.copy(id = newId)
+    case x: Runtime.AzureVM  => x.copy(id = newId)
+
   }
 }
 
