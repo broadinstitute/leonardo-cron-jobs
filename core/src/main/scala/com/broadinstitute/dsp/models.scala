@@ -24,7 +24,7 @@ object CloudService {
     override def asString: String = "DATAPROC"
   }
   final case object AzureVM extends CloudService {
-    override def asString: String= "AZURE_VM"
+    override def asString: String = "AZURE_VM"
   }
 }
 final case class Disk(id: Long,

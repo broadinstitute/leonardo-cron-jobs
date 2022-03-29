@@ -6,7 +6,7 @@ import org.scalacheck.{Arbitrary, Gen}
 import org.broadinstitute.dsde.workbench.google2.Generators._
 
 object Generators {
-  //TODO IA-3289 When we implement Azure, make sure to add CloudService.AzureVM as an option in the line below so tests use it
+  // TODO IA-3289 When we implement Azure, make sure to add CloudService.AzureVM as an option in the line below so tests use it
   val genCloudService: Gen[CloudService] = Gen.oneOf(CloudService.Gce, CloudService.Dataproc)
   def genRuntime(possibleStatuses: Option[NonEmptyList[String]]): Gen[Runtime] = for {
     id <- Gen.chooseNum(0, 100)
@@ -33,12 +33,7 @@ object Generators {
     project <- genGoogleProject
     diskName <- genDiskName
     zone <- genZoneName
-  } yield Disk(id,
-               CloudContext.Gcp(project),
-               diskName,
-               zone,
-               formattedBy = Some("GCE")
-  )
+  } yield Disk(id, CloudContext.Gcp(project), diskName, zone, formattedBy = Some("GCE"))
 
   val genInitBucket: Gen[InitBucketToRemove] = for {
     project <- genGoogleProject
