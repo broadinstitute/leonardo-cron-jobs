@@ -33,7 +33,7 @@ object Generators {
     project <- genGoogleProject
     diskName <- genDiskName
     zone <- genZoneName
-  } yield Disk(id, CloudContext.Gcp(project), diskName, zone, formattedBy = Some("GCE"))
+  } yield Disk(id, CloudContext.Gcp(project), diskName, zone, formattedBy = Some("GCE")) // TODO: update generator once we support Azure
 
   val genInitBucket: Gen[InitBucketToRemove] = for {
     project <- genGoogleProject
