@@ -6,6 +6,7 @@ import org.scalacheck.{Arbitrary, Gen}
 import org.broadinstitute.dsde.workbench.google2.Generators._
 
 object Generators {
+  // TODO IA-3289 When we implement Azure, make sure to add CloudService.AzureVM as an option in the line below so tests use it
   val genCloudService: Gen[CloudService] = Gen.oneOf(CloudService.Gce, CloudService.Dataproc)
   def genRuntime(possibleStatuses: Option[NonEmptyList[String]]): Gen[Runtime] = for {
     id <- Gen.chooseNum(0, 100)
@@ -18,6 +19,8 @@ object Generators {
       Runtime.Dataproc(id, project, runtimeName, cloudService, status, DBTestHelper.regionName)
     case CloudService.Gce =>
       Runtime.Gce(id, project, runtimeName, cloudService, status, DBTestHelper.zoneName)
+    case CloudService.AzureVM =>
+      Runtime.AzureVM(id, runtimeName, cloudService, status)
   }
   val genDataprocRuntime: Gen[Runtime.Dataproc] = for {
     id <- Gen.chooseNum(0, 100)
