@@ -47,7 +47,7 @@ object DbReaderImplicits {
       case (id, cloudContextDb, cloudProvider, runtimeName, cloudService, status, zone, region) =>
         cloudProvider match {
           case CloudProvider.Azure =>
-            //TODO: IA-3289 correctly implement this case in the pattern match once we support Azure
+            // TODO: IA-3289 correctly implement this case in the pattern match once we support Azure
             Runtime.AzureVM(id, runtimeName, cloudService, status)
           case CloudProvider.Gcp =>
             (zone, region) match {
