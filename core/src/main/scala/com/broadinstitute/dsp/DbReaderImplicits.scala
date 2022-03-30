@@ -47,7 +47,8 @@ object DbReaderImplicits {
       case (id, cloudContextDb, cloudProvider, runtimeName, cloudService, status, zone, region) =>
         cloudProvider match {
           case CloudProvider.Azure =>
-            throw new NotImplementedError()
+            // TODO: IA-3289 correctly implement this case in the pattern match once we support Azure
+            Runtime.AzureVM(id, runtimeName, cloudService, status)
           case CloudProvider.Gcp =>
             (zone, region) match {
               case (Some(_), Some(_)) =>
