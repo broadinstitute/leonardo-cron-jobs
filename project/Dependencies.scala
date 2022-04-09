@@ -7,7 +7,7 @@ object Dependencies {
   val declineVersion = "2.2.0"
 
   val core = Seq(
-    "net.logstash.logback" % "logstash-logback-encoder" % "7.0.1",
+    "net.logstash.logback" % "logstash-logback-encoder" % "7.1",
     "ch.qos.logback" % "logback-classic" % "1.2.10",
     "ch.qos.logback" % "logback-core" % "1.2.10",
     "org.tpolecat" %% "doobie-core" % doobieVersion,
