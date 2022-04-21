@@ -107,7 +107,7 @@ final case class WorkerConfig(numberOfWorkers: Option[Int], numberOfPreemptibleW
 final case class RuntimeWithWorkers(r: Runtime.Dataproc, workerConfig: WorkerConfig) {
   override def toString: String =
     s"Runtime details: ${r.toString}. Worker details: primary: ${workerConfig.numberOfWorkers.getOrElse(0)}, secondary: ${workerConfig.numberOfPreemptibleWorkers
-      .getOrElse(0)}"
+        .getOrElse(0)}"
 }
 final case class RuntimeCheckerDeps[F[_]](computeService: GoogleComputeService[F],
                                           dataprocService: GoogleDataprocService[F],
