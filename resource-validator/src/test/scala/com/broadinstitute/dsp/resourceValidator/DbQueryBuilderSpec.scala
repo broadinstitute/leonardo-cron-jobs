@@ -17,7 +17,7 @@ final class DbQueryBuilderSpec extends AnyFlatSpec with CronJobsTestSuite with I
   val transactor = yoloTransactor
 
   it should "build deletedDisksQuery properly" taggedAs DbTest in {
-    check(DbReader.deletedDisksQuery)
+    check(DbReader.shouldBedeletedDisksQuery)
   }
 
   it should "build initBucketsToDeleteQuery properly" taggedAs DbTest in {
