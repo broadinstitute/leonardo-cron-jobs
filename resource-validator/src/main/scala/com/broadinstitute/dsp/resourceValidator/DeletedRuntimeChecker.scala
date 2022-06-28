@@ -32,8 +32,7 @@ object DeletedRuntimeChecker {
           case x: Runtime.Gce =>
             checkGceRuntime(x, isDryRun)
           case x: Runtime.AzureVM =>
-            // TODO: IA-3289 Implement check Azure VM
-            logger.info(s"Azure VM is not supported yet").as(None)
+            checkAzureRuntime(x, isDryRun)
         }
 
       private def checkDataprocCluster(runtime: Runtime.Dataproc, isDryRun: Boolean)(implicit
@@ -82,6 +81,21 @@ object DeletedRuntimeChecker {
               logger.warn(s"${runtime} still exists in Google. Going to delete") >>
                 deps.computeService
                   .deleteInstance(runtime.googleProject, runtime.zone, InstanceName(runtime.runtimeName))
+                  .void
+          }
+        } yield runtimeOpt.fold(none[Runtime])(_ => Some(runtime))
+
+      private def checkAzureRuntime(runtime: Runtime.AzureVM, isDryRun: Boolean): F[Option[Runtime]] =
+        for {
+          runtimeOpt <- deps.azureVmService
+            .getAzureVm(runtime.runtimeName, runtime.cloudContext.value)
+          _ <- runtimeOpt.traverse_ { _ =>
+            if (isDryRun)
+              logger.warn(s"${runtime} still exists in Azure. It needs to be deleted")
+            else
+              logger.warn(s"${runtime} still exists in Azure. Going to delete") >>
+                deps.azureVmService
+                  .deleteAzureVm(runtime.runtimeName, runtime.cloudContext.value, true)
                   .void
           }
         } yield runtimeOpt.fold(none[Runtime])(_ => Some(runtime))

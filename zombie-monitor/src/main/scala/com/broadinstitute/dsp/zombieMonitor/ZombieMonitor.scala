@@ -75,7 +75,7 @@ object ZombieMonitor {
   ): Resource[F, ZombieMonitorDeps[F]] =
     for {
       blockerBound <- Resource.eval(Semaphore[F](250))
-      metrics <- OpenTelemetryMetrics.resource(appConfig.pathToCredential, "leonardo-cron-jobs")
+      metrics <- OpenTelemetryMetrics.resource("leonardo-cron-jobs", appConfig.prometheus.port)
       runtimeCheckerDeps <- RuntimeCheckerDeps.init(appConfig.runtimeCheckerConfig, metrics, blockerBound)
       diskService <- GoogleDiskService.resource(appConfig.pathToCredential.toString, blockerBound)
       gkeService <- GKEService.resource(appConfig.pathToCredential, blockerBound)

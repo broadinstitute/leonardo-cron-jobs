@@ -45,7 +45,7 @@ object Nuker {
     appConfig: AppConfig
   ): Resource[F, NukerDeps[F]] =
     for {
-      metrics <- OpenTelemetryMetrics.resource(appConfig.pathToCredential, "leonardo-cron-jobs")
+      metrics <- OpenTelemetryMetrics.resource("leonardo-cron-jobs", appConfig.prometheus.port)
       credential <- org.broadinstitute.dsde.workbench.google2.credentialResource[F](appConfig.pathToCredential.toString)
       topicAdminClient <- GoogleTopicAdmin.fromServiceAccountCrendential(credential)
       subscriptionClient <- GoogleSubscriptionAdmin.fromServiceAccountCredential(credential)

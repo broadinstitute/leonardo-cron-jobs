@@ -1,8 +1,9 @@
 package com.broadinstitute.dsp
 package zombieMonitor
 
-import java.nio.file.Paths
+import org.broadinstitute.dsde.workbench.azure.{AzureAppRegistrationConfig, ClientId, ClientSecret, ManagedAppTenantId}
 
+import java.nio.file.Paths
 import org.broadinstitute.dsde.workbench.model.google.GcsBucketName
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
@@ -22,8 +23,10 @@ class ConfigSpec extends AnyFlatSpec with Matchers {
       expectedReportDestinationBucket,
       RuntimeCheckerConfig(
         expectedPathToCredential,
-        expectedReportDestinationBucket
-      )
+        expectedReportDestinationBucket,
+        AzureAppRegistrationConfig(ClientId(""), ClientSecret(""), ManagedAppTenantId(""))
+      ),
+      Prometheus(9098)
     )
 
     config shouldBe Right(expectedConfig)

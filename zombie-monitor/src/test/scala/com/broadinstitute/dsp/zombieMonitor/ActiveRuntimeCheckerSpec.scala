@@ -31,6 +31,8 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.broadinstitute.dsde.workbench.openTelemetry.FakeOpenTelemetryMetricsInterpreter
 import cats.effect.unsafe.implicits.global
 import com.broadinstitute.dsp.Generators.{arbDataprocRuntime, genRuntime}
+import org.broadinstitute.dsde.workbench.azure.AzureVmService
+import org.broadinstitute.dsde.workbench.azure.mock.FakeAzureVmService
 import org.scalacheck.Arbitrary
 
 class ActiveRuntimeCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
@@ -94,7 +96,8 @@ class ActiveRuntimeCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
       val computeService = new FakeGoogleComputeService {
         override def getInstance(project: GoogleProject, zone: ZoneName, instanceName: InstanceName)(implicit
           ev: Ask[IO, TraceId]
-        ): IO[Option[Instance]] = IO.pure(Some(Instance.newBuilder().setStatus(Instance.Status.TERMINATED).build()))
+        ): IO[Option[Instance]] =
+          IO.pure(Some(Instance.newBuilder().setStatus(Instance.Status.TERMINATED.toString).build()))
       }
       val deps = initRuntimeCheckerDeps(computeService, dataprocService)
       val checker = ActiveRuntimeChecker.impl(dbReader, deps)
@@ -116,7 +119,8 @@ class ActiveRuntimeCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
       val computeService = new FakeGoogleComputeService {
         override def getInstance(project: GoogleProject, zone: ZoneName, instanceName: InstanceName)(implicit
           ev: Ask[IO, TraceId]
-        ): IO[Option[Instance]] = IO.pure(Some(Instance.newBuilder().setStatus(Instance.Status.RUNNING).build()))
+        ): IO[Option[Instance]] =
+          IO.pure(Some(Instance.newBuilder().setStatus(Instance.Status.RUNNING.toString).build()))
       }
       val dataprocService = new BaseFakeGoogleDataprocService {
         override def getCluster(project: GoogleProject, region: RegionName, clusterName: DataprocClusterName)(implicit
@@ -199,7 +203,8 @@ class ActiveRuntimeCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
     googleComputeService: GoogleComputeService[IO] = FakeGoogleComputeService,
     googleDataprocService: GoogleDataprocService[IO] = FakeGoogleDataprocService,
     googleStorageService: GoogleStorageService[IO] = FakeGoogleStorageInterpreter,
-    googleBillingService: GoogleBillingService[IO] = FakeGoogleBillingInterpreter
+    googleBillingService: GoogleBillingService[IO] = FakeGoogleBillingInterpreter,
+    azureVmService: AzureVmService[IO] = FakeAzureVmService
   ): RuntimeCheckerDeps[IO] = {
     val config = Config.appConfig.toOption.get
 
@@ -207,7 +212,8 @@ class ActiveRuntimeCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
       googleComputeService,
       googleDataprocService,
       CheckRunnerDeps(config.reportDestinationBucket, googleStorageService, FakeOpenTelemetryMetricsInterpreter),
-      googleBillingService
+      googleBillingService,
+      azureVmService
     )
   }
 }

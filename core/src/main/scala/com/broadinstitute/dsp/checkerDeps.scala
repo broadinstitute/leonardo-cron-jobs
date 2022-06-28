@@ -3,6 +3,7 @@ package com.broadinstitute.dsp
 import cats.Parallel
 import cats.effect.std.Semaphore
 import cats.effect.{Async, Resource}
+import org.broadinstitute.dsde.workbench.azure.{AzureAppRegistrationConfig, AzureVmService}
 import org.broadinstitute.dsde.workbench.google2.util.RetryPredicates
 import org.broadinstitute.dsde.workbench.google2.{
   GKEService,
@@ -40,9 +41,10 @@ object RuntimeCheckerDeps {
                                                               blockerBound
       )
       billingService <- GoogleBillingService.fromCredential(scopedCredential, blockerBound)
+      azureVmService <- AzureVmService.fromAzureAppRegistrationConfig(config.azureAppRegistration)
     } yield {
       val checkRunnerDeps = CheckRunnerDeps(config.reportDestinationBucket, storageService, metrics)
-      RuntimeCheckerDeps(computeService, dataprocService, checkRunnerDeps, billingService)
+      RuntimeCheckerDeps(computeService, dataprocService, checkRunnerDeps, billingService, azureVmService)
     }
 }
 
@@ -55,12 +57,14 @@ sealed abstract class Runtime {
 }
 
 object Runtime {
-  // TODO: IA-3289 update parameters once we support azure clean up
-  final case class AzureVM(id: Long, runtimeName: String, cloudService: CloudService, status: String) extends Runtime {
+  final case class AzureVM(id: Long,
+                           cloudContext: CloudContext.Azure,
+                           runtimeName: String,
+                           cloudService: CloudService,
+                           status: String
+  ) extends Runtime {
     // this is the format we'll output in report, which can be easily consumed by scripts if necessary
-    override def toString: String = s"$id,$runtimeName,$cloudService,$status"
-
-    override def cloudContext: CloudContext = CloudContext.Azure("")
+    override def toString: String = s"$id,${cloudService.asString},$runtimeName,$cloudService,$status"
   }
 
   final case class Gce(id: Long,
@@ -112,7 +116,8 @@ final case class RuntimeWithWorkers(r: Runtime.Dataproc, workerConfig: WorkerCon
 final case class RuntimeCheckerDeps[F[_]](computeService: GoogleComputeService[F],
                                           dataprocService: GoogleDataprocService[F],
                                           checkRunnerDeps: CheckRunnerDeps[F],
-                                          billingService: GoogleBillingService[F]
+                                          billingService: GoogleBillingService[F],
+                                          azureVmService: AzureVmService[F]
 )
 
 final case class KubernetesClusterCheckerDeps[F[_]](checkRunnerDeps: CheckRunnerDeps[F], gkeService: GKEService[F])
@@ -124,4 +129,7 @@ final case class NodepoolCheckerDeps[F[_]](checkRunnerDeps: CheckRunnerDeps[F],
 
 final case class DiskCheckerDeps[F[_]](checkRunnerDeps: CheckRunnerDeps[F], googleDiskService: GoogleDiskService[F])
 
-final case class RuntimeCheckerConfig(pathToCredential: Path, reportDestinationBucket: GcsBucketName)
+final case class RuntimeCheckerConfig(pathToCredential: Path,
+                                      reportDestinationBucket: GcsBucketName,
+                                      azureAppRegistration: AzureAppRegistrationConfig
+)

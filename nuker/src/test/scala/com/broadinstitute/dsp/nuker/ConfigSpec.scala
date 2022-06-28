@@ -13,7 +13,8 @@ class ConfigSpec extends AnyFlatSpec with Matchers {
     val expectedPathToCredential = Paths.get("path-to-credential")
     val expectedConfig = AppConfig(
       PubsubTopicCleanerConfig(GoogleProject("replace-me")),
-      expectedPathToCredential
+      expectedPathToCredential,
+      Prometheus(9098)
     )
 
     config shouldBe Right(expectedConfig)

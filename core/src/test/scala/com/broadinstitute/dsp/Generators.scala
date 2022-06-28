@@ -4,6 +4,7 @@ import cats.data.NonEmptyList
 import org.broadinstitute.dsde.workbench.google2.GKEModels.{KubernetesClusterId, KubernetesClusterName}
 import org.scalacheck.{Arbitrary, Gen}
 import org.broadinstitute.dsde.workbench.google2.Generators._
+import org.broadinstitute.dsde.workbench.azure.Generators.genAzureCloudContext
 
 object Generators {
   // TODO IA-3289 When we implement Azure, make sure to add CloudService.AzureVM as an option in the line below so tests use it
@@ -12,6 +13,7 @@ object Generators {
     id <- Gen.chooseNum(0, 100)
     cloudService <- genCloudService
     project <- genGoogleProject
+    azureCloudContext <- genAzureCloudContext
     runtimeName <- Gen.uuid.map(_.toString)
     status <- possibleStatuses.fold(Gen.oneOf("Running", "Creating", "Deleted", "Error"))(s => Gen.oneOf(s.toList))
   } yield cloudService match {
@@ -20,7 +22,7 @@ object Generators {
     case CloudService.Gce =>
       Runtime.Gce(id, project, runtimeName, cloudService, status, DBTestHelper.zoneName)
     case CloudService.AzureVM =>
-      Runtime.AzureVM(id, runtimeName, cloudService, status)
+      Runtime.AzureVM(id, CloudContext.Azure(azureCloudContext), runtimeName, cloudService, status)
   }
   val genDataprocRuntime: Gen[Runtime.Dataproc] = for {
     id <- Gen.chooseNum(0, 100)

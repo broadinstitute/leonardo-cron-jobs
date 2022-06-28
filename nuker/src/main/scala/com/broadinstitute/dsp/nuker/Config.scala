@@ -14,4 +14,4 @@ object Config {
     .leftMap(failures => new RuntimeException(failures.toList.map(_.description).mkString("\n")))
 }
 
-final case class AppConfig(pubsubTopicCleaner: PubsubTopicCleanerConfig, pathToCredential: Path)
+final case class AppConfig(pubsubTopicCleaner: PubsubTopicCleanerConfig, pathToCredential: Path, prometheus: Prometheus)

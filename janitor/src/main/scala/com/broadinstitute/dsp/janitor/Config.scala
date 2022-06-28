@@ -20,5 +20,6 @@ final case class AppConfig(database: DatabaseConfig,
                            pathToCredential: Path,
                            reportDestinationBucket: GcsBucketName,
                            runtimeCheckerConfig: RuntimeCheckerConfig,
-                           leonardoPubsub: PubsubConfig
+                           leonardoPubsub: PubsubConfig,
+                           prometheus: Prometheus
 )

@@ -14,6 +14,7 @@ import org.broadinstitute.dsde.workbench.model.google.GoogleProject
 import org.scalatest.flatspec.AnyFlatSpec
 import org.broadinstitute.dsde.workbench.openTelemetry.FakeOpenTelemetryMetricsInterpreter
 import cats.effect.unsafe.implicits.global
+import com.google.api.gax.longrunning.OperationFuture
 class DeletedDiskCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
   it should "return None if disk no longer exists in Google" in {
     val diskService = new MockGoogleDiskService {
@@ -46,7 +47,8 @@ class DeletedDiskCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
 
         override def deleteDisk(project: GoogleProject, zone: ZoneName, diskName: DiskName)(implicit
           ev: Ask[IO, TraceId]
-        ): IO[Option[Operation]] = if (dryRun) IO.raiseError(fail("this shouldn't be called")) else IO.pure(None)
+        ): IO[Option[OperationFuture[Operation, Operation]]] =
+          if (dryRun) IO.raiseError(fail("this shouldn't be called")) else IO.pure(None)
       }
       val checkerDeps =
         initDeletedDiskCheckerDeps(diskService)

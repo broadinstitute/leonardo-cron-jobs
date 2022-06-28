@@ -3,6 +3,7 @@ package com.broadinstitute.dsp
 import cats.syntax.all._
 import doobie.implicits.javasql.TimestampMeta
 import doobie.{Get, Meta, Read}
+import org.broadinstitute.dsde.workbench.azure.AzureCloudContext
 import org.broadinstitute.dsde.workbench.google2.GKEModels.KubernetesClusterName
 import org.broadinstitute.dsde.workbench.google2.{DiskName, Location, RegionName, ZoneName}
 import org.broadinstitute.dsde.workbench.model.google.{GcsBucketName, GoogleProject}
@@ -36,7 +37,14 @@ object DbReaderImplicits {
   implicit val cloudContextRead: Read[CloudContext] = Read[(String, CloudProvider)].map { case (s, cloudProvider) =>
     cloudProvider match {
       case CloudProvider.Azure =>
-        CloudContext.Azure(s)
+        AzureCloudContext.fromString(s) match {
+          case Left(value) =>
+            throw new RuntimeException(
+              s"${value} is not valid azure cloud context"
+            )
+          case Right(value) =>
+            CloudContext.Azure(value)
+        }
       case CloudProvider.Gcp =>
         CloudContext.Gcp(GoogleProject(s))
     }
@@ -48,7 +56,14 @@ object DbReaderImplicits {
         cloudProvider match {
           case CloudProvider.Azure =>
             // TODO: IA-3289 correctly implement this case in the pattern match once we support Azure
-            Runtime.AzureVM(id, runtimeName, cloudService, status)
+            AzureCloudContext.fromString(cloudContextDb) match {
+              case Left(value) =>
+                throw new RuntimeException(
+                  s"${value} is not valid azure cloud context"
+                )
+              case Right(value) =>
+                Runtime.AzureVM(id, CloudContext.Azure(value), runtimeName, cloudService, status)
+            }
           case CloudProvider.Gcp =>
             (zone, region) match {
               case (Some(_), Some(_)) =>

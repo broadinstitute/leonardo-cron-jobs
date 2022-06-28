@@ -2,6 +2,7 @@ package com.broadinstitute.dsp
 
 import ca.mrvisser.sealerate
 import io.circe.Encoder
+import org.broadinstitute.dsde.workbench.azure.AzureCloudContext
 import org.broadinstitute.dsde.workbench.google2.{DiskName, Location, ZoneName}
 import org.broadinstitute.dsde.workbench.google2.GKEModels.{
   KubernetesClusterId,
@@ -125,8 +126,8 @@ object CloudContext {
     override val asStringWithProvider = s"Gcp/${value.value}"
     override def cloudProvider: CloudProvider = CloudProvider.Gcp
   }
-  final case class Azure(value: String) extends CloudContext {
-    override val asString = value
+  final case class Azure(value: AzureCloudContext) extends CloudContext {
+    override val asString = value.asString
     override val asStringWithProvider = s"Azure/${value}"
     override def cloudProvider: CloudProvider = CloudProvider.Azure
   }
@@ -147,3 +148,5 @@ object JsonCodec {
 final case class ServiceData(version: Option[String]) {
   val name = "leonardo-cron-jobs"
 }
+
+final case class Prometheus(port: Int)
