@@ -22,17 +22,20 @@ trait DbReader[F[_]] {
 object DbReader {
   implicit def apply[F[_]](implicit ev: DbReader[F]): DbReader[F] = ev
 
-  val deletedDisksQuery =
+  val shouldBedeletedDisksQuery =
     sql"""
            SELECT pd1.id, pd1.cloudContext, pd1.cloudProvider, pd1.name, pd1.zone, pd1.formattedBy
            FROM PERSISTENT_DISK AS pd1
-           WHERE pd1.status="Deleted" AND
-           pd1.destroyedDate > now() - INTERVAL 30 DAY AND
+           WHERE
+           (
+             (pd1.status="Deleted" AND pd1.destroyedDate > now() - INTERVAL 30 DAY) OR 
+             (pd1.status="Deleting" AND pd1.`dateAccessed` < now() - INTERVAL 30 MINUTE)
+           ) AND
              NOT EXISTS
              (
                SELECT *
                FROM PERSISTENT_DISK pd2
-               WHERE pd1.cloudContext = pd2.cloudContext and pd1.name = pd2.name and pd2.status != "Deleted"
+               WHERE pd1.cloudContext = pd2.cloudContext and pd1.name = pd2.name and pd2.status != "Deleted" and pd2.status != "Deleting"
               )
         """.query[Disk]
 
@@ -136,7 +139,7 @@ object DbReader {
 
     // Same disk names might be re-used
     override def getDeletedDisks: Stream[F, Disk] =
-      deletedDisksQuery.stream.transact(xa)
+      shouldBedeletedDisksQuery.stream.transact(xa)
 
     override def getDeletedAndErroredKubernetesClusters: Stream[F, KubernetesCluster] =
       deletedAndErroredKubernetesClusterQuery.stream.transact(xa)
