@@ -9,10 +9,9 @@ import com.broadinstitute.dsp.DBTestHelper.{
   transactorResource,
   yoloTransactor
 }
-import doobie.scalatest.IOChecker
 import com.broadinstitute.dsp.Generators._
+import doobie.scalatest.IOChecker
 import org.broadinstitute.dsde.workbench.google2.GKEModels.{KubernetesClusterId, NodepoolName}
-import org.broadinstitute.dsde.workbench.google2.Generators.genKubernetesClusterId
 import org.scalatest.flatspec.AnyFlatSpec
 
 class DbReaderGetDeletedOrErroredNodepoolsSpec extends AnyFlatSpec with CronJobsTestSuite with IOChecker {
