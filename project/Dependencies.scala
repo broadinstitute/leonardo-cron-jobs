@@ -9,14 +9,14 @@ object Dependencies {
   val declineVersion = "2.2.0"
 
   val core = Seq(
-    "net.logstash.logback" % "logstash-logback-encoder" % "7.0.1",
-    "ch.qos.logback" % "logback-classic" % "1.2.10",
-    "ch.qos.logback" % "logback-core" % "1.2.10",
+    "net.logstash.logback" % "logstash-logback-encoder" % "7.1.1",
+    "ch.qos.logback" % "logback-classic" % "1.2.11",
+    "ch.qos.logback" % "logback-core" % "1.2.11",
     "org.tpolecat" %% "doobie-core" % doobieVersion,
     "org.tpolecat" %% "doobie-hikari" % doobieVersion,
     "org.tpolecat" %% "doobie-scalatest" % doobieVersion % Test,
     "com.github.pureconfig" %% "pureconfig" % "0.17.1",
-    "mysql" % "mysql-connector-java" % "8.0.27",
+    "mysql" % "mysql-connector-java" % "8.0.29",
     "org.scalatest" %% "scalatest" % "3.2.11" % Test,
     "com.monovore" %% "decline" % declineVersion,
     "com.monovore" %% "decline-effect" % declineVersion,
