@@ -37,7 +37,7 @@ object DbReader {
          SELECT DISTINCT c1.id, cloudContext, cloudProvider, runtimeName, rt.cloudService, c1.status, rt.zone, rt.region
             FROM CLUSTER AS c1
             INNER JOIN RUNTIME_CONFIG AS rt ON c1.`runtimeConfigId`=rt.id
-            WHERE c1.status!="Deleted" AND c1.status!="Error" AND createdDate < now() - INTERVAL 1 HOUR
+            WHERE c1.status!="Deleted" AND c1.status!="Error" AND c1.createdDate < now() - INTERVAL 1 HOUR
         """.query[Runtime]
 
   val activeK8sClustersQuery =

@@ -55,7 +55,6 @@ object DbReaderImplicits {
       case (id, cloudContextDb, cloudProvider, runtimeName, cloudService, status, zone, region) =>
         cloudProvider match {
           case CloudProvider.Azure =>
-            // TODO: IA-3289 correctly implement this case in the pattern match once we support Azure
             AzureCloudContext.fromString(cloudContextDb) match {
               case Left(value) =>
                 throw new RuntimeException(

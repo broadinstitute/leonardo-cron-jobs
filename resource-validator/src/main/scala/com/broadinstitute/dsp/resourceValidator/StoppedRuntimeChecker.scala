@@ -31,7 +31,7 @@ object StoppedRuntimeChecker {
             checkDataprocCluster(x, isDryRun)
           case x: Runtime.Gce =>
             checkGceRuntime(x, isDryRun)
-          case x: Runtime.AzureVM =>
+          case _: Runtime.AzureVM =>
             // TODO: IA-3289 Implement check Azure VM
             logger.info(s"Azure VM is not supported yet").as(None)
         }
@@ -43,7 +43,7 @@ object StoppedRuntimeChecker {
           runtimeOpt <- deps.computeService
             .getInstance(runtime.googleProject, runtime.zone, InstanceName(runtime.runtimeName))
           runningRuntimeOpt <- runtimeOpt.flatTraverse { rt =>
-            if (rt.getStatus == Instance.Status.RUNNING)
+            if (rt.getStatus.toUpperCase == Instance.Status.RUNNING.name().toUpperCase)
               if (isDryRun)
                 logger.warn(s"${runtime} is running. It needs to be stopped.").as[Option[Runtime]](Some(runtime))
               else
