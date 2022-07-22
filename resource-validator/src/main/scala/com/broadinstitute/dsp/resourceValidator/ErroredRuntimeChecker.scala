@@ -4,8 +4,9 @@ package resourceValidator
 import cats.effect.Concurrent
 import cats.mtl.Ask
 import cats.syntax.all._
-import org.broadinstitute.dsde.workbench.google2.{DataprocClusterName, InstanceName}
+import org.broadinstitute.dsde.workbench.google2.DataprocClusterName
 import org.broadinstitute.dsde.workbench.model.TraceId
+import org.broadinstitute.dsde.workbench.util2.InstanceName
 import org.typelevel.log4cats.Logger
 
 // Implements CheckRunner[F[_], A]
@@ -92,14 +93,14 @@ object ErroredRuntimeChecker {
       def checkAzureRuntime(runtime: Runtime.AzureVM, isDryRun: Boolean): F[Option[Runtime]] =
         for {
           runtimeOpt <- deps.azureVmService
-            .getAzureVm(runtime.runtimeName, runtime.cloudContext.value)
+            .getAzureVm(InstanceName(runtime.runtimeName), runtime.cloudContext.value)
           _ <- runtimeOpt.traverse_ { rt =>
             if (isDryRun)
               logger.warn(s"${runtime} still exists in ${rt.powerState()} status. It needs to be deleted.")
             else
               logger.warn(s"${runtime} still exists in ${rt.powerState()} status. Going to delete it.") >>
                 deps.azureVmService
-                  .deleteAzureVm(runtime.runtimeName, runtime.cloudContext.value, true)
+                  .deleteAzureVm(InstanceName(runtime.runtimeName), runtime.cloudContext.value, true)
                   .void
           }
         } yield runtimeOpt.fold(none[Runtime])(_ => Some(runtime))

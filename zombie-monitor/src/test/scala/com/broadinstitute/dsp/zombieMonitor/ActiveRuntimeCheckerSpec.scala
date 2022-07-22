@@ -21,7 +21,6 @@ import org.broadinstitute.dsde.workbench.google2.{
   GoogleComputeService,
   GoogleDataprocService,
   GoogleStorageService,
-  InstanceName,
   RegionName,
   ZoneName
 }
@@ -33,6 +32,7 @@ import cats.effect.unsafe.implicits.global
 import com.broadinstitute.dsp.Generators.{arbDataprocRuntime, genRuntime}
 import org.broadinstitute.dsde.workbench.azure.AzureVmService
 import org.broadinstitute.dsde.workbench.azure.mock.FakeAzureVmService
+import org.broadinstitute.dsde.workbench.util2.InstanceName
 import org.scalacheck.Arbitrary
 
 class ActiveRuntimeCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {

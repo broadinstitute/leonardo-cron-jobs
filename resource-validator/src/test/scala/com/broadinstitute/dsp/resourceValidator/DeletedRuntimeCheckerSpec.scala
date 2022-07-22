@@ -13,12 +13,13 @@ import org.broadinstitute.dsde.workbench.google2.mock.{
   FakeGoogleBillingInterpreter,
   FakeGoogleComputeService
 }
-import org.broadinstitute.dsde.workbench.google2.{DataprocClusterName, InstanceName, RegionName, ZoneName}
+import org.broadinstitute.dsde.workbench.google2.{DataprocClusterName, RegionName, ZoneName}
 import org.broadinstitute.dsde.workbench.model.TraceId
 import org.broadinstitute.dsde.workbench.model.google.GoogleProject
 import cats.effect.unsafe.implicits.global
 import com.google.api.gax.longrunning.OperationFuture
 import com.google.protobuf.Empty
+import org.broadinstitute.dsde.workbench.util2.InstanceName
 import org.scalatest.flatspec.AnyFlatSpec
 
 class DeletedRuntimeCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {

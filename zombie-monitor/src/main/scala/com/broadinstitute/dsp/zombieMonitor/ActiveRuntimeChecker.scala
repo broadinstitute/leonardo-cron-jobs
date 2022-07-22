@@ -6,8 +6,9 @@ import cats.mtl.Ask
 import cats.syntax.all._
 import com.google.cloud.compute.v1.Instance
 import fs2.Stream
-import org.broadinstitute.dsde.workbench.google2.{DataprocClusterName, InstanceName}
+import org.broadinstitute.dsde.workbench.google2.DataprocClusterName
 import org.broadinstitute.dsde.workbench.model.TraceId
+import org.broadinstitute.dsde.workbench.util2.InstanceName
 import org.typelevel.log4cats.Logger
 
 /**
@@ -130,7 +131,7 @@ object ActiveRuntimeChecker {
       def checkAzureRuntimeStatus(runtime: Runtime.AzureVM, isDryRun: Boolean): F[Option[Runtime]] =
         for {
           runtimeOpt <- deps.azureVmService
-            .getAzureVm(runtime.runtimeName, runtime.cloudContext.value)
+            .getAzureVm(InstanceName(runtime.runtimeName), runtime.cloudContext.value)
           res <-
             runtimeOpt match {
               case None =>

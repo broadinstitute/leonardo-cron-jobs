@@ -7,8 +7,9 @@ import cats.mtl.Ask
 import cats.syntax.all._
 import com.google.cloud.compute.v1.Instance
 import com.google.cloud.dataproc.v1.ClusterStatus
-import org.broadinstitute.dsde.workbench.google2.{DataprocClusterName, InstanceName}
+import org.broadinstitute.dsde.workbench.google2.DataprocClusterName
 import org.broadinstitute.dsde.workbench.model.TraceId
+import org.broadinstitute.dsde.workbench.util2.InstanceName
 import org.typelevel.log4cats.Logger
 
 // Implements CheckRunner[F[_], A]

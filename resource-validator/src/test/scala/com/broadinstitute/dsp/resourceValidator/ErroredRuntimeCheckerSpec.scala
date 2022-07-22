@@ -13,9 +13,10 @@ import com.google.cloud.dataproc.v1.{Cluster, ClusterOperationMetadata, ClusterS
 import com.google.protobuf.Empty
 import fs2.Stream
 import org.broadinstitute.dsde.workbench.google2.mock.{BaseFakeGoogleDataprocService, FakeGoogleComputeService}
-import org.broadinstitute.dsde.workbench.google2.{DataprocClusterName, InstanceName, RegionName, ZoneName}
+import org.broadinstitute.dsde.workbench.google2.{DataprocClusterName, RegionName, ZoneName}
 import org.broadinstitute.dsde.workbench.model.TraceId
 import org.broadinstitute.dsde.workbench.model.google.GoogleProject
+import org.broadinstitute.dsde.workbench.util2.InstanceName
 import org.scalatest.flatspec.AnyFlatSpec
 class ErroredRuntimeCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
   it should "return None if runtime no longer exists in Google" in {

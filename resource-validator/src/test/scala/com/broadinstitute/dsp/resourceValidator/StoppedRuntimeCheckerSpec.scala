@@ -20,7 +20,6 @@ import org.broadinstitute.dsde.workbench.google2.{
   DataprocClusterName,
   DataprocOperation,
   DataprocRoleZonePreemptibility,
-  InstanceName,
   OperationName,
   RegionName,
   ZoneName
@@ -32,6 +31,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import cats.effect.unsafe.implicits.global
 import com.broadinstitute.dsp.Generators.genRuntime
 import com.google.api.gax.longrunning.OperationFuture
+import org.broadinstitute.dsde.workbench.util2.InstanceName
 import org.scalacheck.Arbitrary
 
 final class StoppedRuntimeCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
