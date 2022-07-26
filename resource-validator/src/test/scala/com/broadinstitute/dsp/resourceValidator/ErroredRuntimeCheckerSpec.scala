@@ -2,25 +2,22 @@ package com.broadinstitute.dsp
 package resourceValidator
 
 import cats.effect.IO
+import cats.effect.unsafe.implicits.global
 import cats.mtl.Ask
 import com.broadinstitute.dsp.Generators._
 import com.broadinstitute.dsp.resourceValidator.InitDependenciesHelper._
+import com.google.api.gax.longrunning.OperationFuture
 import com.google.cloud.compute.v1.{Instance, Operation}
 import com.google.cloud.dataproc.v1.ClusterStatus.State
-import com.google.cloud.dataproc.v1.{Cluster, ClusterStatus}
+import com.google.cloud.dataproc.v1.{Cluster, ClusterOperationMetadata, ClusterStatus}
+import com.google.protobuf.Empty
 import fs2.Stream
 import org.broadinstitute.dsde.workbench.google2.mock.{BaseFakeGoogleDataprocService, FakeGoogleComputeService}
-import org.broadinstitute.dsde.workbench.google2.{
-  DataprocClusterName,
-  DataprocOperation,
-  InstanceName,
-  RegionName,
-  ZoneName
-}
+import org.broadinstitute.dsde.workbench.google2.{DataprocClusterName, RegionName, ZoneName}
 import org.broadinstitute.dsde.workbench.model.TraceId
 import org.broadinstitute.dsde.workbench.model.google.GoogleProject
+import org.broadinstitute.dsde.workbench.util2.InstanceName
 import org.scalatest.flatspec.AnyFlatSpec
-import cats.effect.unsafe.implicits.global
 class ErroredRuntimeCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
   it should "return None if runtime no longer exists in Google" in {
     val computeService = new FakeGoogleComputeService {
@@ -62,7 +59,8 @@ class ErroredRuntimeCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
 
         override def deleteInstance(project: GoogleProject, zone: ZoneName, instanceName: InstanceName)(implicit
           ev: Ask[IO, TraceId]
-        ): IO[Option[Operation]] = if (dryRun) IO.raiseError(fail("this shouldn't be called")) else IO.pure(None)
+        ): IO[Option[OperationFuture[Operation, Operation]]] =
+          if (dryRun) IO.raiseError(fail("this shouldn't be called")) else IO.pure(None)
       }
       val dataprocService = new BaseFakeGoogleDataprocService {
         override def getCluster(project: GoogleProject, region: RegionName, clusterName: DataprocClusterName)(implicit
@@ -74,7 +72,7 @@ class ErroredRuntimeCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
 
         override def deleteCluster(project: GoogleProject, region: RegionName, clusterName: DataprocClusterName)(
           implicit ev: Ask[IO, TraceId]
-        ): IO[Option[DataprocOperation]] =
+        ): IO[Option[OperationFuture[Empty, ClusterOperationMetadata]]] =
           if (dryRun) IO.raiseError(fail("this shouldn't be called")) else IO.pure(None)
       }
 
@@ -103,7 +101,7 @@ class ErroredRuntimeCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
 
         override def deleteCluster(project: GoogleProject, region: RegionName, clusterName: DataprocClusterName)(
           implicit ev: Ask[IO, TraceId]
-        ): IO[Option[DataprocOperation]] =
+        ): IO[Option[OperationFuture[Empty, ClusterOperationMetadata]]] =
           IO.raiseError(fail("this shouldn't be called"))
       }
 

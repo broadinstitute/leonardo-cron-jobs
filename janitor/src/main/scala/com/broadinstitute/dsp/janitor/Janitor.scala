@@ -62,7 +62,7 @@ object Janitor {
   ): Resource[F, JanitorDeps[F]] =
     for {
       blockerBound <- Resource.eval(Semaphore[F](250))
-      metrics <- OpenTelemetryMetrics.resource(appConfig.pathToCredential, "leonardo-cron-jobs")
+      metrics <- OpenTelemetryMetrics.resource("leonardo-cron-jobs", appConfig.prometheus.port)
       runtimeCheckerDeps <- RuntimeCheckerDeps.init(appConfig.runtimeCheckerConfig, metrics, blockerBound)
       publisherConfig = PublisherConfig(
         appConfig.pathToCredential.toString,

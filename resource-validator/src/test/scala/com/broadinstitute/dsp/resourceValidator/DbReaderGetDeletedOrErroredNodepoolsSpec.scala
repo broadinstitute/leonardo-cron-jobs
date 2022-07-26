@@ -1,6 +1,7 @@
 package com.broadinstitute.dsp
 package resourceValidator
 
+import cats.effect.unsafe.implicits.global
 import com.broadinstitute.dsp.DBTestHelper.{
   getNodepoolName,
   insertK8sCluster,
@@ -11,9 +12,8 @@ import com.broadinstitute.dsp.DBTestHelper.{
 import com.broadinstitute.dsp.Generators._
 import doobie.scalatest.IOChecker
 import org.broadinstitute.dsde.workbench.google2.GKEModels.{KubernetesClusterId, NodepoolName}
-import org.broadinstitute.dsde.workbench.model.google.GoogleProject
 import org.scalatest.flatspec.AnyFlatSpec
-import cats.effect.unsafe.implicits.global
+
 class DbReaderGetDeletedOrErroredNodepoolsSpec extends AnyFlatSpec with CronJobsTestSuite with IOChecker {
   implicit val config = ConfigSpec.config.database
   val transactor = yoloTransactor
@@ -24,7 +24,7 @@ class DbReaderGetDeletedOrErroredNodepoolsSpec extends AnyFlatSpec with CronJobs
         val dbReader = DbReader.impl(xa)
 
         val cluster2 =
-          cluster.copy(project = GoogleProject("project2"))
+          cluster.copy(project = cluster.project.copy(value = s"${cluster.project}-2"))
 
         for {
           clusterId <- insertK8sCluster(cluster)

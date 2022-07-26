@@ -78,13 +78,13 @@ object Settings {
 
   private lazy val commonSettings = List(
     organization := "com.broadinstitute.dsp",
-    scalaVersion := "2.13.7",
+    scalaVersion := "2.13.8",
     resolvers ++= commonResolvers,
     addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.10.3"),
     addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.1"),
     // Docker settings
     maintainer := "workbench-interactive-analysis@broadinstitute.org",
-    dockerBaseImage := "us.gcr.io/broad-dsp-gcr-public/base/jre:11-debian",
+    dockerBaseImage := "us.gcr.io/broad-dsp-gcr-public/base/jre:17-debian",
     dockerRepository := Some("us.gcr.io"),
     // Resolve trivy errors related to glibc (CVE-2019-9169)
     // TODO Hopefully this will be fixed in an upcoming version of graalvm-ce

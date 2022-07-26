@@ -7,8 +7,9 @@ import cats.mtl.Ask
 import cats.syntax.all._
 import com.google.cloud.compute.v1.Instance
 import com.google.cloud.dataproc.v1.ClusterStatus
-import org.broadinstitute.dsde.workbench.google2.{DataprocClusterName, InstanceName}
+import org.broadinstitute.dsde.workbench.google2.DataprocClusterName
 import org.broadinstitute.dsde.workbench.model.TraceId
+import org.broadinstitute.dsde.workbench.util2.InstanceName
 import org.typelevel.log4cats.Logger
 
 // Implements CheckRunner[F[_], A]
@@ -31,7 +32,7 @@ object StoppedRuntimeChecker {
             checkDataprocCluster(x, isDryRun)
           case x: Runtime.Gce =>
             checkGceRuntime(x, isDryRun)
-          case x: Runtime.AzureVM =>
+          case _: Runtime.AzureVM =>
             // TODO: IA-3289 Implement check Azure VM
             logger.info(s"Azure VM is not supported yet").as(None)
         }
@@ -43,11 +44,15 @@ object StoppedRuntimeChecker {
           runtimeOpt <- deps.computeService
             .getInstance(runtime.googleProject, runtime.zone, InstanceName(runtime.runtimeName))
           runningRuntimeOpt <- runtimeOpt.flatTraverse { rt =>
-            if (rt.getStatus == Instance.Status.RUNNING)
+            val expectedStatus =
+              Set(Instance.Status.STOPPED.name().toUpperCase, Instance.Status.TERMINATED.name().toUpperCase())
+            if (!expectedStatus.contains(rt.getStatus.toUpperCase))
               if (isDryRun)
-                logger.warn(s"${runtime} is running. It needs to be stopped.").as[Option[Runtime]](Some(runtime))
+                logger
+                  .warn(s"${runtime} is ${rt.getStatus}. It needs to be stopped.")
+                  .as[Option[Runtime]](Some(runtime))
               else
-                logger.warn(s"${runtime} is running. Going to stop it.") >>
+                logger.warn(s"${runtime} is ${rt.getStatus}. Going to stop it.") >>
                   // In contrast to in Leo, we're not setting the shutdown script metadata before stopping the instance
                   // in order to keep things simple since our main goal here is to prevent unintended cost to users.
                   deps.computeService

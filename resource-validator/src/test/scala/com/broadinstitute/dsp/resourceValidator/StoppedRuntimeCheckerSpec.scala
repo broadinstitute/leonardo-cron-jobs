@@ -10,12 +10,16 @@ import com.google.cloud.dataproc.v1.ClusterStatus.State
 import com.google.cloud.dataproc.v1.{Cluster, ClusterOperationMetadata, ClusterStatus}
 import fs2.Stream
 import org.broadinstitute.dsde.workbench.google2.DataprocRole.{Master, SecondaryWorker, Worker}
-import org.broadinstitute.dsde.workbench.google2.mock.{BaseFakeGoogleDataprocService, FakeGoogleComputeService}
+import org.broadinstitute.dsde.workbench.google2.mock.{
+  BaseFakeGoogleDataprocService,
+  FakeComputeOperationFuture,
+  FakeDataprocClusterOperationFutureOp,
+  FakeGoogleComputeService
+}
 import org.broadinstitute.dsde.workbench.google2.{
   DataprocClusterName,
   DataprocOperation,
   DataprocRoleZonePreemptibility,
-  InstanceName,
   OperationName,
   RegionName,
   ZoneName
@@ -26,6 +30,8 @@ import com.broadinstitute.dsp.resourceValidator.StoppedRuntimeCheckerSpec._
 import org.scalatest.flatspec.AnyFlatSpec
 import cats.effect.unsafe.implicits.global
 import com.broadinstitute.dsp.Generators.genRuntime
+import com.google.api.gax.longrunning.OperationFuture
+import org.broadinstitute.dsde.workbench.util2.InstanceName
 import org.scalacheck.Arbitrary
 
 final class StoppedRuntimeCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
@@ -67,13 +73,14 @@ final class StoppedRuntimeCheckerSpec extends AnyFlatSpec with CronJobsTestSuite
         override def getInstance(project: GoogleProject, zone: ZoneName, instanceName: InstanceName)(implicit
           ev: Ask[IO, TraceId]
         ): IO[Option[Instance]] = {
-          val instance = Instance.newBuilder().setStatus(Instance.Status.RUNNING).build()
+          val instance = Instance.newBuilder().setStatus(Instance.Status.RUNNING.toString).build()
           IO.pure(Some(instance))
         }
 
         override def stopInstance(project: GoogleProject, zone: ZoneName, instanceName: InstanceName)(implicit
           ev: Ask[IO, TraceId]
-        ): IO[Operation] = if (dryRun) IO.raiseError(fail("this shouldn't be called")) else IO.pure(defaultOperation)
+        ): IO[OperationFuture[Operation, Operation]] =
+          if (dryRun) IO.raiseError(fail("this shouldn't be called")) else IO.pure(new FakeComputeOperationFuture())
       }
 
       val dataprocService = new BaseFakeGoogleDataprocService {
@@ -92,8 +99,9 @@ final class StoppedRuntimeCheckerSpec extends AnyFlatSpec with CronJobsTestSuite
                                  clusterName: DataprocClusterName,
                                  metadata: Option[Map[String, String]],
                                  isFullStop: Boolean
-        )(implicit ev: Ask[IO, TraceId]): IO[Option[DataprocOperation]] =
-          if (dryRun) IO.raiseError(fail("this shouldn't be called")) else IO.pure(Some(defaultDataprocOperation))
+        )(implicit ev: Ask[IO, TraceId]): IO[Option[OperationFuture[Cluster, ClusterOperationMetadata]]] =
+          if (dryRun) IO.raiseError(fail("this shouldn't be called"))
+          else IO.pure(Some(new FakeDataprocClusterOperationFutureOp))
       }
 
       val runtimeCheckerDeps =
@@ -109,7 +117,7 @@ final class StoppedRuntimeCheckerSpec extends AnyFlatSpec with CronJobsTestSuite
 
 object StoppedRuntimeCheckerSpec {
   val defaultOperation = Operation.getDefaultInstance
-  val defaultDataprocOperation = new DataprocOperation(OperationName("op"), ClusterOperationMetadata.getDefaultInstance)
+  val defaultDataprocOperation = DataprocOperation(OperationName("op"), ClusterOperationMetadata.getDefaultInstance)
   val zone = ZoneName("us-central1-a")
   val dataprocRoleZonePreemptibilityInstances = Map(
     DataprocRoleZonePreemptibility(Master, zone, false) -> Set(InstanceName("master-instance")),

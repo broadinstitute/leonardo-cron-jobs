@@ -6,8 +6,9 @@ import cats.mtl.Ask
 import cats.syntax.all._
 import com.google.cloud.compute.v1.Instance
 import fs2.Stream
-import org.broadinstitute.dsde.workbench.google2.{DataprocClusterName, InstanceName}
+import org.broadinstitute.dsde.workbench.google2.DataprocClusterName
 import org.broadinstitute.dsde.workbench.model.TraceId
+import org.broadinstitute.dsde.workbench.util2.InstanceName
 import org.typelevel.log4cats.Logger
 
 /**
@@ -34,8 +35,7 @@ object ActiveRuntimeChecker {
           case x: Runtime.Gce =>
             checkGceRuntimeStatus(x, isDryRun)
           case x: Runtime.AzureVM =>
-            // TODO: IA-3289 Implement check Azure VM
-            logger.info(s"Azure VM is not supported yet").as(None)
+            checkAzureRuntimeStatus(x, isDryRun)
         }
 
       def checkDataprocClusterStatus(runtime: Runtime.Dataproc, isDryRun: Boolean)(implicit
@@ -112,8 +112,11 @@ object ActiveRuntimeChecker {
               case None =>
                 if (isDryRun) logger.info(s"Not updating DB ${runtime} to be Deleted").as(runtime.some)
                 else dbReader.markRuntimeDeleted(runtime.id).as(runtime.some)
-              case Some(r) if runtime.status.toUpperCase == r.getStatus.toString => F.pure(none[Runtime])
-              case Some(r) if r.getStatus == Instance.Status.TERMINATED && runtime.status != "Stopped" =>
+              case Some(r) if runtime.status.toUpperCase == r.getStatus.toUpperCase() => F.pure(none[Runtime])
+              case Some(r)
+                  if r.getStatus.toUpperCase == Instance.Status.TERMINATED
+                    .name()
+                    .toUpperCase && runtime.status != "Stopped" =>
                 if (isDryRun) logger.info(s"Not updating ${runtime} to be Stopped").as(runtime.some)
                 else dbReader.updateRuntimeStatus(runtime.id, "Stopped").as(runtime.some)
               case Some(r) =>
@@ -122,6 +125,23 @@ object ActiveRuntimeChecker {
                     s"${runtime} is ${runtime.status} in Leonardo, but it's actually in ${r.getStatus} status in Google"
                   )
                   .as(none[Runtime])
+            }
+        } yield res
+
+      def checkAzureRuntimeStatus(runtime: Runtime.AzureVM, isDryRun: Boolean): F[Option[Runtime]] =
+        for {
+          runtimeOpt <- deps.azureVmService
+            .getAzureVm(InstanceName(runtime.runtimeName), runtime.cloudContext.value)
+          res <-
+            runtimeOpt match {
+              case None =>
+                if (isDryRun) logger.info(s"Not updating DB ${runtime} to be Deleted").as(runtime.some)
+                else dbReader.markRuntimeDeleted(runtime.id).as(runtime.some)
+              case Some(r) =>
+                // TODO: update this once we understand more about Azure VM statuses
+                logger.info(s"Not updating DB ${runtime}. Its azure status is ${r.powerState().toString}") >> F.pure(
+                  none[Runtime]
+                )
             }
         } yield res
     }
