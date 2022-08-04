@@ -55,22 +55,19 @@ final case class InitBucketToRemove(googleProject: GoogleProject, bucket: Option
 final case class K8sClusterToScan(id: Long, kubernetesClusterId: KubernetesClusterId)
 final case class NodepoolToScan(id: Long, nodepoolId: NodepoolId)
 
-final case class KubernetesClusterToRemove(id: Long, googleProject: GoogleProject)
+final case class KubernetesClusterToRemove(id: Long, cloudContext: CloudContext)
 
-final case class KubernetesCluster(clusterName: KubernetesClusterName,
-                                   googleProject: GoogleProject,
-                                   location: Location
-) {
-  override def toString: String = s"${googleProject}/${clusterName}"
+final case class KubernetesCluster(clusterName: KubernetesClusterName, cloudContext: CloudContext, location: Location) {
+  override def toString: String = s"${cloudContext.asStringWithProvider}/${clusterName}"
 }
 
 final case class Nodepool(nodepoolId: Long,
                           nodepoolName: NodepoolName,
                           clusterName: KubernetesClusterName,
-                          googleProject: GoogleProject,
+                          cloudContext: CloudContext,
                           location: Location
 ) {
-  override def toString: String = s"$googleProject/${nodepoolName.value}"
+  override def toString: String = s"${cloudContext.asStringWithProvider}/${nodepoolName.value}"
 }
 
 final case class DeleteNodepoolMeesage(nodepoolId: Long, googleProject: GoogleProject, traceId: Option[TraceId]) {

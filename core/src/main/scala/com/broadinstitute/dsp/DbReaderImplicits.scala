@@ -4,7 +4,12 @@ import cats.syntax.all._
 import doobie.implicits.javasql.TimestampMeta
 import doobie.{Get, Meta, Read}
 import org.broadinstitute.dsde.workbench.azure.AzureCloudContext
-import org.broadinstitute.dsde.workbench.google2.GKEModels.KubernetesClusterName
+import org.broadinstitute.dsde.workbench.google2.GKEModels.{
+  KubernetesClusterId,
+  KubernetesClusterName,
+  NodepoolId,
+  NodepoolName
+}
 import org.broadinstitute.dsde.workbench.google2.{DiskName, Location, RegionName, ZoneName}
 import org.broadinstitute.dsde.workbench.model.google.{GcsBucketName, GoogleProject}
 
@@ -88,6 +93,102 @@ object DbReaderImplicits {
                   s"${cloudService} Runtime ${id} has no zone and no region defined. This is impossible. Fix this in DB"
                 )
             }
+        }
+    }
+
+  implicit val kubernetesClusterToRemoveRead: Read[KubernetesClusterToRemove] =
+    Read[(Long, String, CloudProvider)].map { case (id, cloudContextDb, cloudProvider) =>
+      cloudProvider match {
+        case CloudProvider.Azure =>
+          AzureCloudContext.fromString(cloudContextDb) match {
+            case Left(value) =>
+              throw new RuntimeException(
+                s"${value} is not valid azure cloud context"
+              )
+            case Right(value) =>
+              KubernetesClusterToRemove(id, CloudContext.Azure(value))
+          }
+        case CloudProvider.Gcp =>
+          KubernetesClusterToRemove(id, CloudContext.Gcp(GoogleProject(cloudContextDb)))
+      }
+    }
+
+  implicit val kubernetesClusterRead: Read[KubernetesCluster] =
+    Read[(KubernetesClusterName, String, Location, CloudProvider)].map {
+      case (name, cloudContextDb, location, cloudProvider) =>
+        cloudProvider match {
+          case CloudProvider.Azure =>
+            AzureCloudContext.fromString(cloudContextDb) match {
+              case Left(value) =>
+                throw new RuntimeException(
+                  s"${value} is not valid azure cloud context"
+                )
+              case Right(value) =>
+                KubernetesCluster(name, CloudContext.Azure(value), location)
+            }
+          case CloudProvider.Gcp =>
+            KubernetesCluster(name, CloudContext.Gcp(GoogleProject(cloudContextDb)), location)
+        }
+    }
+
+  implicit val nodepoolRead: Read[Nodepool] =
+    Read[(Long, NodepoolName, KubernetesClusterName, CloudProvider, String, Location)].map {
+      case (id, nodepoolName, k8sClusterName, cloudProvider, cloudContextDb, location) =>
+        cloudProvider match {
+          case CloudProvider.Azure =>
+            AzureCloudContext.fromString(cloudContextDb) match {
+              case Left(value) =>
+                throw new RuntimeException(
+                  s"${value} is not valid azure cloud context"
+                )
+              case Right(value) =>
+                Nodepool(id, nodepoolName, k8sClusterName, CloudContext.Azure(value), location)
+            }
+          case CloudProvider.Gcp =>
+            Nodepool(id, nodepoolName, k8sClusterName, CloudContext.Gcp(GoogleProject(cloudContextDb)), location)
+        }
+    }
+
+  implicit val k8sToScanRead: Read[K8sClusterToScan] =
+    Read[(Long, KubernetesClusterName, String, Location, CloudProvider)].map {
+      case (id, name, cloudContextDb, location, cloudProvider) =>
+        cloudProvider match {
+          case CloudProvider.Azure =>
+            AzureCloudContext.fromString(cloudContextDb) match {
+              case Left(value) =>
+                throw new RuntimeException(
+                  s"${value} is not valid azure cloud context"
+                )
+              case Right(value) =>
+                throw new RuntimeException(
+                  s"Azure is not supported yet" // TODO: IA-3623
+                )
+            }
+          case CloudProvider.Gcp =>
+            K8sClusterToScan(id, KubernetesClusterId(GoogleProject(cloudContextDb), location, name))
+        }
+    }
+
+  implicit val nodepoolToScanRead: Read[NodepoolToScan] =
+    Read[(Long, CloudProvider, String, Location, KubernetesClusterName, NodepoolName)].map {
+      case (id, cloudProvider, cloudContextDb, location, clusterName, nodepoolName) =>
+        cloudProvider match {
+          case CloudProvider.Azure =>
+            AzureCloudContext.fromString(cloudContextDb) match {
+              case Left(value) =>
+                throw new RuntimeException(
+                  s"${value} is not valid azure cloud context"
+                )
+              case Right(value) =>
+                throw new RuntimeException(
+                  s"Azure is not supported yet" // TODO: IA-3623
+                )
+            }
+          case CloudProvider.Gcp =>
+            NodepoolToScan(
+              id,
+              NodepoolId(KubernetesClusterId(GoogleProject(cloudContextDb), location, clusterName), nodepoolName)
+            )
         }
     }
 }

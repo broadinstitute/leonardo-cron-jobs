@@ -6,6 +6,8 @@ import doobie._
 import doobie.implicits._
 import fs2.Stream
 import org.broadinstitute.dsde.workbench.model.google.{GcsBucketName, GoogleProject}
+import com.broadinstitute.dsp.DbReaderImplicits.kubernetesClusterToRemoveRead
+import com.broadinstitute.dsp.DbReaderImplicits.nodepoolRead
 
 trait DbReader[F[_]] {
   def getKubernetesClustersToDelete: Stream[F, KubernetesClusterToRemove]
@@ -28,7 +30,7 @@ object DbReader {
   // TODO: Read the grace period (hardcoded to '1 HOUR' below) from config
   val kubernetesClustersToDeleteQuery =
     sql"""
-      SELECT kc.id, kc.googleProject
+      SELECT kc.id, kc.cloudContext, kc.cloudProvider
       FROM KUBERNETES_CLUSTER kc
       WHERE
         kc.status != "DELETED" AND
@@ -60,7 +62,7 @@ object DbReader {
   // TODO: Read the grace period (hardcoded to '1 HOUR' below) from config
   val applessNodepoolQuery =
     sql"""
-        SELECT np.id, np.nodepoolName, kc.clusterName, kc.googleProject, kc.location
+        SELECT np.id, np.nodepoolName, kc.clusterName, kc.cloudProvider, kc.cloudContext, kc.location
         FROM NODEPOOL AS np
         INNER JOIN KUBERNETES_CLUSTER AS kc
         ON np.clusterId = kc.id
