@@ -41,11 +41,11 @@ object DbReader {
         """.query[Runtime]
 
   val activeK8sClustersQuery =
-    sql"""select id, googleProject, location, clusterName from KUBERNETES_CLUSTER where status != "DELETED" and status != "ERROR";
+    sql"""select id, clusterName, cloudContext, location, cloudProvider from KUBERNETES_CLUSTER where status != "DELETED" and status != "ERROR";
         """.query[K8sClusterToScan]
 
   val activeNodepoolsQuery =
-    sql"""select np.id, cluster.googleProject, cluster.location, cluster.clusterName, np.nodepoolName from
+    sql"""select np.id, cluster.cloudProvider, cluster.cloudContext, cluster.location, cluster.clusterName, np.nodepoolName from
          	NODEPOOL AS np INNER JOIN KUBERNETES_CLUSTER AS cluster
          	on cluster.id = np.clusterId
          	where np.status != "DELETED" and np.status != "ERROR"
