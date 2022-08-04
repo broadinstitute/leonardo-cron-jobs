@@ -26,8 +26,14 @@ object NodepoolRemover {
           ctx <- ev.ask
           _ <-
             if (!isDryRun) {
-              val msg = DeleteNodepoolMeesage(n.nodepoolId, n.googleProject, Some(ctx))
-              deps.publisher.publishOne(msg)
+              n.cloudContext match {
+                case CloudContext.Gcp(value) =>
+                  val msg = DeleteNodepoolMeesage(n.nodepoolId, value, Some(ctx))
+                  deps.publisher.publishOne(msg)
+                case CloudContext.Azure(_) =>
+                  logger.warn("Azure is not supported yet") // TODO: IA-3623
+              }
+
             } else F.unit
         } yield Some(n)
     }

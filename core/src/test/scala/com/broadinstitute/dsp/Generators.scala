@@ -49,17 +49,33 @@ object Generators {
 
   val genKubernetesCluster: Gen[KubernetesCluster] = for {
     name <- Gen.uuid.map(x => KubernetesClusterName(x.toString))
+    cloudService <- genCloudService
     project <- genGoogleProject
+    azureCloudContext <- genAzureCloudContext
     location <- genLocation
-  } yield KubernetesCluster(name, project, location)
+  } yield cloudService match {
+    case CloudService.Gce      => KubernetesCluster(name, CloudContext.Gcp(project), location)
+    case CloudService.Dataproc => KubernetesCluster(name, CloudContext.Gcp(project), location)
+    case CloudService.AzureVM  => KubernetesCluster(name, CloudContext.Azure(azureCloudContext), location)
+  }
 
   val genNodepool: Gen[Nodepool] = for {
     id <- Gen.chooseNum(0, 100)
     nodepoolName <- genNodepoolName
     clusterName <- Gen.uuid.map(x => KubernetesClusterName(x.toString))
+    cloudService <- genCloudService
     project <- genGoogleProject
+    azureCloudContext <- genAzureCloudContext
     location <- genLocation
-  } yield Nodepool(id, nodepoolName, clusterName, project, location)
+  } yield cloudService match {
+    case CloudService.Gce => Nodepool(id, nodepoolName, clusterName, CloudContext.Gcp(project), location)
+
+    case CloudService.Dataproc => Nodepool(id, nodepoolName, clusterName, CloudContext.Gcp(project), location)
+
+    case CloudService.AzureVM =>
+      Nodepool(id, nodepoolName, clusterName, CloudContext.Azure(azureCloudContext), location)
+
+  }
 
   val genK8sClusterToScan: Gen[K8sClusterToScan] = for {
     id <- Gen.chooseNum(0, 100)
@@ -73,8 +89,14 @@ object Generators {
 
   val genKubernetesClusterToRemove: Gen[KubernetesClusterToRemove] = for {
     id <- Gen.chooseNum(0, 100)
-    googleProject <- genGoogleProject
-  } yield KubernetesClusterToRemove(id, googleProject)
+    cloudService <- genCloudService
+    project <- genGoogleProject
+    azureCloudContext <- genAzureCloudContext
+  } yield cloudService match {
+    case CloudService.Gce      => KubernetesClusterToRemove(id, CloudContext.Gcp(project))
+    case CloudService.Dataproc => KubernetesClusterToRemove(id, CloudContext.Gcp(project))
+    case CloudService.AzureVM  => KubernetesClusterToRemove(id, CloudContext.Azure(azureCloudContext))
+  }
 
   val genRuntimeWithWorkers: Gen[RuntimeWithWorkers] = for {
     runtime <- genDataprocRuntime

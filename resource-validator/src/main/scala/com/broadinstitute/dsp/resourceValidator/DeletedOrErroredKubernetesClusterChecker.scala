@@ -29,21 +29,26 @@ object DeletedOrErroredKubernetesClusterChecker {
       def checkKubernetesClusterStatus(cluster: KubernetesCluster, isDryRun: Boolean)(implicit
         ev: Ask[F, TraceId]
       ): F[Option[KubernetesCluster]] =
-        for {
-          clusterOpt <- deps.gkeService.getCluster(
-            KubernetesClusterId(cluster.googleProject, cluster.location, cluster.clusterName)
-          )
-          _ <- clusterOpt.traverse_ { _ =>
-            if (isDryRun) {
-              logger.warn(s"${cluster.toString} still exists in Google. It needs to be deleted")
-            } else {
-              logger.warn(s"${cluster.toString} still exists in Google. Going to delete") >> deps.gkeService
-                .deleteCluster(
-                  KubernetesClusterId(cluster.googleProject, cluster.location, cluster.clusterName)
-                )
-                .void
-            }
-          }
-        } yield clusterOpt.fold(none[KubernetesCluster])(_ => Some(cluster))
+        cluster.cloudContext match {
+          case CloudContext.Gcp(value) =>
+            for {
+              clusterOpt <- deps.gkeService.getCluster(
+                KubernetesClusterId(value, cluster.location, cluster.clusterName)
+              )
+              _ <- clusterOpt.traverse_ { _ =>
+                if (isDryRun) {
+                  logger.warn(s"${cluster.toString} still exists in Google. It needs to be deleted")
+                } else {
+                  logger.warn(s"${cluster.toString} still exists in Google. Going to delete") >> deps.gkeService
+                    .deleteCluster(
+                      KubernetesClusterId(value, cluster.location, cluster.clusterName)
+                    )
+                    .void
+                }
+              }
+            } yield clusterOpt.fold(none[KubernetesCluster])(_ => Some(cluster))
+          case CloudContext.Azure(_) => logger.warn("Azure is not supported yet").as(none)
+        }
+
     }
 }

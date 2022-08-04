@@ -38,13 +38,21 @@ object KubernetesClusterRemover {
       ): F[Option[KubernetesClusterToRemove]] =
         for {
           now <- F.realTimeInstant
-          isBillingEnabled <- deps.billingService.isBillingEnabled(c.googleProject)
-          _ <-
-            if (!isDryRun && isBillingEnabled) {
-              val msg = DeleteKubernetesClusterMessage(c.id, c.googleProject, TraceId(s"kubernetesClusterRemover-$now"))
-              deps.publisher.publishOne(msg)
-            } else F.unit
-          res = if (isBillingEnabled) Some(c) else None
+          res <- c.cloudContext match {
+            case CloudContext.Gcp(value) =>
+              for {
+                isBillingEnabled <- deps.billingService.isBillingEnabled(value)
+                _ <-
+                  if (!isDryRun && isBillingEnabled) {
+                    val msg =
+                      DeleteKubernetesClusterMessage(c.id, value, TraceId(s"kubernetesClusterRemover-$now"))
+                    deps.publisher.publishOne(msg)
+                  } else F.unit
+                res = if (isBillingEnabled) Some(c) else None
+              } yield res
+            case CloudContext.Azure(_) => logger.warn("Azure k8s clusterRemover is not supported yet").as(none)
+          }
+
         } yield res
     }
 }

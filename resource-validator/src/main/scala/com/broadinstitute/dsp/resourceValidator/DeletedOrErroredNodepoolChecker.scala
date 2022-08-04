@@ -33,24 +33,32 @@ object DeletedOrErroredNodepoolChecker {
       ): F[Option[Nodepool]] =
         for {
           now <- F.realTimeInstant
-          nodepoolOpt <- deps.gkeService.getNodepool(
-            NodepoolId(KubernetesClusterId(nodepool.googleProject, nodepool.location, nodepool.clusterName),
-                       nodepool.nodepoolName
-            )
-          )
-          _ <- nodepoolOpt.traverse_ { _ =>
-            if (isDryRun) {
-              logger.warn(s"${nodepool.toString} still exists in Google. It needs to be deleted")
-            } else {
-              val msg = DeleteNodepoolMeesage(nodepool.nodepoolId,
-                                              nodepool.googleProject,
-                                              Some(TraceId(s"DeletedOrErroredNodepoolChecker-$now"))
-              )
-              logger.warn(s"${nodepool.toString} still exists in Google. Going to delete") >> deps.publisher.publishOne(
-                msg
-              )
-            }
+          res <- nodepool.cloudContext match {
+            case CloudContext.Gcp(value) =>
+              for {
+                nodepoolOpt <- deps.gkeService.getNodepool(
+                  NodepoolId(KubernetesClusterId(value, nodepool.location, nodepool.clusterName), nodepool.nodepoolName)
+                )
+                _ <- nodepoolOpt.traverse_ { _ =>
+                  if (isDryRun) {
+                    logger.warn(s"${nodepool.toString} still exists in Google. It needs to be deleted")
+                  } else {
+                    val msg = DeleteNodepoolMeesage(nodepool.nodepoolId,
+                                                    value,
+                                                    Some(TraceId(s"DeletedOrErroredNodepoolChecker-$now"))
+                    )
+                    logger.warn(s"${nodepool.toString} still exists in Google. Going to delete") >> deps.publisher
+                      .publishOne(
+                        msg
+                      )
+                  }
+                }
+              } yield nodepoolOpt.fold(none[Nodepool])(_ => Some(nodepool))
+            case CloudContext.Azure(_) =>
+              logger
+                .warn("Deleting Azure Nodepool is not supported yet")
+                .as(none) // TODO: IA-3623
           }
-        } yield nodepoolOpt.fold(none[Nodepool])(_ => Some(nodepool))
+        } yield res
     }
 }
