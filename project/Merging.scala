@@ -5,6 +5,7 @@ object Merging {
     case PathList("io", "sundr", _ @_*)                   => MergeStrategy.first
     case PathList("org", "bouncycastle", _ @_*)           => MergeStrategy.first
     case PathList("com", "google", "code", "gson", _ @_*) => MergeStrategy.first
+    case PathList("META-INF", xs @ _*)                    => MergeStrategy.first
     case x if x.contains("io.netty.versions.properties")  => MergeStrategy.first
     case "reference.conf"                                 => MergeStrategy.concat
     case x if x.endsWith("/module-info.class") =>
