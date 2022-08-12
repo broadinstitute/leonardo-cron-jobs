@@ -177,7 +177,7 @@ object DbReaderImplicits {
             AzureCloudContext.fromString(cloudContextDb) match {
               case Left(value) =>
                 throw new RuntimeException(
-                  s"${value} is not valid azure cloud context"
+                  s"${value} is not a valid azure cloud context"
                 )
               case Right(value) =>
                 throw new RuntimeException(
