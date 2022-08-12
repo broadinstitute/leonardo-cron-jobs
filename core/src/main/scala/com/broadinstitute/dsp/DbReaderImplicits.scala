@@ -179,7 +179,7 @@ object DbReaderImplicits {
                 throw new RuntimeException(
                   s"${value} is not a valid azure cloud context"
                 )
-              case Right(value) =>
+              case Right(_) =>
                 throw new RuntimeException(
                   s"Azure is not supported yet" // TODO: IA-3623
                 )
