@@ -7,11 +7,8 @@ object Merging {
     case PathList("META-INF", "versions", "9", _ @_*)         => MergeStrategy.discard
     case PathList("META-INF", "versions", "11", _ @_*)        => MergeStrategy.discard
     case PathList("META-INF", "io.netty.versions.properties") => MergeStrategy.concat
+    case PathList("module-info.class")                        => MergeStrategy.concat
     case "reference.conf"                                     => MergeStrategy.concat
-    case x if x.endsWith("/module-info.class") =>
-      MergeStrategy.discard // JDK 8 does not use the file module-info.class so it is safe to discard the file.
-    case "module-info.class" =>
-      MergeStrategy.discard
-    case x => oldStrategy(x)
+    case x                                                    => oldStrategy(x)
   }
 }
