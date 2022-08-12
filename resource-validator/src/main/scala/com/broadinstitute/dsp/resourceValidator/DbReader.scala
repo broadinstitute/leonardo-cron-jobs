@@ -122,7 +122,7 @@ object DbReader {
   def impl[F[_]](xa: Transactor[F])(implicit F: Async[F]): DbReader[F] = new DbReader[F] {
 
     /**
-     * AOU reuses runtime names, hence exclude any aou runtimes that have the same names that're still "alive"
+     * AOU reuses runtime names, hence exclude any aou runtimes that have the same names that are still "alive"
      */
     override def getDeletedRuntimes: Stream[F, Runtime] =
       deletedRuntimeQuery.stream.transact(xa)
