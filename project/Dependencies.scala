@@ -1,12 +1,25 @@
 import sbt._
 
 object Dependencies {
-  val workbenchLibsHash = "0e748a2"
+  val workbenchLibsHash = "0545bbb3-SNAP"
   val workbenchGoogle2Version = s"0.24-${workbenchLibsHash}"
   val workbenchAzureVersion = s"0.1-${workbenchLibsHash}"
   val openTelemetryVersion = s"0.3-${workbenchLibsHash}"
   val doobieVersion = "1.0.0-RC2"
   val declineVersion = "2.2.0"
+
+  val excludeBouncyCastle = ExclusionRule(organization = "org.bouncycastle", name = s"bcprov-jdk15on")
+  val excludeBouncyCastleExt = ExclusionRule(organization = "org.bouncycastle", name = s"bcprov-ext-jdk15on")
+  val excludeBouncyCastleUtil = ExclusionRule(organization = "org.bouncycastle", name = s"bcutil-jdk15on")
+  val excludeBouncyCastlePkix = ExclusionRule(organization = "org.bouncycastle", name = s"bcpkix-jdk15on")
+  val excludeBigQuery = ExclusionRule(organization = "com.google.cloud", name = s"google-cloud-bigquery")
+
+  val excludeResourceManagerRelay =
+    ExclusionRule(organization = "com.azure.resourcemanager", name = s"azure-resourcemanager-relay")
+  val excludeResourceManagerNetwork =
+    ExclusionRule(organization = "com.azure.resourcemanager", name = s"azure-resourcemanager-network")
+  val excludeResourceManagerMsi =
+    ExclusionRule(organization = "com.azure.resourcemanager", name = s"azure-resourcemanager-msi")
 
   val core = Seq(
     "net.logstash.logback" % "logstash-logback-encoder" % "7.1.1",
@@ -22,22 +35,32 @@ object Dependencies {
     "com.monovore" %% "decline-effect" % declineVersion,
     "dev.optics" %% "monocle-core" % "3.1.0",
     "dev.optics" %% "monocle-macro" % "3.1.0",
-    "org.broadinstitute.dsde.workbench" %% "workbench-opentelemetry" % openTelemetryVersion,
+    "org.broadinstitute.dsde.workbench" %% "workbench-opentelemetry" % openTelemetryVersion excludeAll (excludeBouncyCastle,
+    excludeBouncyCastleExt,
+    excludeBouncyCastleUtil,
+    excludeBouncyCastlePkix),
     "org.broadinstitute.dsde.workbench" %% "workbench-opentelemetry" % openTelemetryVersion % Test classifier "tests",
-    "org.broadinstitute.dsde.workbench" %% "workbench-google2" % workbenchGoogle2Version,
+    "org.broadinstitute.dsde.workbench" %% "workbench-google2" % workbenchGoogle2Version excludeAll (excludeBouncyCastle,
+    excludeBouncyCastleExt,
+    excludeBouncyCastleUtil,
+    excludeBouncyCastlePkix,
+    excludeBigQuery),
     "org.broadinstitute.dsde.workbench" %% "workbench-google2" % workbenchGoogle2Version % Test classifier "tests",
-    "org.broadinstitute.dsde.workbench" %% "workbench-azure" % workbenchAzureVersion,
+    "org.broadinstitute.dsde.workbench" %% "workbench-azure" % workbenchAzureVersion excludeAll (excludeResourceManagerMsi, excludeResourceManagerRelay),
     "org.broadinstitute.dsde.workbench" %% "workbench-azure" % workbenchAzureVersion % Test classifier "tests",
     "org.scalatestplus" %% "scalacheck-1-15" % "3.2.11.0" % Test,
     "org.scalatestplus" %% "mockito-3-12" % "3.2.10.0" % Test, // https://github.com/scalatest/scalatestplus-selenium
     "ca.mrvisser" %% "sealerate" % "0.0.6"
   )
 
-  val resourceValidator = core
+  val resourceValidator =
+    core
 
-  val zombieMonitor = core
+  val zombieMonitor =
+    core
 
-  val janitor = core
+  val janitor =
+    core
 
   val nuker = core
 }
