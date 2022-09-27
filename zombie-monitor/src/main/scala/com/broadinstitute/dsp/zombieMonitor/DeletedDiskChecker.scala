@@ -31,15 +31,29 @@ object DeletedDiskChecker {
             case CloudContext.Azure(_) => F.raiseError(new NotImplementedError())
             case CloudContext.Gcp(p)   => F.pure(p)
           }
-          diskOpt <- deps.googleDiskService.getDisk(googleProject, disk.zone, disk.diskName)
-          _ <-
-            if (isDryRun) F.unit
-            else
-              diskOpt match {
-                case None    => dbReader.updateDiskStatus(disk.id)
-                case Some(_) => F.unit
+          getDiskRes <- deps.googleDiskService.getDisk(googleProject, disk.zone, disk.diskName).attempt
+          res <- getDiskRes match {
+            case Left(e) =>
+              val result = e match {
+                case ee: com.google.api.gax.rpc.PermissionDeniedException =>
+                  if (
+                    ee.getCause.getMessage.contains("Compute Engine API has not been used") || ee.getCause.getMessage
+                      .contains("This API method requires billing to be enabled")
+                  )
+                    if (isDryRun) F.unit else dbReader.updateDiskStatus(disk.id)
+                  else logger.error(e)(s"fail to get ${disk.diskName}")
+                case e => logger.error(e)(s"fail to get ${disk.diskName}")
               }
-        } yield diskOpt.fold[Option[Disk]](Some(disk))(_ => none[Disk])
+              result.as(Some(disk))
+            case Right(diskOpt) =>
+              if (isDryRun) F.pure(diskOpt.fold[Option[Disk]](Some(disk))(_ => none[Disk]))
+              else
+                diskOpt match {
+                  case None    => dbReader.updateDiskStatus(disk.id).as(Some(disk))
+                  case Some(_) => F.pure(none[Disk])
+                }
+          }
+        } yield res
 
       override def appName: String = zombieMonitor.appName
     }
