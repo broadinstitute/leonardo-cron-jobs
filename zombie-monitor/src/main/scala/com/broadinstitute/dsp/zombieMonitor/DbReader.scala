@@ -40,8 +40,12 @@ object DbReader {
             WHERE c1.status!="Deleted" AND c1.status!="Error" AND c1.createdDate < now() - INTERVAL 1 HOUR
         """.query[Runtime]
 
+  // Leonardo don't manage AKS cluster lifecycle; Hence ignoring Azure
   val activeK8sClustersQuery =
-    sql"""select id, clusterName, cloudContext, location, cloudProvider from KUBERNETES_CLUSTER where status != "DELETED" and status != "ERROR";
+    sql"""select id, clusterName, cloudContext, location, cloudProvider 
+          from 
+            KUBERNETES_CLUSTER 
+          where status != "DELETED" and status != "ERROR" and cloudProvider = "GCP";
         """.query[K8sClusterToScan]
 
   val activeNodepoolsQuery =
