@@ -49,7 +49,7 @@ object DbReader {
          	NODEPOOL AS np INNER JOIN KUBERNETES_CLUSTER AS cluster
          	on cluster.id = np.clusterId
          	where np.status != "DELETED" and np.status != "ERROR"
-         	""".query[NodepoolToScan]
+         	""".query[Option[NodepoolToScan]]
 
   def updateDiskStatusQuery(id: Int) =
     sql"""
@@ -125,7 +125,7 @@ object DbReader {
       markK8sClusterDeletedQuery(id.toInt).run.transact(xa).void
 
     override def getk8sNodepoolsToDeleteCandidate: Stream[F, NodepoolToScan] =
-      activeNodepoolsQuery.stream.transact(xa)
+      activeNodepoolsQuery.stream.unNone.transact(xa)
 
     override def markNodepoolAndAppDeleted(nodepoolId: Long): F[Unit] = {
       val res = for {
