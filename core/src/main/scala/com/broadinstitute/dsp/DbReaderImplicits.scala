@@ -169,7 +169,7 @@ object DbReaderImplicits {
         }
     }
 
-  implicit val nodepoolToScanRead: Read[NodepoolToScan] =
+  implicit val nodepoolToScanRead: Read[Option[NodepoolToScan]] =
     Read[(Long, CloudProvider, String, Location, KubernetesClusterName, NodepoolName)].map {
       case (id, cloudProvider, cloudContextDb, location, clusterName, nodepoolName) =>
         cloudProvider match {
@@ -179,15 +179,16 @@ object DbReaderImplicits {
                 throw new RuntimeException(
                   s"${value} is not a valid azure cloud context"
                 )
-              case Right(_) =>
-                throw new RuntimeException(
-                  s"Azure is not supported yet" // TODO: IA-3623
-                )
+              case Right(x) =>
+                // Leonardo doesn't manage nodepool in the case of Azure. Hence ignoring the nodepool if it's Azure
+                none[NodepoolToScan]
             }
           case CloudProvider.Gcp =>
-            NodepoolToScan(
-              id,
-              NodepoolId(KubernetesClusterId(GoogleProject(cloudContextDb), location, clusterName), nodepoolName)
+            Some(
+              NodepoolToScan(
+                id,
+                NodepoolId(KubernetesClusterId(GoogleProject(cloudContextDb), location, clusterName), nodepoolName)
+              )
             )
         }
     }
