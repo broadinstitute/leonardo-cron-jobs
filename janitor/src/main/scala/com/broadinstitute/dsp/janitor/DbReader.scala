@@ -2,12 +2,15 @@ package com.broadinstitute.dsp
 package janitor
 
 import cats.effect.Async
+import com.broadinstitute.dsp.DbReaderImplicits.{cloudProviderMeta, kubernetesClusterToRemoveRead, nodepoolRead}
 import doobie._
 import doobie.implicits._
 import fs2.Stream
+import org.broadinstitute.dsde.workbench.azure.{AzureCloudContext, ContainerName}
+import cats.implicits._
 import org.broadinstitute.dsde.workbench.model.google.{GcsBucketName, GoogleProject}
-import com.broadinstitute.dsp.DbReaderImplicits.kubernetesClusterToRemoveRead
-import com.broadinstitute.dsp.DbReaderImplicits.nodepoolRead
+
+import java.sql.SQLDataException
 
 trait DbReader[F[_]] {
   def getKubernetesClustersToDelete: Stream[F, KubernetesClusterToRemove]
@@ -16,6 +19,41 @@ trait DbReader[F[_]] {
 }
 
 object DbReader {
+
+  implicit val bucketToRemoveRead: Read[BucketToRemove] =
+    Read[(CloudProvider, String, Option[String])].map { case (cloudProvider, cloudContextDb, stagingBucketOpt) =>
+      cloudProvider match {
+        case CloudProvider.Azure =>
+          AzureCloudContext.fromString(cloudContextDb) match {
+            case Left(value) =>
+              throw new RuntimeException(
+                s"${value} is not valid azure cloud context"
+              )
+            case Right(azureContext) =>
+              stagingBucketOpt match {
+                case Some(value) =>
+                  val res = for {
+                    splittedString <- Either.catchNonFatal(value.split("/"))
+                    stagingBucket <- Either.catchNonFatal(splittedString(1)) match {
+                      case Left(e) =>
+                        new SQLDataException(s"invalid staging bucket value for Azure due to ${e.getMessage}").asLeft
+                      case Right(value) =>
+                        AzureStagingBucket(StorageAccountName(splittedString(0)), ContainerName(value)).asRight
+                    }
+                  } yield BucketToRemove.Azure(azureContext, Some(stagingBucket))
+                  res match {
+                    case Left(value) => throw value
+                    case Right(btr)  => btr: BucketToRemove
+                  }
+                case None => BucketToRemove.Azure(azureContext, None)
+              }
+
+          }
+        case CloudProvider.Gcp =>
+          BucketToRemove.Gcp(GoogleProject(cloudContextDb), stagingBucketOpt.map(GcsBucketName))
+      }
+    }
+
   implicit def apply[F[_]](implicit ev: DbReader[F]): DbReader[F] = ev
 
   /**
@@ -94,7 +132,7 @@ object DbReader {
    */
   val stagingBucketsToDeleteQuery =
     sql"""
-        SELECT cloudContext, stagingBucket
+        SELECT cloudProvider, cloudContext, stagingBucket
         FROM CLUSTER
         WHERE
           status="Deleted" AND
@@ -115,6 +153,13 @@ object DbReader {
   }
 }
 
-final case class BucketToRemove(googleProject: GoogleProject, bucket: Option[GcsBucketName]) {
-  override def toString: String = s"${googleProject.value},${bucket.getOrElse("null")}"
+sealed trait BucketToRemove extends Serializable with Product
+object BucketToRemove {
+  final case class Gcp(googleProject: GoogleProject, bucket: Option[GcsBucketName]) extends BucketToRemove {
+    override def toString: String = s"${googleProject.value},${bucket.getOrElse("null")}"
+  }
+  final case class Azure(azureCloudContext: AzureCloudContext, bucket: Option[AzureStagingBucket])
+      extends BucketToRemove {
+    override def toString: String = s"${azureCloudContext.asString},${bucket.getOrElse("null")}"
+  }
 }

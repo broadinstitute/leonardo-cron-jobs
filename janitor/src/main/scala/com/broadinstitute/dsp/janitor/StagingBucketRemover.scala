@@ -29,16 +29,19 @@ object StagingBucketRemover {
       override def checkResource(a: BucketToRemove, isDryRun: Boolean)(implicit
         ev: Ask[F, TraceId]
       ): F[Option[BucketToRemove]] =
-        a.bucket
-          .flatTraverse { b =>
-            deps.storageService.deleteBucket(a.googleProject, b, isRecursive = true).compile.last.map {
-              // deleteBucket() will return `true` if the bucket is deleted; else return `false`
-              // We only need to report buckets that are actually being deleted.
-              case Some(true)  => Some(a)
-              case Some(false) => None
-              case None        => None
+        a match {
+          case BucketToRemove.Gcp(googleProject, bucketOpt) =>
+            bucketOpt.flatTraverse { b =>
+              deps.storageService.deleteBucket(googleProject, b, isRecursive = true).compile.last.map {
+                // deleteBucket() will return `true` if the bucket is deleted; else return `false`
+                // We only need to report buckets that are actually being deleted.
+                case Some(true)  => Some(a)
+                case Some(false) => None
+                case None        => None
+              }
             }
-          }
+          case BucketToRemove.Azure(_, _) => F.pure(None) // TODO: implement it for Azure as well
+        }
     }
 }
 

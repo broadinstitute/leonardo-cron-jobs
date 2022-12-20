@@ -40,8 +40,12 @@ object DbReader {
             WHERE c1.status!="Deleted" AND c1.status!="Error" AND c1.createdDate < now() - INTERVAL 1 HOUR
         """.query[Runtime]
 
+  // Leonardo doesn't manage AKS cluster lifecycle; Hence ignoring Azure
   val activeK8sClustersQuery =
-    sql"""select id, clusterName, cloudContext, location, cloudProvider from KUBERNETES_CLUSTER where status != "DELETED" and status != "ERROR";
+    sql"""select id, clusterName, cloudContext, location, cloudProvider 
+          from 
+            KUBERNETES_CLUSTER 
+          where status != "DELETED" and status != "ERROR" and cloudProvider = "GCP";
         """.query[K8sClusterToScan]
 
   val activeNodepoolsQuery =
@@ -49,7 +53,7 @@ object DbReader {
          	NODEPOOL AS np INNER JOIN KUBERNETES_CLUSTER AS cluster
          	on cluster.id = np.clusterId
          	where np.status != "DELETED" and np.status != "ERROR"
-         	""".query[NodepoolToScan]
+         	""".query[Option[NodepoolToScan]]
 
   def updateDiskStatusQuery(id: Int) =
     sql"""
@@ -125,7 +129,7 @@ object DbReader {
       markK8sClusterDeletedQuery(id.toInt).run.transact(xa).void
 
     override def getk8sNodepoolsToDeleteCandidate: Stream[F, NodepoolToScan] =
-      activeNodepoolsQuery.stream.transact(xa)
+      activeNodepoolsQuery.stream.unNone.transact(xa)
 
     override def markNodepoolAndAppDeleted(nodepoolId: Long): F[Unit] = {
       val res = for {

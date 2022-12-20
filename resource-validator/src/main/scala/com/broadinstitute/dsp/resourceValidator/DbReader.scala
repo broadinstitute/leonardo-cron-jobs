@@ -92,18 +92,20 @@ object DbReader {
              )"""
       .query[Runtime]
 
+  // Leonardo doesn't manage cluster for Azure. Hence excluding AKS clusters
   val deletedAndErroredKubernetesClusterQuery =
     sql"""SELECT kc1.clusterName, cloudContext, location, cloudProvider
           FROM KUBERNETES_CLUSTER as kc1
-          WHERE kc1.status="DELETED" OR kc1.status="ERROR"
+          WHERE (kc1.status="DELETED" OR kc1.status="ERROR") AND kc1.cloudProvider = "GCP"
           """
       .query[KubernetesCluster]
 
+  // Leonardo doesn't manage nodepool for Azure. Hence excluding Azure nodepools
   val deletedAndErroredNodepoolQuery =
     sql"""SELECT np. id, np.nodepoolName, kc.clusterName, kc.cloudProvider, kc.cloudContext, kc.location
          FROM NODEPOOL AS np
          INNER JOIN KUBERNETES_CLUSTER AS kc ON np.clusterId = kc.id
-         WHERE np.status="DELETED" OR np.status="ERROR"
+         WHERE (np.status="DELETED" OR np.status="ERROR") AND kc.cloudProvider = "GCP"
          """
       .query[Nodepool]
 
