@@ -54,7 +54,7 @@ final class DbReaderSpec extends AnyFlatSpec with CronJobsTestSuite with IOCheck
       val res = transactorResource.use { implicit xa =>
         val dbReader = DbReader.impl(xa)
 
-        val oldTimeStamp = (new GregorianCalendar(2020, Calendar.OCTOBER, 1).getTime()).toInstant
+        val oldTimeStamp = new GregorianCalendar(2020, Calendar.OCTOBER, 1).getTime().toInstant
         for {
           runtimeConfigId <- insertRuntimeConfig(runtime.cloudService)
           id <- insertRuntime(runtime, runtimeConfigId, oldTimeStamp)

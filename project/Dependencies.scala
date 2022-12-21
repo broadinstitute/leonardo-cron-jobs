@@ -6,7 +6,7 @@ object Dependencies {
   val workbenchAzureVersion = s"0.1-${workbenchLibsHash}"
   val openTelemetryVersion = s"0.3-${workbenchLibsHash}"
   val doobieVersion = "1.0.0-RC2"
-  val declineVersion = "2.2.0"
+  val declineVersion = "2.4.1"
 
   val excludeBouncyCastle = ExclusionRule(organization = "org.bouncycastle", name = s"bcprov-jdk15on")
   val excludeBouncyCastleExt = ExclusionRule(organization = "org.bouncycastle", name = s"bcprov-ext-jdk15on")
@@ -22,15 +22,15 @@ object Dependencies {
     ExclusionRule(organization = "com.azure.resourcemanager", name = s"azure-resourcemanager-msi")
 
   val core = Seq(
-    "net.logstash.logback" % "logstash-logback-encoder" % "7.1.1",
-    "ch.qos.logback" % "logback-classic" % "1.2.11",
-    "ch.qos.logback" % "logback-core" % "1.2.11",
+    "net.logstash.logback" % "logstash-logback-encoder" % "7.2",
+    "ch.qos.logback" % "logback-classic" % "1.4.5",
+    "ch.qos.logback" % "logback-core" % "1.4.5",
     "org.tpolecat" %% "doobie-core" % doobieVersion,
     "org.tpolecat" %% "doobie-hikari" % doobieVersion,
     "org.tpolecat" %% "doobie-scalatest" % doobieVersion % Test,
-    "com.github.pureconfig" %% "pureconfig" % "0.17.1",
-    "mysql" % "mysql-connector-java" % "8.0.29",
-    "org.scalatest" %% "scalatest" % "3.2.11" % Test,
+    "com.github.pureconfig" %% "pureconfig" % "0.17.2",
+    "mysql" % "mysql-connector-java" % "8.0.31",
+    "org.scalatest" %% "scalatest" % "3.2.14" % Test,
     "com.monovore" %% "decline" % declineVersion,
     "com.monovore" %% "decline-effect" % declineVersion,
     "dev.optics" %% "monocle-core" % "3.1.0",
