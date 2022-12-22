@@ -16,6 +16,7 @@ trait DbReader[F[_]] {
   def getKubernetesClustersToDelete: Stream[F, KubernetesClusterToRemove]
   def getNodepoolsToDelete: Stream[F, Nodepool]
   def getStagingBucketsToDelete: Stream[F, BucketToRemove]
+  def getStuckAppToReport: Stream[F, AppToReport]
 }
 
 object DbReader {
@@ -141,6 +142,25 @@ object DbReader {
         """
       .query[BucketToRemove]
 
+  /**
+   * We want to flag apps that have been stuck in creating for more than 2 hours and report them to the user
+   * to avoid hidden costs. Since apps cannot be deleted while creating, there is not much more we can do other
+   * than report.
+   * We sinilarily want to flag apps that have been stuck in deleting for more than 1 hour.
+   *
+   * Note that there are no `Creating` status for apps, only `STARTING`, `PRESTARTING`, `PRECREATING`, or `PROVISIONING`
+   */
+  val appStuckQuery =
+    sql"""
+        SELECT id, appName, status, createdDate
+        FROM APP
+        WHERE
+          (status in ("STARTING", "PRESTARTING", "PRECREATING", "PROVISIONING") AND createdDate < now() - INTERVAL 2 HOUR) OR
+          (status="DELETING" ANDvcreatedDate < now() - INTERVAL 1 HOUR);
+        """
+      .query[AppToReport]
+
+
   def impl[F[_]](xa: Transactor[F])(implicit F: Async[F]): DbReader[F] = new DbReader[F] {
     override def getKubernetesClustersToDelete: Stream[F, KubernetesClusterToRemove] =
       kubernetesClustersToDeleteQuery.stream.transact(xa)
@@ -150,6 +170,9 @@ object DbReader {
 
     override def getStagingBucketsToDelete: Stream[F, BucketToRemove] =
       stagingBucketsToDeleteQuery.stream.transact(xa)
+
+    override def getStuckAppToReport: Stream[F, AppToReport] =
+      appStuckQuery.stream.transact(xa)
   }
 }
 
@@ -163,3 +186,9 @@ object BucketToRemove {
     override def toString: String = s"${azureCloudContext.asString},${bucket.getOrElse("null")}"
   }
 }
+
+final case class AppToReport(id: Long, name: Long, status: String, createdDate: String){
+  override def toString: String = s"App id:${id}, App name:${name}, App status:${status}, App creation time: ${createdDate}"
+}
+
+
