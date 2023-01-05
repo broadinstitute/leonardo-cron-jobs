@@ -160,7 +160,6 @@ object DbReader {
         """
       .query[AppToReport]
 
-
   def impl[F[_]](xa: Transactor[F])(implicit F: Async[F]): DbReader[F] = new DbReader[F] {
     override def getKubernetesClustersToDelete: Stream[F, KubernetesClusterToRemove] =
       kubernetesClustersToDeleteQuery.stream.transact(xa)
@@ -187,8 +186,7 @@ object BucketToRemove {
   }
 }
 
-final case class AppToReport(id: Long, name: Long, status: String, createdDate: String){
-  override def toString: String = s"App id:${id}, App name:${name}, App status:${status}, App creation time: ${createdDate}"
+final case class AppToReport(id: Long, name: Long, status: String, createdDate: String) {
+  override def toString: String =
+    s"App id:${id}, App name:${name}, App status:${status}, App creation time: ${createdDate}"
 }
-
-
