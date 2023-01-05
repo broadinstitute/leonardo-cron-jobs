@@ -39,7 +39,7 @@ trait CheckRunner[F[_], A] {
         if (isDryRun)
           GcsBlobName(s"${appName}/${configs.checkType}/dry-run-${now}")
         else GcsBlobName(s"${appName}/${configs.checkType}/action-${now}")
-      _ <- (resourceToScan
+      _ <- resourceToScan
         .parEvalMapUnordered(50)(rt => checkResource(rt, isDryRun).handleErrorWith(_ => F.pure(None)))
         .unNone
         .map(_.toString)
@@ -52,7 +52,7 @@ trait CheckRunner[F[_], A] {
             dependencies.reportDestinationBucket,
             blobName
           )
-        ))
+        )
         .compile
         .drain
       blob <- dependencies.storageService.getBlob(dependencies.reportDestinationBucket, blobName).compile.last
