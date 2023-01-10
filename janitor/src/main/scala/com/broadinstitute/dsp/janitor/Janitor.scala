@@ -54,7 +54,8 @@ object Janitor {
 
       reportStuckApps =
         if (shouldCheckAll || shouldCheckStuckAppsToBeReported)
-          Stream.eval(StuckAppReporter.impl(deps.dbReader).run(isDryRun))
+          Stream.eval(StuckAppReporter.impl(deps.dbReader, deps.leoPublisherDeps).run(isDryRun))
+        else Stream.empty
 
       processes = Stream(removeKubernetesClusters, removeNodepools, removeStagingBuckets, reportStuckApps).covary[F]
 

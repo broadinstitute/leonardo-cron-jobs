@@ -21,18 +21,22 @@ object Main
       Opts.flag("checkNodepoolsToRemove", "check nodepools that should be removed").orFalse
     val shouldCheckStagingBucketsToBeRemoved =
       Opts.flag("checkStagingBucketsToRemove", "check staging buckets that should be removed").orFalse
+    val shouldCheckStuckAppsToBeReported =
+      Opts.flag("checkStuckAppsToBeReported", "check apps that are stuck in creating or deleting status").orFalse
 
     (enableDryRun,
      shouldCheckAll,
      shouldCheckKubernetesClustersToBeRemoved,
      shouldCheckNodepoolsToBeRemoved,
-     shouldCheckStagingBucketsToBeRemoved
+     shouldCheckStagingBucketsToBeRemoved,
+     shouldCheckStuckAppsToBeReported
     ).mapN {
       (dryRun,
        checkAll,
        shouldCheckKubernetesClustersToBeRemoved,
        shouldCheckNodepoolsToBeRemoved,
-       shouldCheckStagingBucketsToBeRemoved
+       shouldCheckStagingBucketsToBeRemoved,
+       shouldCheckStuckAppsToBeReported
       ) =>
         Janitor
           .run[IO](
@@ -40,7 +44,8 @@ object Main
             shouldCheckAll = checkAll,
             shouldCheckKubernetesClustersToBeRemoved = shouldCheckKubernetesClustersToBeRemoved,
             shouldCheckNodepoolsToBeRemoved = shouldCheckNodepoolsToBeRemoved,
-            shouldCheckStagingBucketsToBeRemoved = shouldCheckStagingBucketsToBeRemoved
+            shouldCheckStagingBucketsToBeRemoved = shouldCheckStagingBucketsToBeRemoved,
+            shouldCheckStuckAppsToBeReported = shouldCheckStuckAppsToBeReported
           )
           .compile
           .drain
