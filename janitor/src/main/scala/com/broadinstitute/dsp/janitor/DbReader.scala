@@ -146,17 +146,17 @@ object DbReader {
    * We want to flag apps that have been stuck in creating for more than 2 hours and report them to the user
    * to avoid hidden costs. Since apps cannot be deleted while creating, there is not much more we can do other
    * than report.
-   * We sinilarily want to flag apps that have been stuck in deleting for more than 1 hour.
+   * We similarly want to flag apps that have been stuck in deleting for more than 1 hour.
    *
-   * Note that there are no `Creating` status for apps, only `STARTING`, `PRESTARTING`, `PRECREATING`, or `PROVISIONING`
+   * Note that there are no `Creating` status for apps, it corresponds to `PRECREATING`, or `PROVISIONING`
    */
   val appStuckQuery =
     sql"""
         SELECT id, appName, status, createdDate
         FROM APP
         WHERE
-          (status in ("STARTING", "PRESTARTING", "PRECREATING", "PROVISIONING") AND createdDate < now() - INTERVAL 2 HOUR) OR
-          (status="DELETING" ANDvcreatedDate < now() - INTERVAL 1 HOUR);
+          (status in ("PRECREATING", "PROVISIONING") AND createdDate < now() - INTERVAL 2 HOUR) OR
+          (status="DELETING" AND createdDate < now() - INTERVAL 1 HOUR);
         """
       .query[AppToReport]
 

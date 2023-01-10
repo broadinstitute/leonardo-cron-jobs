@@ -25,7 +25,8 @@ object Janitor {
                                  shouldCheckAll: Boolean,
                                  shouldCheckKubernetesClustersToBeRemoved: Boolean,
                                  shouldCheckNodepoolsToBeRemoved: Boolean,
-                                 shouldCheckStagingBucketsToBeRemoved: Boolean
+                                 shouldCheckStagingBucketsToBeRemoved: Boolean,
+                                 shouldCheckStuckAppsToBeReported: Boolean
   ): Stream[F, Nothing] = {
     implicit val logger =
       StructuredLogger.withContext[F](Slf4jLogger.getLogger[F])(loggingContext)
@@ -51,9 +52,13 @@ object Janitor {
           Stream.eval(StagingBucketRemover.impl(deps.dbReader, checkRunnerDep).run(isDryRun))
         else Stream.empty
 
-      processes = Stream(removeKubernetesClusters, removeNodepools, removeStagingBuckets).covary[F]
+      reportStuckApps =
+        if (shouldCheckAll || shouldCheckStuckAppsToBeReported)
+          Stream.eval(StuckAppReporter.impl(deps.dbReader).run(isDryRun))
 
-      _ <- processes.parJoin(3) // Number of checkers in 'processes'
+      processes = Stream(removeKubernetesClusters, removeNodepools, removeStagingBuckets, reportStuckApps).covary[F]
+
+      _ <- processes.parJoin(4) // Number of checkers in 'processes'
     } yield ExitCode.Success
   }.drain
 
