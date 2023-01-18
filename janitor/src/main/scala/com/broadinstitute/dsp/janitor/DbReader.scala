@@ -170,7 +170,7 @@ object BucketToRemove {
   }
 }
 
-final case class AppToReport(id: Long, name: Long, status: String, createdDate: String) {
+final case class AppToReport(id: Long, name: AppName, status: String, createdDate: String) {
   override def toString: String =
     s"App id:${id}, App name:${name}, App status:${status}, App creation time: ${createdDate}"
 }

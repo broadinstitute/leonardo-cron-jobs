@@ -14,15 +14,17 @@ leonardo-pubsub {
   topic-name = "leonardo-pubsub"
 }
 
-report-destination-bucket = "liz-baldo-dev-testing"
+report-destination-bucket = "replace me" # if you're using leonardo's dev SA for local testing, make sure to give leonardo's dev SA write permission to this bucket
+
 
 runtime-checker-config {
   path-to-credential = ${path-to-credential}
   report-destination-bucket = ${report-destination-bucket}
 
+# Look into the azure app-registration section from the leonardo.conf file in the leonardo repo
   azure-app-registration {
-   client-id = "bce2f808-21ea-478f-b4f6-91896d1424aa"
-   client-secret = "MVs7Q~D4xNQ3s3Y1H8VoJuFhEtwwFrBvVCJnS"
-   managed-app-tenant-id = "fad90753-2022-4456-9b0a-c7e5b934e408"
+   client-id = "replace me"
+   client-secret = "replace me"
+   managed-app-tenant-id = "replace me"
   }
 }
