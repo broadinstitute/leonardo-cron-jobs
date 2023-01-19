@@ -27,4 +27,8 @@ final class DbQueryBuilderSpec extends AnyFlatSpec with CronJobsTestSuite with I
   it should "build stagingBucketsToDeleteQuery properly" taggedAs DbTest in {
     check(DbReader.stagingBucketsToDeleteQuery)
   }
+
+  it should "build appStuckQuery properly" taggedAs DbTest in {
+    check(DbReader.appStuckQuery)
+  }
 }
