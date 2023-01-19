@@ -19,7 +19,8 @@ object StuckAppReporter {
 
       override def dependencies: CheckRunnerDeps[F] = deps.checkRunnerDeps
 
-      override def resourceToScan: fs2.Stream[F, AppToReport] = dbReader.getStuckAppToReport
+      override def resourceToScan: fs2.Stream[F, AppToReport] =
+        fs2.Stream.eval(F.pure(AppToReport(10L, "dummyapp", "stuck", "now"))) // dbReader.getStuckAppToReport
 
       override def checkResource(a: AppToReport, isDryRun: Boolean)(implicit
         ev: Ask[F, TraceId]
