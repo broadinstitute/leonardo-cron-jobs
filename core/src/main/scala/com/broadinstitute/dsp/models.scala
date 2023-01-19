@@ -148,8 +148,6 @@ final case class ServiceData(version: Option[String]) {
 final case class Prometheus(port: Int)
 
 final case class StorageAccountName(value: String) extends AnyVal
-final case class AzureStagingBucket(storageAccount: StorageAccountName,
-                                    storageContainerName: org.broadinstitute.dsde.workbench.azure.ContainerName
-) {
-  def asString: String = s"${storageAccount.value}/${storageContainerName.value}"
+final case class AzureStagingBucket(storageContainerName: org.broadinstitute.dsde.workbench.azure.ContainerName) {
+  def asString: String = s"${storageContainerName.value}"
 }

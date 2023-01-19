@@ -7,10 +7,7 @@ import doobie._
 import doobie.implicits._
 import fs2.Stream
 import org.broadinstitute.dsde.workbench.azure.{AzureCloudContext, ContainerName}
-import cats.implicits._
 import org.broadinstitute.dsde.workbench.model.google.{GcsBucketName, GoogleProject}
-
-import java.sql.SQLDataException
 
 trait DbReader[F[_]] {
   def getKubernetesClustersToDelete: Stream[F, KubernetesClusterToRemove]
@@ -31,21 +28,8 @@ object DbReader {
               )
             case Right(azureContext) =>
               stagingBucketOpt match {
-                case Some(value) =>
-                  val res = for {
-                    splittedString <- Either.catchNonFatal(value.split("/"))
-                    stagingBucket <- Either.catchNonFatal(splittedString(1)) match {
-                      case Left(e) =>
-                        new SQLDataException(s"invalid staging bucket value for Azure due to ${e.getMessage}").asLeft
-                      case Right(value) =>
-                        AzureStagingBucket(StorageAccountName(splittedString(0)), ContainerName(value)).asRight
-                    }
-                  } yield BucketToRemove.Azure(azureContext, Some(stagingBucket))
-                  res match {
-                    case Left(value) => throw value
-                    case Right(btr)  => btr: BucketToRemove
-                  }
-                case None => BucketToRemove.Azure(azureContext, None)
+                case Some(value) => BucketToRemove.Azure(azureContext, Some(AzureStagingBucket(ContainerName(value))))
+                case None        => BucketToRemove.Azure(azureContext, None)
               }
 
           }
