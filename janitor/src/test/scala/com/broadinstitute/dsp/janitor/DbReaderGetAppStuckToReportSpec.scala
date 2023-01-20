@@ -1,7 +1,7 @@
 package com.broadinstitute.dsp
 package janitor
 
-import com.broadinstitute.dsp.DBTestHelper.{
+import com.broadinstitute.dsp.DbTestHelper.{
   insertApp,
   insertDisk,
   insertK8sCluster,
