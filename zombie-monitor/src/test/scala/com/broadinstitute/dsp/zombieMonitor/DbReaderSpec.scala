@@ -3,7 +3,7 @@ package zombieMonitor
 
 import cats.effect.IO
 import cats.effect.unsafe.implicits.global
-import com.broadinstitute.dsp.DBTestHelper._
+import com.broadinstitute.dsp.DbTestHelper._
 import com.broadinstitute.dsp.Generators._
 import doobie.implicits._
 import doobie.scalatest.IOChecker
