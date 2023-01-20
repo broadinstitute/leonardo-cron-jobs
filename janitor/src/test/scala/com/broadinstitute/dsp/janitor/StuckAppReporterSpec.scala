@@ -13,6 +13,9 @@ import org.broadinstitute.dsde.workbench.openTelemetry.FakeOpenTelemetryMetricsI
 import org.scalatest.flatspec.AnyFlatSpec
 import cats.effect.unsafe.implicits.global
 
+import java.sql.Timestamp
+import java.time.LocalDateTime
+
 final class StuckAppReporterSpec extends AnyFlatSpec with CronJobsTestSuite {
   it should "Only log apps detected to be stuck in deleting or creating status when dryRun is False" in {
     forAll { (dryRun: Boolean) =>
@@ -20,7 +23,7 @@ final class StuckAppReporterSpec extends AnyFlatSpec with CronJobsTestSuite {
         10L,
         "test_app_name",
         "DELETING",
-        "test_creation_date"
+        Timestamp.valueOf(LocalDateTime.now())
       )
       val dbReader = new FakeDbReader {
         override def getStuckAppToReport: Stream[IO, AppToReport] =
