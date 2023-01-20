@@ -12,7 +12,7 @@ import org.scalatest.Tag
 import DbReaderImplicits._
 import java.time.Instant
 
-object DBTestHelper {
+object DbTestHelper {
   implicit val cloudServicePut: Put[CloudService] = Put[String].contramap(cloudService => cloudService.asString)
   val zoneName = ZoneName("us-central1-a")
   val regionName = RegionName("us-central1")

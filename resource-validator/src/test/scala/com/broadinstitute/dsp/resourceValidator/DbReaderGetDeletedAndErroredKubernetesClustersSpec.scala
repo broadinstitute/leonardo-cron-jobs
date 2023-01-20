@@ -1,7 +1,7 @@
 package com.broadinstitute.dsp
 package resourceValidator
 
-import com.broadinstitute.dsp.DBTestHelper.{insertK8sCluster, _}
+import com.broadinstitute.dsp.DbTestHelper.{insertK8sCluster, _}
 import com.broadinstitute.dsp.Generators._
 import doobie.scalatest.IOChecker
 import org.broadinstitute.dsde.workbench.google2.GKEModels.{KubernetesClusterId, KubernetesClusterName}

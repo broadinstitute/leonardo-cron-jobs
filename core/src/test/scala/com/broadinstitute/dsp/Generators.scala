@@ -18,9 +18,9 @@ object Generators {
     status <- possibleStatuses.fold(Gen.oneOf("Running", "Creating", "Deleted", "Error"))(s => Gen.oneOf(s.toList))
   } yield cloudService match {
     case CloudService.Dataproc =>
-      Runtime.Dataproc(id, project, runtimeName, cloudService, status, DBTestHelper.regionName)
+      Runtime.Dataproc(id, project, runtimeName, cloudService, status, DbTestHelper.regionName)
     case CloudService.Gce =>
-      Runtime.Gce(id, project, runtimeName, cloudService, status, DBTestHelper.zoneName)
+      Runtime.Gce(id, project, runtimeName, cloudService, status, DbTestHelper.zoneName)
     case CloudService.AzureVM =>
       Runtime.AzureVM(id, CloudContext.Azure(azureCloudContext), runtimeName, cloudService, status)
   }
@@ -29,7 +29,7 @@ object Generators {
     project <- genGoogleProject
     runtimeName <- Gen.uuid.map(_.toString)
     status <- Gen.oneOf("Running", "Creating", "Deleted", "Error")
-  } yield Runtime.Dataproc(id, project, runtimeName, CloudService.Dataproc, status, DBTestHelper.regionName)
+  } yield Runtime.Dataproc(id, project, runtimeName, CloudService.Dataproc, status, DbTestHelper.regionName)
   val genDisk: Gen[Disk] = for {
     id <- Gen.chooseNum(0, 100)
     project <- genGoogleProject

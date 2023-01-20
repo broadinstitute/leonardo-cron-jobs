@@ -2,7 +2,7 @@ package com.broadinstitute.dsp
 package resourceValidator
 
 import cats.effect.unsafe.implicits.global
-import com.broadinstitute.dsp.DBTestHelper.{
+import com.broadinstitute.dsp.DbTestHelper.{
   getNodepoolName,
   insertK8sCluster,
   insertNodepool,
