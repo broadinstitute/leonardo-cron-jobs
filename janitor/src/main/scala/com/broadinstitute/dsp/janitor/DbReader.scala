@@ -5,9 +5,12 @@ import cats.effect.Async
 import com.broadinstitute.dsp.DbReaderImplicits.{cloudProviderMeta, kubernetesClusterToRemoveRead, nodepoolRead}
 import doobie._
 import doobie.implicits._
+import doobie.implicits.javasql._ // Mapping for temporal types require a specific import https://github.com/tpolecat/doobie/releases/tag/v0.8.8
 import fs2.Stream
 import org.broadinstitute.dsde.workbench.azure.{AzureCloudContext, ContainerName}
 import org.broadinstitute.dsde.workbench.model.google.{GcsBucketName, GoogleProject}
+
+import java.sql.{SQLDataException, Timestamp}
 
 trait DbReader[F[_]] {
   def getKubernetesClustersToDelete: Stream[F, KubernetesClusterToRemove]
@@ -170,7 +173,7 @@ object BucketToRemove {
   }
 }
 
-final case class AppToReport(id: Long, name: String, status: String, createdDate: String) {
+final case class AppToReport(id: Long, name: String, status: String, createdDate: Timestamp) {
   override def toString: String =
     s"App id:${id}, App name:${name}, App status:${status}, App creation time: ${createdDate}"
 }
