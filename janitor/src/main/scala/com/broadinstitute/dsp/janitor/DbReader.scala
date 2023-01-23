@@ -10,7 +10,7 @@ import fs2.Stream
 import org.broadinstitute.dsde.workbench.azure.{AzureCloudContext, ContainerName}
 import org.broadinstitute.dsde.workbench.model.google.{GcsBucketName, GoogleProject}
 
-import java.sql.{SQLDataException, Timestamp}
+import java.sql.Timestamp
 
 trait DbReader[F[_]] {
   def getKubernetesClustersToDelete: Stream[F, KubernetesClusterToRemove]
