@@ -7,9 +7,6 @@ import cats.implicits._
 import org.broadinstitute.dsde.workbench.model.TraceId
 import org.typelevel.log4cats.Logger
 
-import java.sql.Timestamp
-import java.time.LocalDateTime
-
 object StuckAppReporter {
   def impl[F[_]](
     dbReader: DbReader[F],
@@ -22,18 +19,15 @@ object StuckAppReporter {
 
       override def dependencies: CheckRunnerDeps[F] = deps.checkRunnerDeps
 
-      override def resourceToScan: fs2.Stream[F, AppToReport] =
-        fs2.Stream.eval(
-          F.pure(AppToReport(10L, "dummyapp", "stuck", Timestamp.valueOf(LocalDateTime.now())))
-        ) // dbReader.getStuckAppToReport
+      override def resourceToScan: fs2.Stream[F, AppToReport] = dbReader.getStuckAppToReport
 
       override def checkResource(a: AppToReport, isDryRun: Boolean)(implicit
         ev: Ask[F, TraceId]
       ): F[Option[AppToReport]] =
         for {
           log <-
-            if (!isDryRun) logger.info("Reporting apps stuck in Creating or Deleting status").as(Some(a))
-            else logger.info("Dry run").as(None)
+            if (!isDryRun) logger.info(s"Reporting apps stuck in Creating or Deleting status: $a").as(Some(a))
+            else F.pure(None)
         } yield log
     }
 }
