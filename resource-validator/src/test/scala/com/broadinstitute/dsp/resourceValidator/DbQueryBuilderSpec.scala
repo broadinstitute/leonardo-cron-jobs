@@ -1,7 +1,7 @@
 package com.broadinstitute.dsp
 package resourceValidator
 
-import com.broadinstitute.dsp.DBTestHelper._
+import com.broadinstitute.dsp.DbTestHelper._
 import doobie.scalatest.IOChecker
 import org.scalatest.flatspec.AnyFlatSpec
 

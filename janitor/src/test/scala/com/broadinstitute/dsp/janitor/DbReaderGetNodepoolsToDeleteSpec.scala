@@ -1,7 +1,7 @@
 package com.broadinstitute.dsp
 package janitor
 
-import com.broadinstitute.dsp.DBTestHelper.{
+import com.broadinstitute.dsp.DbTestHelper.{
   insertApp,
   insertDisk,
   insertK8sCluster,
@@ -26,7 +26,7 @@ import java.time.Instant
  *   - Run a Leonardo database unit test (e.g. ClusterComponentSpec)
  *   - Run this spec
  */
-class DBReaderGetNodepoolsToDeleteSpec extends AnyFlatSpec with CronJobsTestSuite with IOChecker {
+class DbReaderGetNodepoolsToDeleteSpec extends AnyFlatSpec with CronJobsTestSuite with IOChecker {
   implicit val config = ConfigSpec.config.database
   val transactor = yoloTransactor
 

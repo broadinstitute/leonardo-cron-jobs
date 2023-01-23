@@ -12,7 +12,7 @@ import org.scalatest.Tag
 import DbReaderImplicits._
 import java.time.Instant
 
-object DBTestHelper {
+object DbTestHelper {
   implicit val cloudServicePut: Put[CloudService] = Put[String].contramap(cloudService => cloudService.asString)
   val zoneName = ZoneName("us-central1-a")
   val regionName = RegionName("us-central1")
@@ -46,7 +46,7 @@ object DBTestHelper {
     xa: HikariTransactor[IO]
   ): IO[Long] =
     sql"""INSERT INTO KUBERNETES_CLUSTER
-         (googleProject, clusterName, location, status, creator, createdDate, destroyedDate, dateAccessed, loadBalancerIp, networkName, subNetworkName, subNetworkIpRange, region, apiServerIp, ingressChart)
+         (cloudContext, clusterName, location, status, creator, createdDate, destroyedDate, dateAccessed, loadBalancerIp, networkName, subNetworkName, subNetworkIpRange, region, apiServerIp, ingressChart)
          VALUES (${clusterId.project}, ${clusterId.clusterName}, ${clusterId.location}, ${status}, "fake@broadinstitute.org", now(), now(), now(), "0.0.0.1", "network", "subnetwork", "0.0.0.1/20", ${regionName}, "35.202.56.6", "stable/nginx-ingress-1.41.3")
          """.update.withUniqueGeneratedKeys[Long]("id").transact(xa)
 
