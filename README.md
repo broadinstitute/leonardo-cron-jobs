@@ -43,10 +43,12 @@ docker run \
   -instances=<mysql instance you'd like to connect> -credential_file=/config
 ```
 
-## Set up configuration file
+## Set up configuration files
 Copy `application.conf.example` under each project in dir `[project]/src/main/resources` as `application.conf`. Replace values appropriately.
 i.e. the `leonardo-pubsub.google-project`  will need to be one that the user you are configured as will have access to.
+Copy `reference.conf.example` under each project in dir `[project]/src/main/resources` as `reference.conf`. Replace values appropriately.
 
+Do not commit the `application.conf` or `reference.conf` as they are used to run the jobs locally only.
 
 ## Run a job
 ```

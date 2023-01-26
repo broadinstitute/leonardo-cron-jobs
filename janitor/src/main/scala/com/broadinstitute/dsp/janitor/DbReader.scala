@@ -5,14 +5,18 @@ import cats.effect.Async
 import com.broadinstitute.dsp.DbReaderImplicits.{cloudProviderMeta, kubernetesClusterToRemoveRead, nodepoolRead}
 import doobie._
 import doobie.implicits._
+import doobie.implicits.javasql._ // Mapping for temporal types require a specific import https://github.com/tpolecat/doobie/releases/tag/v0.8.8
 import fs2.Stream
 import org.broadinstitute.dsde.workbench.azure.{AzureCloudContext, ContainerName}
 import org.broadinstitute.dsde.workbench.model.google.{GcsBucketName, GoogleProject}
+
+import java.sql.Timestamp
 
 trait DbReader[F[_]] {
   def getKubernetesClustersToDelete: Stream[F, KubernetesClusterToRemove]
   def getNodepoolsToDelete: Stream[F, Nodepool]
   def getStagingBucketsToDelete: Stream[F, BucketToRemove]
+  def getStuckAppToReport: Stream[F, AppToReport]
 }
 
 object DbReader {
@@ -125,6 +129,24 @@ object DbReader {
         """
       .query[BucketToRemove]
 
+  /**
+   * We want to flag apps that have been stuck in creating for more than 2 hours and report them to the user
+   * to avoid hidden costs. Since apps cannot be deleted while creating, there is not much more we can do other
+   * than report.
+   * We similarly want to flag apps that have been stuck in deleting for more than 1 hour.
+   *
+   * Note that there are no `Creating` status for apps, it corresponds to `PRECREATING`, or `PROVISIONING`
+   */
+  val appStuckQuery =
+    sql"""
+        SELECT id, appName, status, createdDate
+        FROM APP
+        WHERE
+          (status in ("PRECREATING", "PROVISIONING") AND createdDate < now() - INTERVAL 2 HOUR) OR
+          (status="DELETING" AND createdDate < now() - INTERVAL 1 HOUR);
+        """
+      .query[AppToReport]
+
   def impl[F[_]](xa: Transactor[F])(implicit F: Async[F]): DbReader[F] = new DbReader[F] {
     override def getKubernetesClustersToDelete: Stream[F, KubernetesClusterToRemove] =
       kubernetesClustersToDeleteQuery.stream.transact(xa)
@@ -134,6 +156,9 @@ object DbReader {
 
     override def getStagingBucketsToDelete: Stream[F, BucketToRemove] =
       stagingBucketsToDeleteQuery.stream.transact(xa)
+
+    override def getStuckAppToReport: Stream[F, AppToReport] =
+      appStuckQuery.stream.transact(xa)
   }
 }
 
@@ -146,4 +171,9 @@ object BucketToRemove {
       extends BucketToRemove {
     override def toString: String = s"${azureCloudContext.asString},${bucket.getOrElse("null")}"
   }
+}
+
+final case class AppToReport(id: Long, name: String, status: String, createdDate: Timestamp) {
+  override def toString: String =
+    s"App id:${id}, App name:${name}, App status:${status}, App creation time: ${createdDate}"
 }

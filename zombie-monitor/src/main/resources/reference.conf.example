@@ -1,0 +1,30 @@
+path-to-credential = ${LEONARDO_PATH_TO_CREDENTIAL}
+
+prometheus {
+  port = 9098
+}
+
+database {
+  url = "jdbc:mysql://127.0.0.1:3306/leonardo?rewriteBatchedStatements=true&nullNamePatternMatchesAll=true&autoReconnect=true"
+  user = ${LEONARDO_DB_USER}
+  password = ${LEONARDO_DB_PASSWORD}
+}
+
+leonardo-pubsub {
+  topic-name = "leonardo-pubsub"
+}
+
+report-destination-bucket = "replace me" # if you're using leonardo's dev SA for local testing, make sure to give leonardo's dev SA write permission to this bucket
+
+
+runtime-checker-config {
+  path-to-credential = ${path-to-credential}
+  report-destination-bucket = ${report-destination-bucket}
+
+# Look into the azure app-registration section from the leonardo.conf file in the leonardo repo
+  azure-app-registration {
+   client-id = "replace me"
+   client-secret = "replace me"
+   managed-app-tenant-id = "replace me"
+  }
+}
