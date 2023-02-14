@@ -8,6 +8,7 @@ import cats.mtl.Ask
 import com.broadinstitute.dsp.JsonCodec.serviceDataEncoder
 import fs2.Stream
 import io.circe.syntax.EncoderOps
+import org.broadinstitute.dsde.workbench.azure.AzureContainerService
 import org.broadinstitute.dsde.workbench.google2.{GKEService, GoogleDiskService}
 import org.broadinstitute.dsde.workbench.model.TraceId
 import org.broadinstitute.dsde.workbench.openTelemetry.OpenTelemetryMetrics
@@ -79,11 +80,14 @@ object ZombieMonitor {
       runtimeCheckerDeps <- RuntimeCheckerDeps.init(appConfig.runtimeCheckerConfig, metrics, blockerBound)
       diskService <- GoogleDiskService.resource(appConfig.pathToCredential.toString, blockerBound)
       gkeService <- GKEService.resource(appConfig.pathToCredential, blockerBound)
+      aksService <- AzureContainerService.fromAzureAppRegistrationConfig(
+        appConfig.runtimeCheckerConfig.azureAppRegistration
+      )
       xa <- DbTransactor.init(appConfig.database)
     } yield {
       val dbReader = DbReader.impl(xa)
       val checkRunnerDeps = runtimeCheckerDeps.checkRunnerDeps
-      val k8sCheckerDeps = KubernetesClusterCheckerDeps(checkRunnerDeps, gkeService)
+      val k8sCheckerDeps = KubernetesClusterCheckerDeps(checkRunnerDeps, gkeService, aksService)
       ZombieMonitorDeps(DiskCheckerDeps(checkRunnerDeps, diskService), runtimeCheckerDeps, k8sCheckerDeps, dbReader)
     }
 }

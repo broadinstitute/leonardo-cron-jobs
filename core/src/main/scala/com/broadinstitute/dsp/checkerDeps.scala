@@ -3,7 +3,7 @@ package com.broadinstitute.dsp
 import cats.Parallel
 import cats.effect.std.Semaphore
 import cats.effect.{Async, Resource}
-import org.broadinstitute.dsde.workbench.azure.{AzureAppRegistrationConfig, AzureVmService}
+import org.broadinstitute.dsde.workbench.azure.{AzureAppRegistrationConfig, AzureContainerService, AzureVmService}
 import org.broadinstitute.dsde.workbench.google2.util.RetryPredicates
 import org.broadinstitute.dsde.workbench.google2.{
   GKEService,
@@ -120,7 +120,10 @@ final case class RuntimeCheckerDeps[F[_]](computeService: GoogleComputeService[F
                                           azureVmService: AzureVmService[F]
 )
 
-final case class KubernetesClusterCheckerDeps[F[_]](checkRunnerDeps: CheckRunnerDeps[F], gkeService: GKEService[F])
+final case class KubernetesClusterCheckerDeps[F[_]](checkRunnerDeps: CheckRunnerDeps[F],
+                                                    gkeService: GKEService[F],
+                                                    aksService: AzureContainerService[F]
+)
 
 final case class NodepoolCheckerDeps[F[_]](checkRunnerDeps: CheckRunnerDeps[F],
                                            gkeService: GKEService[F],
