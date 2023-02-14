@@ -8,8 +8,22 @@ import com.google.cloud.compute.v1.Instance
 import com.google.cloud.dataproc.v1.ClusterStatus.State
 import com.google.cloud.dataproc.v1.{Cluster, ClusterStatus}
 import fs2.Stream
-import org.broadinstitute.dsde.workbench.google2.mock.{BaseFakeGoogleDataprocService, FakeGoogleBillingInterpreter, FakeGoogleComputeService, FakeGoogleDataprocService, FakeGoogleStorageInterpreter}
-import org.broadinstitute.dsde.workbench.google2.{DataprocClusterName, GoogleBillingService, GoogleComputeService, GoogleDataprocService, GoogleStorageService, RegionName, ZoneName}
+import org.broadinstitute.dsde.workbench.google2.mock.{
+  BaseFakeGoogleDataprocService,
+  FakeGoogleBillingInterpreter,
+  FakeGoogleComputeService,
+  FakeGoogleDataprocService,
+  FakeGoogleStorageInterpreter
+}
+import org.broadinstitute.dsde.workbench.google2.{
+  DataprocClusterName,
+  GoogleBillingService,
+  GoogleComputeService,
+  GoogleDataprocService,
+  GoogleStorageService,
+  RegionName,
+  ZoneName
+}
 import org.broadinstitute.dsde.workbench.model.TraceId
 import org.broadinstitute.dsde.workbench.model.google.GoogleProject
 import org.scalatest.flatspec.AnyFlatSpec

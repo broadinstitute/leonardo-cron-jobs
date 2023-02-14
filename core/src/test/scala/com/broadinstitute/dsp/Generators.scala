@@ -40,7 +40,7 @@ object Generators {
                diskName,
                zone,
                formattedBy = Some("GCE")
-  ) // TODO: update generator once we support Azure disks
+  ) // TODO: update generator once we support Azure
 
   val genInitBucket: Gen[InitBucketToRemove] = for {
     project <- genGoogleProject
