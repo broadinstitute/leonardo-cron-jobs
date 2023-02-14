@@ -80,6 +80,7 @@ object ZombieMonitor {
       runtimeCheckerDeps <- RuntimeCheckerDeps.init(appConfig.runtimeCheckerConfig, metrics, blockerBound)
       diskService <- GoogleDiskService.resource(appConfig.pathToCredential.toString, blockerBound)
       gkeService <- GKEService.resource(appConfig.pathToCredential, blockerBound)
+      _ <- Resource.eval(StructuredLogger[F].info("XXX " + appConfig.runtimeCheckerConfig.azureAppRegistration))
       aksService <- AzureContainerService.fromAzureAppRegistrationConfig(
         appConfig.runtimeCheckerConfig.azureAppRegistration
       )

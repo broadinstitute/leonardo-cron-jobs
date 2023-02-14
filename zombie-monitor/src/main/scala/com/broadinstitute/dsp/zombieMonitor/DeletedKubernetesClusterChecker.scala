@@ -47,15 +47,13 @@ object DeletedKubernetesClusterChecker {
       ): F[Boolean] =
         for {
           clusterOpt <- deps.gkeService.getCluster(gkeClusterId)
-          deleted <-
-            if (isDryRun) F.pure(false)
-            else
-              clusterOpt match {
-                case None =>
-                  logger.info(s"Going to mark GKE cluster ${id} as DELETED") >> dbReader.markK8sClusterDeleted(id) >> F
-                    .pure(true)
-                case Some(_) => F.pure(false)
-              }
+          deleted <- clusterOpt match {
+            case None =>
+              logger.info(s"Going to mark GKE cluster ${id} as DELETED") >>
+                (if (!isDryRun) dbReader.markK8sClusterDeleted(id) else F.unit) >>
+                F.pure(true)
+            case Some(_) => F.pure(false)
+          }
         } yield deleted
 
       def checkAksClusterStatus(id: Long, cloudContext: AzureCloudContext, isDryRun: Boolean)(implicit
@@ -64,14 +62,13 @@ object DeletedKubernetesClusterChecker {
         for {
           clusters <- deps.aksService.listClusters(cloudContext)
           deleted <-
-            if (isDryRun) F.pure(false)
-            else
-              clusters match {
-                case Nil =>
-                  logger.info(s"Going to mark AKS cluster ${id} as DELETED") >> dbReader.markK8sClusterDeleted(id) >> F
-                    .pure(true)
-                case _ => F.pure(false)
-              }
+            clusters match {
+              case Nil =>
+                logger.info(s"Going to mark AKS cluster ${id} as DELETED") >>
+                  (if (!isDryRun) dbReader.markK8sClusterDeleted(id) else F.unit) >>
+                  F.pure(true)
+              case _ => F.pure(false)
+            }
         } yield deleted
     }
 }

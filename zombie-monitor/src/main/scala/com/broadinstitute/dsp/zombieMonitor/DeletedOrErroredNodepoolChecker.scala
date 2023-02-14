@@ -53,17 +53,17 @@ object DeletedOrErroredNodepoolChecker {
         for {
           nodepoolOpt <- deps.gkeService.getNodepool(gkeNodepoolId)
           deleted <-
-            if (isDryRun) F.pure(false)
-            else
-              nodepoolOpt match {
-                case None =>
-                  logger.info(s"Going to mark GKE nodepool ${id} and apps as DELETED") >> dbReader
-                    .markNodepoolAndAppDeleted(id) >> F.pure(true)
-                case Some(nodepool) if nodepool.getStatus == com.google.container.v1.NodePool.Status.ERROR =>
-                  logger.info(s"Going to mark GKE nodepool ${id} and apps as ERROR") >> dbReader
-                    .updateNodepoolAndAppStatus(id, "ERROR") >> F.pure(true)
-                case _ => F.pure(false)
-              }
+            nodepoolOpt match {
+              case None =>
+                logger.info(s"Going to mark GKE nodepool ${id} and apps as DELETED") >>
+                  (if (!isDryRun) dbReader.markNodepoolAndAppDeleted(id) else F.unit) >>
+                  F.pure(true)
+              case Some(nodepool) if nodepool.getStatus == com.google.container.v1.NodePool.Status.ERROR =>
+                logger.info(s"Going to mark GKE nodepool ${id} and apps as ERROR") >>
+                  (if (!isDryRun) dbReader.updateNodepoolAndAppStatus(id, "ERROR") else F.unit) >>
+                  F.pure(true)
+              case _ => F.pure(false)
+            }
         } yield deleted
 
       def checkAksNodepool(id: Long, cloudContext: AzureCloudContext, isDryRun: Boolean)(implicit
@@ -72,14 +72,13 @@ object DeletedOrErroredNodepoolChecker {
         for {
           clusters <- deps.aksService.listClusters(cloudContext)
           deleted <-
-            if (isDryRun) F.pure(false)
-            else
-              clusters match {
-                case Nil =>
-                  logger.info(s"Going to mark AKS nodepool ${id} and apps as DELETED") >> dbReader
-                    .markNodepoolAndAppDeleted(id) >> F.pure(true)
-                case _ => F.pure(false)
-              }
+            clusters match {
+              case Nil =>
+                logger.info(s"Going to mark AKS nodepool ${id} and apps as DELETED") >>
+                  (if (!isDryRun) dbReader.markNodepoolAndAppDeleted(id) else F.unit) >>
+                  F.pure(true)
+              case _ => F.pure(false)
+            }
         } yield deleted
     }
 }
