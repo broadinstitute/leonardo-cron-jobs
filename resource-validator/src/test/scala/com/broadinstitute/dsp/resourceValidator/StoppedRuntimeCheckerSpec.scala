@@ -29,13 +29,17 @@ import org.broadinstitute.dsde.workbench.model.google.GoogleProject
 import com.broadinstitute.dsp.resourceValidator.StoppedRuntimeCheckerSpec._
 import org.scalatest.flatspec.AnyFlatSpec
 import cats.effect.unsafe.implicits.global
+import com.azure.resourcemanager.compute.models.VirtualMachine
 import com.broadinstitute.dsp.Generators.genRuntime
 import com.google.api.gax.longrunning.OperationFuture
+import org.broadinstitute.dsde.workbench.azure.AzureCloudContext
+import org.broadinstitute.dsde.workbench.azure.mock.FakeAzureVmService
 import org.broadinstitute.dsde.workbench.util2.InstanceName
 import org.scalacheck.Arbitrary
+import org.scalatestplus.mockito.MockitoSugar.mock
 
 final class StoppedRuntimeCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
-  it should "return None if runtime no longer exists in Google" in {
+  it should "return None if runtime no longer exists in the cloud" in {
     val computeService = new FakeGoogleComputeService {
       override def getInstance(project: GoogleProject, zone: ZoneName, instanceName: InstanceName)(implicit
         ev: Ask[IO, TraceId]
@@ -61,7 +65,7 @@ final class StoppedRuntimeCheckerSpec extends AnyFlatSpec with CronJobsTestSuite
     }
   }
 
-  it should "return Runtime if it is RUNNING in Google" in {
+  it should "return Runtime if it is RUNNING in the cloud" in {
     implicit val arbA = Arbitrary(genRuntime(List("Stopped").toNel))
 
     forAll { (runtime: Runtime, dryRun: Boolean) =>
@@ -104,8 +108,22 @@ final class StoppedRuntimeCheckerSpec extends AnyFlatSpec with CronJobsTestSuite
           else IO.pure(Some(new FakeDataprocClusterOperationFutureOp))
       }
 
+      val azureVmService = new FakeAzureVmService {
+        override def getAzureVm(name: InstanceName, cloudContext: AzureCloudContext)(implicit
+          ev: Ask[IO, TraceId]
+        ): IO[Option[VirtualMachine]] =
+          IO.pure(Some(mock[VirtualMachine]))
+        override def stopAzureVm(name: InstanceName, cloudContext: AzureCloudContext)(implicit
+          ev: Ask[IO, TraceId]
+        ): IO[Option[reactor.core.publisher.Mono[Void]]] =
+          if (dryRun) IO.raiseError(fail("this shouldn't be called")) else IO.pure(None)
+      }
+
       val runtimeCheckerDeps =
-        initRuntimeCheckerDeps(googleComputeService = computeService, googleDataprocService = dataprocService)
+        initRuntimeCheckerDeps(googleComputeService = computeService,
+                               googleDataprocService = dataprocService,
+                               azureVmService = azureVmService
+        )
 
       val stoppedRuntimeChecker = StoppedRuntimeChecker.iml(dbReader, runtimeCheckerDeps)
       val res = stoppedRuntimeChecker.checkResource(runtime, dryRun)

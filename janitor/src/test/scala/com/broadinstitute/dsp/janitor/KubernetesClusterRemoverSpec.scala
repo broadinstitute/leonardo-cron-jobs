@@ -44,7 +44,9 @@ final class KubernetesClusterRemoverSpec extends AnyFlatSpec with CronJobsTestSu
       val checker = KubernetesClusterRemover.impl(dbReader, deps)
       val res = checker.checkResource(clusterToRemove, dryRun)
 
-      res.unsafeRunSync() shouldBe Some(clusterToRemove)
+      res.unsafeRunSync() shouldBe (if (clusterToRemove.cloudContext.cloudProvider == CloudProvider.Gcp)
+                                      Some(clusterToRemove)
+                                    else None)
       if (dryRun) count shouldBe 0
       else count shouldBe 1
     }

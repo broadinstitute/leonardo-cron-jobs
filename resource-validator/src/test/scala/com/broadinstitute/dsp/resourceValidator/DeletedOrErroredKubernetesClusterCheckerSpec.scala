@@ -57,7 +57,8 @@ class DeletedOrErroredKubernetesClusterCheckerSpec extends AnyFlatSpec with Cron
 
       val deletedOrErroredKubernetesClusterChecker = DeletedOrErroredKubernetesClusterChecker.impl(dbReader, deps)
       val res = deletedOrErroredKubernetesClusterChecker.checkResource(cluster, dryRun)
-      res.unsafeRunSync() shouldBe Some(cluster)
+      res.unsafeRunSync() shouldBe (if (cluster.cloudContext.cloudProvider == CloudProvider.Gcp) Some(cluster)
+                                    else None)
     }
   }
 }

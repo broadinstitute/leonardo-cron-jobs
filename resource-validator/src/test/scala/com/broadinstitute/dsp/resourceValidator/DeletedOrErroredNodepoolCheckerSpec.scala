@@ -49,7 +49,8 @@ class DeletedOrErroredNodepoolCheckerSpec extends AnyFlatSpec with CronJobsTestS
       val deletedOrErroredNodepoolChecker = DeletedOrErroredNodepoolChecker.impl(dbReader, deps)
       val res = deletedOrErroredNodepoolChecker.checkResource(nodepool, dryRun)
 
-      res.unsafeRunSync() shouldBe Some(nodepool)
+      res.unsafeRunSync() shouldBe (if (nodepool.cloudContext.cloudProvider == CloudProvider.Gcp) Some(nodepool)
+                                    else None)
       if (dryRun) count shouldBe 0
       else count shouldBe 1
     }

@@ -44,7 +44,7 @@ final class NodepoolRemoverSpec extends AnyFlatSpec with CronJobsTestSuite {
       val checker = NodepoolRemover.impl(dbReader, deps)
       val res = checker.checkResource(n, dryRun)
 
-      res.unsafeRunSync() shouldBe Some(n)
+      res.unsafeRunSync() shouldBe (if (n.cloudContext.cloudProvider == CloudProvider.Gcp) Some(n) else None)
       if (dryRun) count shouldBe 0
       else count shouldBe 1
     }
