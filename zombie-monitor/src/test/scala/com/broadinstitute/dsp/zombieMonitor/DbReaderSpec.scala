@@ -7,8 +7,9 @@ import com.broadinstitute.dsp.DbTestHelper._
 import com.broadinstitute.dsp.Generators._
 import doobie.implicits._
 import doobie.scalatest.IOChecker
+import org.broadinstitute.dsde.workbench.azure.{AzureCloudContext, ManagedResourceGroupName, SubscriptionId, TenantId}
 import org.broadinstitute.dsde.workbench.google2.DiskName
-import org.broadinstitute.dsde.workbench.google2.GKEModels.{KubernetesClusterId, KubernetesClusterName}
+import org.broadinstitute.dsde.workbench.google2.GKEModels.KubernetesClusterName
 import org.broadinstitute.dsde.workbench.google2.KubernetesSerializableName.NamespaceName
 import org.broadinstitute.dsde.workbench.model.google.GoogleProject
 import org.scalatest.flatspec.AnyFlatSpec
@@ -102,22 +103,33 @@ final class DbReaderSpec extends AnyFlatSpec with CronJobsTestSuite with IOCheck
     }
   }
 
-  it should "read a K8sClusterToScan properly" taggedAs DbTest in {
-    forAll { (cluster: KubernetesClusterId) =>
+  it should "read a KubernetesCluster properly" taggedAs DbTest in {
+    forAll { (cluster: KubernetesCluster) =>
       val res = transactorResource.use { implicit xa =>
         val dbReader = DbReader.impl(xa)
 
         val precreatingCluster =
-          cluster.copy(project = GoogleProject("p1"), clusterName = KubernetesClusterName("cluster2"))
+          cluster.copy(cloudContext = CloudContext.Gcp(GoogleProject("p1")),
+                       clusterName = KubernetesClusterName("cluster2")
+          )
         val runningCluster =
-          cluster.copy(project = GoogleProject("p2"), clusterName = KubernetesClusterName("cluster3"))
+          cluster.copy(cloudContext = CloudContext.Gcp(GoogleProject("p2")),
+                       clusterName = KubernetesClusterName("cluster3")
+          )
+        val azureCluster = cluster.copy(
+          cloudContext = CloudContext.Azure(
+            AzureCloudContext(TenantId("tenant"), SubscriptionId("sub"), ManagedResourceGroupName("mrg"))
+          ),
+          clusterName = KubernetesClusterName("cluster4")
+        )
 
         for {
           _ <- insertK8sCluster(cluster, "DELETED")
           _ <- insertK8sCluster(precreatingCluster, "PRECREATING")
           _ <- insertK8sCluster(runningCluster, "RUNNING")
+          _ <- insertK8sCluster(azureCluster, "RUNNING")
           d <- dbReader.getk8sClustersToDeleteCandidate.compile.toList
-        } yield d.map(_.kubernetesClusterId) should contain theSameElementsAs List(precreatingCluster, runningCluster)
+        } yield d should contain theSameElementsAs List(precreatingCluster, runningCluster, azureCluster)
       }
       res.unsafeRunSync()
     }
@@ -138,7 +150,7 @@ final class DbReaderSpec extends AnyFlatSpec with CronJobsTestSuite with IOCheck
   }
 
   it should "update k8s cluster and unlink PD properly" taggedAs DbTest in {
-    forAll { (cluster: KubernetesClusterId, disk: Disk) =>
+    forAll { (cluster: KubernetesCluster, disk: Disk) =>
       val res = transactorResource.use { implicit xa =>
         val dbReader = DbReader.impl(xa)
         for {
@@ -160,7 +172,7 @@ final class DbReaderSpec extends AnyFlatSpec with CronJobsTestSuite with IOCheck
   }
 
   it should "update k8s cluster when there's no nodepool or app row" taggedAs DbTest in {
-    forAll { (cluster: KubernetesClusterId) =>
+    forAll { (cluster: KubernetesCluster) =>
       val res = transactorResource.use { implicit xa =>
         val dbReader = DbReader.impl(xa)
         for {
@@ -174,7 +186,7 @@ final class DbReaderSpec extends AnyFlatSpec with CronJobsTestSuite with IOCheck
   }
 
   it should "update k8s cluster and nodepool when there's no App record" taggedAs DbTest in {
-    forAll { (cluster: KubernetesClusterId) =>
+    forAll { (cluster: KubernetesCluster) =>
       val res = transactorResource.use { implicit xa =>
         val dbReader = DbReader.impl(xa)
         for {
@@ -193,7 +205,7 @@ final class DbReaderSpec extends AnyFlatSpec with CronJobsTestSuite with IOCheck
   }
 
   it should "update nodepool status properly" taggedAs DbTest in {
-    forAll { (cluster: KubernetesClusterId) =>
+    forAll { (cluster: KubernetesCluster) =>
       val res = transactorResource.use { implicit xa =>
         for {
           clusterId <- insertK8sCluster(cluster)
@@ -207,7 +219,7 @@ final class DbReaderSpec extends AnyFlatSpec with CronJobsTestSuite with IOCheck
   }
 
   it should "update App status properly" taggedAs DbTest in {
-    forAll { (cluster: KubernetesClusterId, disk: Disk) =>
+    forAll { (cluster: KubernetesCluster, disk: Disk) =>
       val res = transactorResource.use { implicit xa =>
         for {
           diskId <- insertDisk(disk)
@@ -224,7 +236,7 @@ final class DbReaderSpec extends AnyFlatSpec with CronJobsTestSuite with IOCheck
   }
 
   it should "update nodepool and app status properly" taggedAs DbTest in {
-    forAll { (cluster: KubernetesClusterId, disk: Disk) =>
+    forAll { (cluster: KubernetesCluster, disk: Disk) =>
       val res = transactorResource.use { implicit xa =>
         val dbReader = DbReader.impl(xa)
 

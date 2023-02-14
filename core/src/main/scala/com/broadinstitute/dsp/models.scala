@@ -47,8 +47,6 @@ final case class InitBucketToRemove(googleProject: GoogleProject, bucket: Option
   override def toString: String = s"${googleProject.value},${bucket.getOrElse("null")}"
 }
 
-//final case class K8sClusterToScan(id: Long, kubernetesClusterId: KubernetesClusterId)
-//final case class NodepoolToScan(id: Long, nodepoolId: NodepoolId)
 final case class KubernetesClusterToRemove(id: Long, cloudContext: CloudContext)
 
 final case class KubernetesCluster(id: Long,

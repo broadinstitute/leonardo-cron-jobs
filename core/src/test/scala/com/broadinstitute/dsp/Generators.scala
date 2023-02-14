@@ -1,10 +1,10 @@
 package com.broadinstitute.dsp
 
 import cats.data.NonEmptyList
-import org.broadinstitute.dsde.workbench.google2.GKEModels.{KubernetesClusterId, KubernetesClusterName}
-import org.scalacheck.{Arbitrary, Gen}
-import org.broadinstitute.dsde.workbench.google2.Generators._
 import org.broadinstitute.dsde.workbench.azure.Generators.genAzureCloudContext
+import org.broadinstitute.dsde.workbench.google2.GKEModels.KubernetesClusterName
+import org.broadinstitute.dsde.workbench.google2.Generators._
+import org.scalacheck.{Arbitrary, Gen}
 
 object Generators {
   // TODO IA-3289 When we implement Azure, make sure to add CloudService.AzureVM as an option in the line below so tests use it
@@ -40,7 +40,7 @@ object Generators {
                diskName,
                zone,
                formattedBy = Some("GCE")
-  ) // TODO: update generator once we support Azure
+  ) // TODO: update generator once we support Azure disks
 
   val genInitBucket: Gen[InitBucketToRemove] = for {
     project <- genGoogleProject
@@ -48,15 +48,16 @@ object Generators {
   } yield InitBucketToRemove(project, Some(InitBucketName(bucketName.value)))
 
   val genKubernetesCluster: Gen[KubernetesCluster] = for {
+    id <- Gen.chooseNum(0, 100)
     name <- Gen.uuid.map(x => KubernetesClusterName(x.toString))
     cloudService <- genCloudService
     project <- genGoogleProject
     azureCloudContext <- genAzureCloudContext
     location <- genLocation
   } yield cloudService match {
-    case CloudService.Gce      => KubernetesCluster(name, CloudContext.Gcp(project), location)
-    case CloudService.Dataproc => KubernetesCluster(name, CloudContext.Gcp(project), location)
-    case CloudService.AzureVM  => KubernetesCluster(name, CloudContext.Azure(azureCloudContext), location)
+    case CloudService.Gce      => KubernetesCluster(id, name, CloudContext.Gcp(project), location)
+    case CloudService.Dataproc => KubernetesCluster(id, name, CloudContext.Gcp(project), location)
+    case CloudService.AzureVM  => KubernetesCluster(id, name, CloudContext.Azure(azureCloudContext), location)
   }
 
   val genNodepool: Gen[Nodepool] = for {
@@ -76,16 +77,6 @@ object Generators {
       Nodepool(id, nodepoolName, clusterName, CloudContext.Azure(azureCloudContext), location)
 
   }
-
-  val genK8sClusterToScan: Gen[K8sClusterToScan] = for {
-    id <- Gen.chooseNum(0, 100)
-    clusterId <- genKubernetesClusterId
-  } yield K8sClusterToScan(id, clusterId)
-
-  val genNodepoolToScan: Gen[NodepoolToScan] = for {
-    id <- Gen.chooseNum(0, 100)
-    nodepoolId <- genNodepoolId
-  } yield NodepoolToScan(id, nodepoolId)
 
   val genKubernetesClusterToRemove: Gen[KubernetesClusterToRemove] = for {
     id <- Gen.chooseNum(0, 100)
@@ -113,10 +104,7 @@ object Generators {
   implicit val arbCloudService: Arbitrary[CloudService] = Arbitrary(genCloudService)
   implicit val arbDisk: Arbitrary[Disk] = Arbitrary(genDisk)
   implicit val arbInitBucket: Arbitrary[InitBucketToRemove] = Arbitrary(genInitBucket)
-  implicit val arbKubernetesClusterId: Arbitrary[KubernetesClusterId] = Arbitrary(genKubernetesClusterId)
-  implicit val arbK8sClusterToScan: Arbitrary[K8sClusterToScan] = Arbitrary(genK8sClusterToScan)
   implicit val arbRemovableNodepoolStatus: Arbitrary[RemovableNodepoolStatus] = Arbitrary(genRemovableNodepoolStatus)
-  implicit val arbNodepoolToScan: Arbitrary[NodepoolToScan] = Arbitrary(genNodepoolToScan)
   implicit val arbKubernetesClusterToRemove: Arbitrary[KubernetesClusterToRemove] = Arbitrary(
     genKubernetesClusterToRemove
   )

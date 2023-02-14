@@ -1,6 +1,7 @@
 package com.broadinstitute.dsp
 package janitor
 
+import cats.effect.unsafe.implicits.global
 import com.broadinstitute.dsp.DbTestHelper.{
   insertApp,
   insertDisk,
@@ -12,10 +13,9 @@ import com.broadinstitute.dsp.DbTestHelper.{
 }
 import com.broadinstitute.dsp.Generators._
 import doobie.scalatest.IOChecker
-import org.broadinstitute.dsde.workbench.google2.GKEModels.KubernetesClusterId
 import org.broadinstitute.dsde.workbench.google2.KubernetesSerializableName.NamespaceName
 import org.scalatest.flatspec.AnyFlatSpec
-import cats.effect.unsafe.implicits.global
+
 import java.time.Instant
 
 /**
@@ -34,7 +34,7 @@ class DbReaderGetAppStuckToReportSpec extends AnyFlatSpec with CronJobsTestSuite
   val gracePeriod_creating = 7200 // in seconds
 
   it should "detect for reporting: App in DELETING or CREATING status BEYOND grace period" taggedAs DbTest in {
-    forAll { (cluster: KubernetesClusterId, disk: Disk) =>
+    forAll { (cluster: KubernetesCluster, disk: Disk) =>
       val res = transactorResource.use { implicit xa =>
         val dbReader = DbReader.impl(xa)
 
@@ -69,7 +69,7 @@ class DbReaderGetAppStuckToReportSpec extends AnyFlatSpec with CronJobsTestSuite
   }
 
   it should "not detect for reporting: App in DELETING or CREATING status WITHIN grace period" taggedAs DbTest in {
-    forAll { (cluster: KubernetesClusterId, disk: Disk) =>
+    forAll { (cluster: KubernetesCluster, disk: Disk) =>
       val res = transactorResource.use { implicit xa =>
         val dbReader = DbReader.impl(xa)
 
