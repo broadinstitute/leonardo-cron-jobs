@@ -113,6 +113,7 @@ final class StoppedRuntimeCheckerSpec extends AnyFlatSpec with CronJobsTestSuite
           ev: Ask[IO, TraceId]
         ): IO[Option[VirtualMachine]] =
           IO.pure(Some(mock[VirtualMachine]))
+
         override def stopAzureVm(name: InstanceName, cloudContext: AzureCloudContext)(implicit
           ev: Ask[IO, TraceId]
         ): IO[Option[reactor.core.publisher.Mono[Void]]] =
@@ -127,8 +128,13 @@ final class StoppedRuntimeCheckerSpec extends AnyFlatSpec with CronJobsTestSuite
 
       val stoppedRuntimeChecker = StoppedRuntimeChecker.iml(dbReader, runtimeCheckerDeps)
       val res = stoppedRuntimeChecker.checkResource(runtime, dryRun)
+      // TODO: IA-3289 Implement StoppedRuntimeChecker for Azure VMs
+      val expected = runtime.cloudContext.cloudProvider match {
+        case CloudProvider.Gcp   => Some(runtime)
+        case CloudProvider.Azure => None
+      }
 
-      res.unsafeRunSync() shouldBe Some(runtime)
+      res.unsafeRunSync() shouldBe expected
     }
   }
 }

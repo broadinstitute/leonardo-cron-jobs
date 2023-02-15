@@ -109,8 +109,11 @@ class ActiveRuntimeCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
       val deps = initRuntimeCheckerDeps(computeService, dataprocService, azureVmService = azureVmService)
       val checker = ActiveRuntimeChecker.impl(dbReader, deps)
       val res = checker.checkResource(runtime, dryRun)
-      res.unsafeRunSync() shouldBe (if (runtime.cloudContext.cloudProvider == CloudProvider.Gcp) Some(runtime)
-                                    else None)
+      val expected = runtime.cloudContext.cloudProvider match {
+        case CloudProvider.Gcp   => Some(runtime)
+        case CloudProvider.Azure => None
+      }
+      res.unsafeRunSync() shouldBe expected
     }
   }
 

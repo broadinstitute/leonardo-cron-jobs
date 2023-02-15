@@ -50,7 +50,7 @@ object KubernetesClusterRemover {
                   } else F.unit
                 res = if (isBillingEnabled) Some(c) else None
               } yield res
-            case CloudContext.Azure(_) => logger.warn("Azure k8s clusterRemover is not supported yet").as(none)
+            case CloudContext.Azure(_) => logger.warn("Azure k8s clusterRemover is not supported").as(none)
           }
 
         } yield res

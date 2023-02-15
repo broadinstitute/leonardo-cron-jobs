@@ -90,6 +90,7 @@ class DeletedRuntimeCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
           ev: Ask[IO, TraceId]
         ): IO[Option[VirtualMachine]] =
           IO.pure(Some(mock[VirtualMachine]))
+
         override def deleteAzureVm(name: InstanceName, cloudContext: AzureCloudContext, forceDeletion: Boolean)(implicit
           ev: Ask[IO, TraceId]
         ): IO[Option[Accepted[Void]]] =

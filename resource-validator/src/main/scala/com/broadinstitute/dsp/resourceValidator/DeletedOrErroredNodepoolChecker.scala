@@ -56,8 +56,8 @@ object DeletedOrErroredNodepoolChecker {
               } yield nodepoolOpt.fold(none[Nodepool])(_ => Some(nodepool))
             case CloudContext.Azure(_) =>
               logger
-                .warn("Deleting Azure Nodepool is not supported yet")
-                .as(none) // TODO: IA-3623
+                .warn("Resource validator not supported for Azure nodepools")
+                .as(none)
           }
         } yield res
     }
