@@ -48,7 +48,7 @@ object DeletedOrErroredKubernetesClusterChecker {
               }
             } yield clusterOpt.fold(none[KubernetesCluster])(_ => Some(cluster))
           case CloudContext.Azure(_) =>
-            logger.warn("Resource-validator not supported for Azure kubernetes clusters").as(none)
+            logger.warn("Resource validator not supported for Azure k8s clusters").as(none)
         }
 
     }
