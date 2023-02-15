@@ -28,7 +28,7 @@ object DbReader {
            FROM PERSISTENT_DISK AS pd1
            WHERE
            (
-             (pd1.status="Deleted" AND pd1.destroyedDate > now() - INTERVAL 30 DAY) OR 
+             (pd1.status="Deleted" AND pd1.destroyedDate > now() - INTERVAL 30 DAY) OR
              (pd1.status="Deleting" AND pd1.`dateAccessed` < now() - INTERVAL 30 MINUTE)
            ) AND
              NOT EXISTS
@@ -102,7 +102,7 @@ object DbReader {
 
   // Leonardo doesn't manage nodepool for Azure. Hence excluding Azure nodepools
   val deletedAndErroredNodepoolQuery =
-    sql"""SELECT np. id, np.nodepoolName, kc.clusterName, kc.cloudProvider, kc.cloudContext, kc.location
+    sql"""SELECT np.id, np.nodepoolName, kc.clusterName, kc.cloudProvider, kc.cloudContext, kc.location
          FROM NODEPOOL AS np
          INNER JOIN KUBERNETES_CLUSTER AS kc ON np.clusterId = kc.id
          WHERE (np.status="DELETED" OR np.status="ERROR") AND kc.cloudProvider = "GCP"

@@ -10,8 +10,8 @@ import fs2.Stream
 
 trait DbReader[F[_]] {
   def getDisksToDeleteCandidate: Stream[F, Disk]
-  def getk8sClustersToDeleteCandidate: Stream[F, K8sClusterToScan]
-  def getk8sNodepoolsToDeleteCandidate: Stream[F, NodepoolToScan]
+  def getk8sClustersToDeleteCandidate: Stream[F, KubernetesCluster]
+  def getk8sNodepoolsToDeleteCandidate: Stream[F, Nodepool]
   def getRuntimeCandidate: Stream[F, Runtime]
 
   def updateDiskStatus(id: Long): F[Unit]
@@ -40,20 +40,19 @@ object DbReader {
             WHERE c1.status!="Deleted" AND c1.status!="Error" AND c1.createdDate < now() - INTERVAL 1 HOUR
         """.query[Runtime]
 
-  // Leonardo doesn't manage AKS cluster lifecycle; Hence ignoring Azure
   val activeK8sClustersQuery =
-    sql"""select id, clusterName, cloudContext, location, cloudProvider 
-          from 
-            KUBERNETES_CLUSTER 
-          where status != "DELETED" and status != "ERROR" and cloudProvider = "GCP";
-        """.query[K8sClusterToScan]
+    sql"""select id, clusterName, cloudContext, location, cloudProvider
+          from
+            KUBERNETES_CLUSTER
+          where status != "DELETED" and status != "ERROR";
+        """.query[KubernetesCluster]
 
   val activeNodepoolsQuery =
-    sql"""select np.id, cluster.cloudProvider, cluster.cloudContext, cluster.location, cluster.clusterName, np.nodepoolName from
+    sql"""select np.id, np.nodepoolName, cluster.clusterName, cluster.cloudProvider, cluster.cloudContext, cluster.location from
          	NODEPOOL AS np INNER JOIN KUBERNETES_CLUSTER AS cluster
          	on cluster.id = np.clusterId
          	where np.status != "DELETED" and np.status != "ERROR"
-         	""".query[Option[NodepoolToScan]]
+         	""".query[Nodepool]
 
   def updateDiskStatusQuery(id: Int) =
     sql"""
@@ -119,7 +118,7 @@ object DbReader {
     override def getDisksToDeleteCandidate: Stream[F, Disk] =
       activeDisksQuery.stream.transact(xa)
 
-    override def getk8sClustersToDeleteCandidate: Stream[F, K8sClusterToScan] =
+    override def getk8sClustersToDeleteCandidate: Stream[F, KubernetesCluster] =
       activeK8sClustersQuery.stream.transact(xa)
 
     override def updateDiskStatus(id: Long): F[Unit] =
@@ -128,8 +127,8 @@ object DbReader {
     override def markK8sClusterDeleted(id: Long): F[Unit] =
       markK8sClusterDeletedQuery(id.toInt).run.transact(xa).void
 
-    override def getk8sNodepoolsToDeleteCandidate: Stream[F, NodepoolToScan] =
-      activeNodepoolsQuery.stream.unNone.transact(xa)
+    override def getk8sNodepoolsToDeleteCandidate: Stream[F, Nodepool] =
+      activeNodepoolsQuery.stream.transact(xa)
 
     override def markNodepoolAndAppDeleted(nodepoolId: Long): F[Unit] = {
       val res = for {

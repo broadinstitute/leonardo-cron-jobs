@@ -17,13 +17,18 @@ import org.broadinstitute.dsde.workbench.google2.{DataprocClusterName, RegionNam
 import org.broadinstitute.dsde.workbench.model.TraceId
 import org.broadinstitute.dsde.workbench.model.google.GoogleProject
 import cats.effect.unsafe.implicits.global
+import com.azure.resourcemanager.compute.models.VirtualMachine
+import com.azure.resourcemanager.resources.fluentcore.model.Accepted
 import com.google.api.gax.longrunning.OperationFuture
 import com.google.protobuf.Empty
+import org.broadinstitute.dsde.workbench.azure.AzureCloudContext
+import org.broadinstitute.dsde.workbench.azure.mock.FakeAzureVmService
 import org.broadinstitute.dsde.workbench.util2.InstanceName
 import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatestplus.mockito.MockitoSugar.mock
 
 class DeletedRuntimeCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
-  it should "return None if runtime no longer exists in Google" in {
+  it should "return None if runtime no longer exists in the cloud" in {
     val computeService = new FakeGoogleComputeService {
       override def getInstance(project: GoogleProject, zone: ZoneName, instanceName: InstanceName)(implicit
         ev: Ask[IO, TraceId]
@@ -48,7 +53,7 @@ class DeletedRuntimeCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
     }
   }
 
-  it should "return Runtime if runtime still exists in Google" in {
+  it should "return Runtime if runtime still exists in the cloud" in {
     forAll { (runtime: Runtime, dryRun: Boolean) =>
       val dbReader = new FakeDbReader {
         override def getDeletedRuntimes: fs2.Stream[IO, Runtime] = Stream.emit(runtime)
@@ -80,8 +85,23 @@ class DeletedRuntimeCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
           if (dryRun) IO.raiseError(fail("this shouldn't be called")) else IO.pure(None)
       }
 
+      val azureVmService = new FakeAzureVmService {
+        override def getAzureVm(name: InstanceName, cloudContext: AzureCloudContext)(implicit
+          ev: Ask[IO, TraceId]
+        ): IO[Option[VirtualMachine]] =
+          IO.pure(Some(mock[VirtualMachine]))
+
+        override def deleteAzureVm(name: InstanceName, cloudContext: AzureCloudContext, forceDeletion: Boolean)(implicit
+          ev: Ask[IO, TraceId]
+        ): IO[Option[Accepted[Void]]] =
+          if (dryRun) IO.raiseError(fail("this shouldn't be called")) else IO.pure(None)
+      }
+
       val runtimeCheckerDeps =
-        initRuntimeCheckerDeps(googleComputeService = computeService, googleDataprocService = dataprocService)
+        initRuntimeCheckerDeps(googleComputeService = computeService,
+                               googleDataprocService = dataprocService,
+                               azureVmService = azureVmService
+        )
 
       val deletedRuntimeChecker = DeletedRuntimeChecker.impl(dbReader, runtimeCheckerDeps)
       val res = deletedRuntimeChecker.checkResource(runtime, dryRun)

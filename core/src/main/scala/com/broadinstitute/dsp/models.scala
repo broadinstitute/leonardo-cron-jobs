@@ -3,16 +3,11 @@ package com.broadinstitute.dsp
 import ca.mrvisser.sealerate
 import io.circe.Encoder
 import org.broadinstitute.dsde.workbench.azure.AzureCloudContext
+import org.broadinstitute.dsde.workbench.google2.GKEModels.{KubernetesClusterName, NodepoolName}
+import org.broadinstitute.dsde.workbench.google2.JsonCodec.{googleProjectEncoder, traceIdEncoder}
 import org.broadinstitute.dsde.workbench.google2.{DiskName, Location, ZoneName}
-import org.broadinstitute.dsde.workbench.google2.GKEModels.{
-  KubernetesClusterId,
-  KubernetesClusterName,
-  NodepoolId,
-  NodepoolName
-}
 import org.broadinstitute.dsde.workbench.model.TraceId
 import org.broadinstitute.dsde.workbench.model.google.{GcsBucketName, GoogleProject}
-import org.broadinstitute.dsde.workbench.google2.JsonCodec.{googleProjectEncoder, traceIdEncoder}
 
 sealed abstract class CloudService extends Product with Serializable {
   def asString: String
@@ -52,11 +47,13 @@ final case class InitBucketToRemove(googleProject: GoogleProject, bucket: Option
   override def toString: String = s"${googleProject.value},${bucket.getOrElse("null")}"
 }
 
-final case class K8sClusterToScan(id: Long, kubernetesClusterId: KubernetesClusterId)
-final case class NodepoolToScan(id: Long, nodepoolId: NodepoolId)
 final case class KubernetesClusterToRemove(id: Long, cloudContext: CloudContext)
 
-final case class KubernetesCluster(clusterName: KubernetesClusterName, cloudContext: CloudContext, location: Location) {
+final case class KubernetesCluster(id: Long,
+                                   clusterName: KubernetesClusterName,
+                                   cloudContext: CloudContext,
+                                   location: Location
+) {
   override def toString: String = s"${cloudContext.asStringWithProvider}/${clusterName}"
 }
 

@@ -24,17 +24,15 @@ object NodepoolRemover {
       ): F[Option[Nodepool]] =
         for {
           ctx <- ev.ask
-          _ <-
-            if (!isDryRun) {
-              n.cloudContext match {
-                case CloudContext.Gcp(value) =>
-                  val msg = DeleteNodepoolMeesage(n.nodepoolId, value, Some(ctx))
-                  deps.publisher.publishOne(msg)
-                case CloudContext.Azure(_) =>
-                  logger.warn("Azure is not supported yet") // TODO: IA-3623
-              }
-
-            } else F.unit
-        } yield Some(n)
+          res <-
+            n.cloudContext match {
+              case CloudContext.Gcp(value) =>
+                val msg = DeleteNodepoolMeesage(n.nodepoolId, value, Some(ctx))
+                val publish = if (isDryRun) F.unit else deps.publisher.publishOne(msg)
+                publish.as(n.some)
+              case CloudContext.Azure(_) =>
+                logger.warn("Azure k8s NodepoolRemover is not supported").as(none)
+            }
+        } yield res
     }
 }
