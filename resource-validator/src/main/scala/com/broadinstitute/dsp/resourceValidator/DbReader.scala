@@ -94,7 +94,7 @@ object DbReader {
 
   // Leonardo doesn't manage cluster for Azure. Hence excluding AKS clusters
   val deletedAndErroredKubernetesClusterQuery =
-    sql"""SELECT kc1.clusterName, cloudContext, location, cloudProvider
+    sql"""SELECT kc1.id, kc1.clusterName, cloudContext, location, cloudProvider
           FROM KUBERNETES_CLUSTER as kc1
           WHERE (kc1.status="DELETED" OR kc1.status="ERROR") AND kc1.cloudProvider = "GCP"
           """
