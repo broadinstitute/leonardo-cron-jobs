@@ -23,7 +23,7 @@ object Dependencies {
     ExclusionRule(organization = "com.azure.resourcemanager", name = s"azure-resourcemanager-msi")
 
   val core = Seq(
-    "net.logstash.logback" % "logstash-logback-encoder" % "7.2",
+    "net.logstash.logback" % "logstash-logback-encoder" % "7.4",
     "ch.qos.logback" % "logback-classic" % "1.4.11",
     "ch.qos.logback" % "logback-core" % "1.4.11",
     "org.tpolecat" %% "doobie-core" % doobieVersion,
