@@ -9,7 +9,7 @@ import org.broadinstitute.dsde.workbench.google2.GKEModels.KubernetesClusterName
 import org.broadinstitute.dsde.workbench.model.google.GoogleProject
 import org.scalatest.flatspec.AnyFlatSpec
 class DbReaderGetDeletedAndErroredKubernetesClustersSpec extends AnyFlatSpec with CronJobsTestSuite with IOChecker {
-  implicit val config = ConfigSpec.config.database
+  implicit val config: DatabaseConfig = ConfigSpec.config.database
   val transactor = yoloTransactor
 
   it should "detect kubernetes clusters that are Deleted or Errored in the Leo DB" taggedAs DbTest in {

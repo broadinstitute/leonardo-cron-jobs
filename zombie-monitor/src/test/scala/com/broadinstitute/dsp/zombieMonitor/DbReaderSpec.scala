@@ -24,7 +24,7 @@ import java.util.{Calendar, GregorianCalendar}
  *   - Run this spec
  */
 final class DbReaderSpec extends AnyFlatSpec with CronJobsTestSuite with IOChecker {
-  implicit val databaseConfig = ConfigSpec.config.database
+  implicit val databaseConfig: DatabaseConfig = ConfigSpec.config.database
   val transactor = yoloTransactor
 
   it should "build activeDisksQuery properly" taggedAs DbTest in {
