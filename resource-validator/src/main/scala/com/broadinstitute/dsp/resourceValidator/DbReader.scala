@@ -11,6 +11,7 @@ import org.broadinstitute.dsde.workbench.model.google.{GcsBucketName, GoogleProj
 trait DbReader[F[_]] {
   def getDeletedDisks: Stream[F, Disk]
   def getDeletedRuntimes: Stream[F, Runtime]
+  def getDeletingRuntimes: Stream[F, Runtime]
   def getErroredRuntimes: Stream[F, Runtime]
   def getStoppedRuntimes: Stream[F, Runtime]
   def getInitBucketsToDelete: Stream[F, InitBucketToRemove]
@@ -60,6 +61,23 @@ object DbReader {
           )"""
       .query[Runtime]
 
+  val deletingRuntimeQuery =
+    sql"""SELECT DISTINCT c1.id, cloudContext, c1.cloudProvider, runtimeName, rt.cloudService, c1.status, rt.zone, rt.region
+          FROM CLUSTER AS c1
+          INNER JOIN RUNTIME_CONFIG AS rt ON c1.runtimeConfigId = rt.id
+          WHERE
+            c1.status = "Deleting" AND
+            c1.destroyedDate > now() - INTERVAL 60 MIN AND
+            NOT EXISTS (
+              SELECT *
+              FROM CLUSTER AS c2
+              WHERE
+                c2.cloudContext = c1.cloudContext AND
+                c2.runtimeName = c1.runtimeName AND
+                (c2.status = "Stopped" OR c2.status = "Running")
+          )"""
+      .query[Runtime]
+
   val erroredRuntimeQuery =
     sql"""SELECT DISTINCT c1.id, cloudContext, cloudProvider, runtimeName, rt.cloudService, c1.status, rt.zone, rt.region
           FROM CLUSTER AS c1
@@ -94,7 +112,7 @@ object DbReader {
 
   // Leonardo doesn't manage cluster for Azure. Hence excluding AKS clusters
   val deletedAndErroredKubernetesClusterQuery =
-    sql"""SELECT kc1.clusterName, cloudContext, location, cloudProvider
+    sql"""SELECT kc1.id, kc1.clusterName, cloudContext, location, cloudProvider
           FROM KUBERNETES_CLUSTER as kc1
           WHERE (kc1.status="DELETED" OR kc1.status="ERROR") AND kc1.cloudProvider = "GCP"
           """
@@ -128,6 +146,9 @@ object DbReader {
      */
     override def getDeletedRuntimes: Stream[F, Runtime] =
       deletedRuntimeQuery.stream.transact(xa)
+
+    override def getDeletingRuntimes: Stream[F, Runtime] =
+      deletingRuntimeQuery.stream.transact(xa)
 
     override def getErroredRuntimes: Stream[F, Runtime] =
       erroredRuntimeQuery.stream.transact(xa)
