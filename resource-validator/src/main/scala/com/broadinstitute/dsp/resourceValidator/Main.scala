@@ -15,6 +15,7 @@ object Main
     val enableDryRun = Opts.flag("dryRun", "Default to true").orFalse.withDefault(true)
     val shouldCheckAll = Opts.flag("all", "run all checks").orFalse
     val shouldCheckDeletedRuntimes = Opts.flag("checkDeletedRuntimes", "check all deleted runtimes").orFalse
+    val shouldCheckDeletingRuntimes = Opts.flag("checkDeletingRuntimes", "check all deleting runtimes").orFalse
     val shouldCheckErroredRuntimes = Opts.flag("checkErroredRuntimes", "check all errored runtimes").orFalse
     val shouldCheckStoppedRuntimes = Opts.flag("checkStoppedRuntimes", "check all stopped runtimes").orFalse
     val shouldCheckDeletedKubernetesClusters =
@@ -30,6 +31,7 @@ object Main
     (enableDryRun,
      shouldCheckAll,
      shouldCheckDeletedRuntimes,
+     shouldCheckDeletingRuntimes,
      shouldCheckErroredRuntimes,
      shouldCheckStoppedRuntimes,
      shouldCheckDeletedKubernetesClusters,
@@ -41,6 +43,7 @@ object Main
       (dryRun,
        checkAll,
        shouldCheckDeletedRuntimes,
+       shouldCheckDeletingRuntimes,
        shouldCheckErroredRuntimes,
        shouldCheckStoppedRuntimes,
        shouldCheckDeletedKubernetesClusters,
@@ -54,6 +57,7 @@ object Main
             isDryRun = dryRun,
             shouldCheckAll = checkAll,
             shouldCheckDeletedRuntimes = shouldCheckDeletedRuntimes,
+            shouldCheckDeletingRuntimes = shouldCheckDeletingRuntimes,
             shouldCheckErroredRuntimes = shouldCheckErroredRuntimes,
             shouldCheckStoppedRuntimes = shouldCheckStoppedRuntimes,
             shouldCheckDeletedKubernetesCluster = shouldCheckDeletedKubernetesClusters,
