@@ -15,40 +15,23 @@ jobs:
         - janitor
 
     steps:
-      - uses: actions/checkout@v3
-
-      - name: Set up JDK 17
-        uses: actions/setup-java@v3
-        with:
-          java-version: 17
-          distribution: 'temurin'
-
+      - uses: actions/checkout@v2
 
       # fetch SBT package
-#      - uses: olafurpg/setup-scala@v10
+      - uses: olafurpg/setup-scala@v10
 
       # set up SBT cache
-#      - uses: actions/cache@v2
-#        with:
-#          path: |
-#            ~/.cache
-#            ~/.coursier/cache
-#            ~/.ivy2/cache
-#            ~/.sbt
-#          key: sbt-${{ matrix.project }}-${{ hashFiles('**/*.sbt') }}
-#          restore-keys: |
-#            sbt-${{ matrix.project }}-
-#            sbt-
-
-      - name: Setup Cache
-        uses: coursier/cache-action@v5
-      - name: Cache resources
-        run: |
-          rm -rf "$HOME/.ivy2/local" || true
-          find $HOME/Library/Caches/Coursier/v1        -name "ivydata-*.properties" -delete || true
-          find $HOME/.ivy2/cache                       -name "ivydata-*.properties" -delete || true
-          find $HOME/.cache/coursier/v1                -name "ivydata-*.properties" -delete || true
-          find $HOME/.sbt                              -name "*.lock"               -delete || true
+      - uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cache
+            ~/.coursier/cache
+            ~/.ivy2/cache
+            ~/.sbt
+          key: sbt-${{ matrix.project }}-${{ hashFiles('**/*.sbt') }}
+          restore-keys: |
+            sbt-${{ matrix.project }}-
+            sbt-
 
       # build the image
       - name: Build
