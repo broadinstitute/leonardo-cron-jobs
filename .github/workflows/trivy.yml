@@ -39,6 +39,7 @@ jobs:
         run: |
           set -o pipefail
           
+          # Avoid running into this issue https://www.reddit.com/r/azuredevops/comments/15kiovv/ado_docker_buildaspnet_70_issue_since_last_week/
           export DOCKER_BUILDKIT=0
 
           # build sources and store the log
