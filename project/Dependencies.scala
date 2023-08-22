@@ -1,10 +1,11 @@
 import sbt._
 
 object Dependencies {
-  val workbenchLibsHash = "87b3b166-SNAP"
-  val workbenchGoogle2Version = s"0.25-${workbenchLibsHash}"
-  val workbenchAzureVersion = s"0.1-${workbenchLibsHash}"
-  val openTelemetryVersion = s"0.3-${workbenchLibsHash}"
+
+  val workbenchLibsHash = "92757f1"
+  val workbenchGoogle2Version = s"0.32-${workbenchLibsHash}"
+  val workbenchAzureVersion = s"0.5-${workbenchLibsHash}"
+  val openTelemetryVersion = s"0.6-${workbenchLibsHash}"
   val doobieVersion = "1.0.0-RC4"
   val declineVersion = "2.4.1"
 
@@ -23,8 +24,8 @@ object Dependencies {
 
   val core = Seq(
     "net.logstash.logback" % "logstash-logback-encoder" % "7.2",
-    "ch.qos.logback" % "logback-classic" % "1.4.5",
-    "ch.qos.logback" % "logback-core" % "1.4.5",
+    "ch.qos.logback" % "logback-classic" % "1.4.11",
+    "ch.qos.logback" % "logback-core" % "1.4.11",
     "org.tpolecat" %% "doobie-core" % doobieVersion,
     "org.tpolecat" %% "doobie-hikari" % doobieVersion,
     "org.tpolecat" %% "doobie-scalatest" % doobieVersion % Test,
