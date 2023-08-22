@@ -105,6 +105,7 @@ object Settings {
   lazy val resourceValidatorSettings = commonSettings ++ resourceValidatorDockerSettings ++ List(
     name := "resource-validator",
     libraryDependencies ++= Dependencies.resourceValidator,
+    javaOptions := Seq("-Xmx4G -Xms4G -Xss2M"),
     assembly / assemblyJarName := "resource-validator-assembly.jar",
     // removes all jar mappings in universal and appends the fat jar
     // This is needed to include `core` module in classpath
@@ -125,6 +126,7 @@ object Settings {
   lazy val zombieMonitorSettings = commonSettings ++ zombieMonitorDockerSettings ++ List(
     name := "zombie-monitor",
     libraryDependencies ++= Dependencies.zombieMonitor,
+    javaOptions := Seq("-Xmx4G -Xms4G -Xss2M"),
     assembly / assemblyJarName := "zombie-monitor-assembly.jar",
     // removes all jar mappings in universal and appends the fat jar
     // This is needed to include `core` module in classpath
@@ -145,6 +147,7 @@ object Settings {
   lazy val janitorSettings = commonSettings ++ janitorDockerSettings ++ List(
     name := "janitor",
     libraryDependencies ++= Dependencies.janitor,
+    javaOptions := Seq("-Xmx4G -Xms4G -Xss2M"),
     assembly / assemblyJarName := "janitor-assembly.jar",
     // removes all jar mappings in universal and appends the fat jar
     // This is needed to include `core` module in classpath
