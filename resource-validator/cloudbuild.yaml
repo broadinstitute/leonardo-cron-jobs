@@ -2,7 +2,7 @@ steps:
   - name: 'gcr.io/$PROJECT_ID/scala-sbt'
     args:
       - |
-        JVM_OPTS="-Xmx4G -Xms4G -Xss2M"; testOnly -- -l cronJobs.dbTest; resourceValidator/docker:publishLocal
+        testOnly -- -l cronJobs.dbTest; resourceValidator/docker:publishLocal JVM_OPTS="-Xmx4G -Xms4G -Xss2M"
   - name: 'gcr.io/cloud-builders/docker'
     args: [ 'image', 'tag', 'us.gcr.io/broad-dsp-gcr-public/resource-validator:latest', 'us.gcr.io/broad-dsp-gcr-public/resource-validator:$SHORT_SHA']
 images: [

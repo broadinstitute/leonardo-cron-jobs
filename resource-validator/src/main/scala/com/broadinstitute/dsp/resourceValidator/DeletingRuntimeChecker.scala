@@ -9,7 +9,7 @@ import org.broadinstitute.dsde.workbench.model.TraceId
 import org.broadinstitute.dsde.workbench.util2.InstanceName
 import org.typelevel.log4cats.Logger
 
-// Implements CheckRunner[F[_], A]
+// Looks for GCE, Dataproc, or Azure runtime that have been stuck in a `deleting` status for over 60 minutes
 object DeletingRuntimeChecker {
   def impl[F[_]](
     dbReader: DbReader[F],

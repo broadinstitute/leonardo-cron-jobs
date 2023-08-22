@@ -2,7 +2,7 @@ steps:
   - name: 'gcr.io/$PROJECT_ID/scala-sbt'
     args:
       - |
-        JVM_OPTS="-Xmx4G -Xms4G -Xss2M"; testOnly -- -l cronJobs.dbTest; janitor/docker:publishLocal
+        testOnly -- -l cronJobs.dbTest; janitor/docker:publishLocal JVM_OPTS="-Xmx4G -Xms4G -Xss2M
   - name: 'gcr.io/cloud-builders/docker'
     args: [ 'image', 'tag', 'us.gcr.io/broad-dsp-gcr-public/janitor:latest', 'us.gcr.io/broad-dsp-gcr-public/janitor:$SHORT_SHA']
 images: [
