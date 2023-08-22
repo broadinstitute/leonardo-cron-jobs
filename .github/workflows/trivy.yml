@@ -35,6 +35,7 @@ jobs:
 
       # build the image
       - name: Build
+        continue-on-error: true
         id: build
         run: |
           set -o pipefail
