@@ -39,8 +39,7 @@ jobs:
         run: |
           set -o pipefail
           
-          DOCKER_BUILDKIT=0
-          echo "DOCKER_BUILDKIT=$DOCKER_BUILDKIT" >> $GITHUB_ENV
+          export DOCKER_BUILDKIT=0
 
           # build sources and store the log
           sbt -no-colors ${{ matrix.project }}/docker:publishLocal | tee build.log
