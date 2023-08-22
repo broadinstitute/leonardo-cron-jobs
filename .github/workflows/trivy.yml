@@ -35,10 +35,12 @@ jobs:
 
       # build the image
       - name: Build
-        continue-on-error: true
         id: build
         run: |
           set -o pipefail
+          
+          DOCKER_BUILDKIT=0
+          echo "DOCKER_BUILDKIT=$DOCKER_BUILDKIT" >> $GITHUB_ENV
 
           # build sources and store the log
           sbt -no-colors ${{ matrix.project }}/docker:publishLocal | tee build.log
