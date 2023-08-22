@@ -1,10 +1,8 @@
 steps:
   - name: 'gcr.io/$PROJECT_ID/scala-sbt'
-    env:
-      JVM_OPTS: -Xmx4G -Xms4G -Xss2M
     args:
       - |
-        testOnly -- -l cronJobs.dbTest; zombieMonitor/docker:publishLocal
+        JVM_OPTS="-Xmx4G -Xms4G -Xss2M"; testOnly -- -l cronJobs.dbTest; zombieMonitor/docker:publishLocal
   - name: 'gcr.io/cloud-builders/docker'
     args: [ 'image', 'tag', 'us.gcr.io/broad-dsp-gcr-public/zombie-monitor:latest', 'us.gcr.io/broad-dsp-gcr-public/zombie-monitor:$SHORT_SHA']
 images: [
