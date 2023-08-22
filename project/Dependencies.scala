@@ -49,7 +49,7 @@ object Dependencies {
     "org.broadinstitute.dsde.workbench" %% "workbench-google2" % workbenchGoogle2Version % Test classifier "tests",
     "org.broadinstitute.dsde.workbench" %% "workbench-azure" % workbenchAzureVersion excludeAll (excludeResourceManagerMsi, excludeResourceManagerRelay),
     "org.broadinstitute.dsde.workbench" %% "workbench-azure" % workbenchAzureVersion % Test classifier "tests",
-    "org.scalatestplus" %% "scalacheck-1-15" % "3.2.11.0" % Test,
+    "org.scalatestplus" %% "scalacheck-1-16" % "3.2.14.0" % Test,
     "org.scalatestplus" %% "mockito-3-12" % "3.2.10.0" % Test, // https://github.com/scalatest/scalatestplus-selenium
     "ca.mrvisser" %% "sealerate" % "0.0.6"
   )
