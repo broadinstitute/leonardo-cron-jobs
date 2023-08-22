@@ -14,7 +14,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import cats.effect.unsafe.implicits.global
 
 class DeletedOrErroredKubernetesClusterCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
-  it should "return None if kubernetes cluster no longer exists in Google" in {
+  it should "return None if kubernetes cluster no longer exists in the cloud" in {
     val gkeService = new MockGKEService {
       override def getCluster(clusterId: KubernetesClusterId)(implicit
         ev: Ask[IO, TraceId]
@@ -34,7 +34,7 @@ class DeletedOrErroredKubernetesClusterCheckerSpec extends AnyFlatSpec with Cron
     }
   }
 
-  it should "return KubernetesCluster if cluster still exists in Google" in {
+  it should "return KubernetesCluster if cluster still exists in the cloud" in {
     forAll { (cluster: KubernetesCluster, dryRun: Boolean) =>
       val dbReader = new FakeDbReader {
         override def getDeletedAndErroredKubernetesClusters: fs2.Stream[IO, KubernetesCluster] = Stream.emit(cluster)
@@ -57,7 +57,11 @@ class DeletedOrErroredKubernetesClusterCheckerSpec extends AnyFlatSpec with Cron
 
       val deletedOrErroredKubernetesClusterChecker = DeletedOrErroredKubernetesClusterChecker.impl(dbReader, deps)
       val res = deletedOrErroredKubernetesClusterChecker.checkResource(cluster, dryRun)
-      res.unsafeRunSync() shouldBe Some(cluster)
+      val expected = cluster.cloudContext.cloudProvider match {
+        case CloudProvider.Gcp   => Some(cluster)
+        case CloudProvider.Azure => None
+      }
+      res.unsafeRunSync() shouldBe expected
     }
   }
 }

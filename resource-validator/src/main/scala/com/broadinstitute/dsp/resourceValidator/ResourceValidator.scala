@@ -9,6 +9,7 @@ import com.broadinstitute.dsp.JsonCodec.serviceDataEncoder
 import com.google.pubsub.v1.ProjectTopicName
 import fs2.Stream
 import io.circe.syntax.EncoderOps
+import org.broadinstitute.dsde.workbench.azure.AzureContainerService
 import org.broadinstitute.dsde.workbench.google2.{GKEService, GoogleDiskService, GooglePublisher, PublisherConfig}
 import org.broadinstitute.dsde.workbench.model.TraceId
 import org.broadinstitute.dsde.workbench.openTelemetry.OpenTelemetryMetrics
@@ -25,6 +26,7 @@ object ResourceValidator {
   def run[F[_]: Async: Parallel](isDryRun: Boolean,
                                  shouldCheckAll: Boolean,
                                  shouldCheckDeletedRuntimes: Boolean,
+                                 shouldCheckDeletingRuntimes: Boolean,
                                  shouldCheckErroredRuntimes: Boolean,
                                  shouldCheckStoppedRuntimes: Boolean,
                                  shouldCheckDeletedKubernetesCluster: Boolean,
@@ -47,6 +49,11 @@ object ResourceValidator {
           Stream.eval(DeletedRuntimeChecker.impl(deps.dbReader, deps.runtimeCheckerDeps).run(isDryRun))
         else Stream.empty
 
+      deletingRuntimeCheckerProcess =
+        if (shouldCheckAll || shouldCheckDeletingRuntimes)
+          Stream.eval(DeletingRuntimeChecker.impl(deps.dbReader, deps.runtimeCheckerDeps).run(isDryRun))
+        else Stream.empty
+
       deleteDiskCheckerProcess =
         if (shouldCheckAll || shouldCheckDeletedDisks)
           Stream.eval(DeletedDiskChecker.impl[F](deps.dbReader, deps.deletedDiskCheckerDeps).run(isDryRun))
@@ -56,6 +63,7 @@ object ResourceValidator {
         if (shouldCheckAll || shouldCheckErroredRuntimes)
           Stream.eval(ErroredRuntimeChecker.iml(deps.dbReader, deps.runtimeCheckerDeps).run(isDryRun))
         else Stream.empty
+
       deleteKubernetesClusterCheckerProcess =
         if (shouldCheckAll || shouldCheckDeletedKubernetesCluster)
           Stream.eval(
@@ -64,6 +72,7 @@ object ResourceValidator {
               .run(isDryRun)
           )
         else Stream.empty
+
       deleteNodepoolCheckerProcess =
         if (shouldCheckAll || shouldCheckDeletedNodepool)
           Stream.eval(
@@ -88,6 +97,7 @@ object ResourceValidator {
 
       processes = Stream(
         deleteRuntimeCheckerProcess,
+        deletingRuntimeCheckerProcess,
         errorRuntimeCheckerProcess,
         stoppedRuntimeCheckerProcess,
         deleteDiskCheckerProcess,
@@ -114,12 +124,15 @@ object ResourceValidator {
         ProjectTopicName.of(appConfig.leonardoPubsub.googleProject.value, appConfig.leonardoPubsub.topicName)
       )
       gkeService <- GKEService.resource(appConfig.pathToCredential, blockerBound)
+      aksService <- AzureContainerService.fromAzureAppRegistrationConfig(
+        appConfig.runtimeCheckerConfig.azureAppRegistration
+      )
       googlePublisher <- GooglePublisher.resource[F](publisherConfig)
       xa <- DbTransactor.init(appConfig.database)
     } yield {
       val checkRunnerDeps = runtimeCheckerDeps.checkRunnerDeps
       val diskCheckerDeps = DiskCheckerDeps(checkRunnerDeps, diskService)
-      val kubernetesClusterCheckerDeps = KubernetesClusterCheckerDeps(checkRunnerDeps, gkeService)
+      val kubernetesClusterCheckerDeps = KubernetesClusterCheckerDeps(checkRunnerDeps, gkeService, aksService)
       val nodepoolCheckerDeps = NodepoolCheckerDeps(checkRunnerDeps, gkeService, googlePublisher)
       val dbReader = DbReader.impl(xa)
       ResourcevalidatorServerDeps(runtimeCheckerDeps,

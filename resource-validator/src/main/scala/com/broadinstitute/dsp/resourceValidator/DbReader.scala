@@ -11,6 +11,7 @@ import org.broadinstitute.dsde.workbench.model.google.{GcsBucketName, GoogleProj
 trait DbReader[F[_]] {
   def getDeletedDisks: Stream[F, Disk]
   def getDeletedRuntimes: Stream[F, Runtime]
+  def getDeletingRuntimes: Stream[F, Runtime]
   def getErroredRuntimes: Stream[F, Runtime]
   def getStoppedRuntimes: Stream[F, Runtime]
   def getInitBucketsToDelete: Stream[F, InitBucketToRemove]
@@ -28,7 +29,7 @@ object DbReader {
            FROM PERSISTENT_DISK AS pd1
            WHERE
            (
-             (pd1.status="Deleted" AND pd1.destroyedDate > now() - INTERVAL 30 DAY) OR 
+             (pd1.status="Deleted" AND pd1.destroyedDate > now() - INTERVAL 30 DAY) OR
              (pd1.status="Deleting" AND pd1.`dateAccessed` < now() - INTERVAL 30 MINUTE)
            ) AND
              NOT EXISTS
@@ -50,6 +51,23 @@ object DbReader {
           WHERE
             c1.status = "Deleted" AND
             c1.destroyedDate > now() - INTERVAL 30 DAY AND
+            NOT EXISTS (
+              SELECT *
+              FROM CLUSTER AS c2
+              WHERE
+                c2.cloudContext = c1.cloudContext AND
+                c2.runtimeName = c1.runtimeName AND
+                (c2.status = "Stopped" OR c2.status = "Running")
+          )"""
+      .query[Runtime]
+
+  val deletingRuntimeQuery =
+    sql"""SELECT DISTINCT c1.id, cloudContext, c1.cloudProvider, runtimeName, rt.cloudService, c1.status, rt.zone, rt.region
+          FROM CLUSTER AS c1
+          INNER JOIN RUNTIME_CONFIG AS rt ON c1.runtimeConfigId = rt.id
+          WHERE
+            c1.status = "Deleting" AND
+            c1.destroyedDate > now() - INTERVAL 60 MIN AND
             NOT EXISTS (
               SELECT *
               FROM CLUSTER AS c2
@@ -94,7 +112,7 @@ object DbReader {
 
   // Leonardo doesn't manage cluster for Azure. Hence excluding AKS clusters
   val deletedAndErroredKubernetesClusterQuery =
-    sql"""SELECT kc1.clusterName, cloudContext, location, cloudProvider
+    sql"""SELECT kc1.id, kc1.clusterName, cloudContext, location, cloudProvider
           FROM KUBERNETES_CLUSTER as kc1
           WHERE (kc1.status="DELETED" OR kc1.status="ERROR") AND kc1.cloudProvider = "GCP"
           """
@@ -102,7 +120,7 @@ object DbReader {
 
   // Leonardo doesn't manage nodepool for Azure. Hence excluding Azure nodepools
   val deletedAndErroredNodepoolQuery =
-    sql"""SELECT np. id, np.nodepoolName, kc.clusterName, kc.cloudProvider, kc.cloudContext, kc.location
+    sql"""SELECT np.id, np.nodepoolName, kc.clusterName, kc.cloudProvider, kc.cloudContext, kc.location
          FROM NODEPOOL AS np
          INNER JOIN KUBERNETES_CLUSTER AS kc ON np.clusterId = kc.id
          WHERE (np.status="DELETED" OR np.status="ERROR") AND kc.cloudProvider = "GCP"
@@ -128,6 +146,9 @@ object DbReader {
      */
     override def getDeletedRuntimes: Stream[F, Runtime] =
       deletedRuntimeQuery.stream.transact(xa)
+
+    override def getDeletingRuntimes: Stream[F, Runtime] =
+      deletingRuntimeQuery.stream.transact(xa)
 
     override def getErroredRuntimes: Stream[F, Runtime] =
       erroredRuntimeQuery.stream.transact(xa)

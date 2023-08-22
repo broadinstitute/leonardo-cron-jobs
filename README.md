@@ -3,18 +3,17 @@
 
 # Introduction
 
-This repo contains cron jobs running along side with [Leonardo](https://github.com/databiosphere/leonardo).
+This repo contains cron jobs running alongside with [Leonardo](https://github.com/databiosphere/leonardo).
 
 # Cron Jobs
-[This doc](https://broadworkbench.atlassian.net/wiki/spaces/IA/pages/807436289/2020-09-17+Leonardo+Async+Processes) explains what processes belong in this repo vs what belongs in [Leonardo](https://github.com/databiosphere/leonardo).
+[This doc](https://broadworkbench.atlassian.net/wiki/spaces/IA/pages/2699558951/Leonardo+Cron+Jobs) should provide an extensive summary of what these cron jobs do, and also links the original design documents.
 
 ## resource-validator
-[Design Doc](https://broadworkbench.atlassian.net/wiki/spaces/IA/pages/737542150/2020-08-25+Proposal+for+Resource+Validator+Cron+Job)
 
-This job detects and fixes anomalies by updating Google resources to match their status in Leonardo database.
+This job detects and fixes anomalies by updating Google resources to match their status in Leonardo database. Apart from 
 
 ## zombie-monitor
-This job detects and fixes anomalies by updating Leonardo database status of resources to match their status in Google.
+This job detects and fixes anomalies by updating Leonardo database status of resources to match their status in Google or Azure.
 
 ## janitor
 This job removes prod resources when they are deemed not utilized.
@@ -79,11 +78,10 @@ e.g. `sbt "resourceValidator/run --dryRun --all"`
 2. Once your PR is approved you can merge it and a new PR will be automatically created in [terra-helm](https://github.com/broadinstitute/terra-helm). 
 
 3. Get this terra-helm PR merged (you can merge it yourself) and another automatic commit will bump leonardo's chart version. This will trigger another automatic commit 
-in [terra-helmfile](https://github.com/broadinstitute/terra-helmfile). Note that this commit will only auto-bump `dev` and `perf`, and will be auto-merged.
+in [terra-helmfile](https://github.com/broadinstitute/terra-helmfile). Note that this commit will only auto-bump `dev`, and will be auto-merged.
 
 4. Once the terra-helmfile PR is auto-merged, go to [argo](https://ap-argocd.dsp-devops.broadinstitute.org/applications) (you need to be on VPN to access argo), and click the `SYNC APPS` button on the left upper corner. Select these boxes to sync:
- - `leonardo dev` 
- - `leonardo perf`
+ - `leonardo dev`
  - `prune`
     
     This will sync leonardo's deployment to match [terra-helmfile](https://github.com/broadinstitute/terra-helmfile) repo.

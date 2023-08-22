@@ -27,7 +27,7 @@ import org.broadinstitute.dsde.workbench.util2.InstanceName
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatestplus.mockito.MockitoSugar.mock
 
-class DeletedRuntimeCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
+class DeletingRuntimeCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
   it should "return None if runtime no longer exists in the cloud" in {
     val computeService = new FakeGoogleComputeService {
       override def getInstance(project: GoogleProject, zone: ZoneName, instanceName: InstanceName)(implicit
@@ -45,10 +45,10 @@ class DeletedRuntimeCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
 
     forAll { (runtime: Runtime, dryRun: Boolean) =>
       val dbReader = new FakeDbReader {
-        override def getDeletedRuntimes: fs2.Stream[IO, Runtime] = Stream.emit(runtime)
+        override def getDeletingRuntimes: fs2.Stream[IO, Runtime] = Stream.emit(runtime)
       }
-      val deletedRuntimeChecker = DeletedRuntimeChecker.impl(dbReader, runtimeCheckerDeps)
-      val res = deletedRuntimeChecker.checkResource(runtime, dryRun)
+      val deletingRuntimeChecker = DeletingRuntimeChecker.impl(dbReader, runtimeCheckerDeps)
+      val res = deletingRuntimeChecker.checkResource(runtime, dryRun)
       res.unsafeRunSync() shouldBe None
     }
   }
@@ -56,7 +56,7 @@ class DeletedRuntimeCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
   it should "return Runtime if runtime still exists in the cloud" in {
     forAll { (runtime: Runtime, dryRun: Boolean) =>
       val dbReader = new FakeDbReader {
-        override def getDeletedRuntimes: fs2.Stream[IO, Runtime] = Stream.emit(runtime)
+        override def getDeletingRuntimes: fs2.Stream[IO, Runtime] = Stream.emit(runtime)
       }
       val computeService = new FakeGoogleComputeService {
         override def getInstance(project: GoogleProject, zone: ZoneName, instanceName: InstanceName)(implicit
@@ -103,8 +103,8 @@ class DeletedRuntimeCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
                                azureVmService = azureVmService
         )
 
-      val deletedRuntimeChecker = DeletedRuntimeChecker.impl(dbReader, runtimeCheckerDeps)
-      val res = deletedRuntimeChecker.checkResource(runtime, dryRun)
+      val deletingRuntimeChecker = DeletingRuntimeChecker.impl(dbReader, runtimeCheckerDeps)
+      val res = deletingRuntimeChecker.checkResource(runtime, dryRun)
       res.unsafeRunSync() shouldBe Some(runtime)
     }
   }
@@ -112,7 +112,7 @@ class DeletedRuntimeCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
   it should "return None if a dataproc cluster exists in google but has billing disabled and it is not a dry run" in {
     forAll { (runtime: Runtime) =>
       val dbReader = new FakeDbReader {
-        override def getDeletedRuntimes: fs2.Stream[IO, Runtime] = Stream.emit(runtime)
+        override def getDeletingRuntimes: fs2.Stream[IO, Runtime] = Stream.emit(runtime)
       }
 
       val dataprocService = new BaseFakeGoogleDataprocService {
@@ -136,8 +136,8 @@ class DeletedRuntimeCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
       val runtimeCheckerDeps =
         initRuntimeCheckerDeps(googleDataprocService = dataprocService, googleBillingService = billingService)
 
-      val deletedRuntimeChecker = DeletedRuntimeChecker.impl(dbReader, runtimeCheckerDeps)
-      val res = deletedRuntimeChecker.checkResource(runtime, false)
+      val deletingRuntimeChecker = DeletingRuntimeChecker.impl(dbReader, runtimeCheckerDeps)
+      val res = deletingRuntimeChecker.checkResource(runtime, false)
       res.unsafeRunSync() shouldBe None
     }
   }

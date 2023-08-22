@@ -5,7 +5,6 @@ import doobie.Put
 import doobie.hikari.HikariTransactor
 import doobie.implicits._
 import doobie.util.transactor.Transactor
-import org.broadinstitute.dsde.workbench.google2.GKEModels.KubernetesClusterId
 import org.broadinstitute.dsde.workbench.google2.KubernetesSerializableName.NamespaceName
 import org.broadinstitute.dsde.workbench.google2.{RegionName, ZoneName}
 import org.scalatest.Tag
@@ -42,12 +41,12 @@ object DbTestHelper {
   def insertDisk(disk: Disk, status: String = "Ready")(implicit xa: HikariTransactor[IO]): IO[Long] =
     insertDiskQuery(disk, status: String).withUniqueGeneratedKeys[Long]("id").transact(xa)
 
-  def insertK8sCluster(clusterId: KubernetesClusterId, status: String = "RUNNING")(implicit
+  def insertK8sCluster(cluster: KubernetesCluster, status: String = "RUNNING")(implicit
     xa: HikariTransactor[IO]
   ): IO[Long] =
     sql"""INSERT INTO KUBERNETES_CLUSTER
          (cloudContext, clusterName, location, status, creator, createdDate, destroyedDate, dateAccessed, loadBalancerIp, networkName, subNetworkName, subNetworkIpRange, region, apiServerIp, ingressChart)
-         VALUES (${clusterId.project}, ${clusterId.clusterName}, ${clusterId.location}, ${status}, "fake@broadinstitute.org", now(), now(), now(), "0.0.0.1", "network", "subnetwork", "0.0.0.1/20", ${regionName}, "35.202.56.6", "stable/nginx-ingress-1.41.3")
+         VALUES (${cluster.cloudContext.asString}, ${cluster.clusterName}, ${cluster.location}, ${status}, "fake@broadinstitute.org", now(), now(), now(), "0.0.0.1", "network", "subnetwork", "0.0.0.1/20", ${regionName}, "35.202.56.6", "stable/nginx-ingress-1.41.3")
          """.update.withUniqueGeneratedKeys[Long]("id").transact(xa)
 
   def insertNodepool(clusterId: Long, nodepoolName: String, isDefault: Boolean, status: String = "RUNNING")(implicit

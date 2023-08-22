@@ -9,7 +9,7 @@ import sbtassembly.AssemblyKeys._
 import sbtassembly.AssemblyPlugin.autoImport.assembly
 
 object Settings {
-  private lazy val artifactory = "https://artifactory.broadinstitute.org/artifactory/"
+  private lazy val artifactory = "https://broadinstitute.jfrog.io/artifactory/"
 
   private lazy val commonResolvers = List(
     "artifactory-releases" at artifactory + "libs-release",
@@ -78,7 +78,7 @@ object Settings {
 
   private lazy val commonSettings = List(
     organization := "com.broadinstitute.dsp",
-    scalaVersion := "2.13.10",
+    scalaVersion := "2.13.11",
     resolvers ++= commonResolvers,
     addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.10.3"),
     addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.1"),

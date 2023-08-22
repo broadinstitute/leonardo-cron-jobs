@@ -34,7 +34,7 @@ object StoppedRuntimeChecker {
             checkGceRuntime(x, isDryRun)
           case _: Runtime.AzureVM =>
             // TODO: IA-3289 Implement check Azure VM
-            logger.info(s"Azure VM is not supported yet").as(None)
+            logger.info(s"StoppedRuntimeChecker not supported for Azure VMs").as(None)
         }
 
       private def checkGceRuntime(runtime: Runtime.Gce, isDryRun: Boolean)(implicit
