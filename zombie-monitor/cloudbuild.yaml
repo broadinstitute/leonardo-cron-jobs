@@ -3,6 +3,8 @@ steps:
     args:
       - |
         testOnly -- -l cronJobs.dbTest; zombieMonitor/docker:publishLocal
+    env:
+      - 'JVM_OPTS=-Xmx4G -Xms4G -Xss2M'
   - name: 'gcr.io/cloud-builders/docker'
     args: [ 'image', 'tag', 'us.gcr.io/broad-dsp-gcr-public/zombie-monitor:latest', 'us.gcr.io/broad-dsp-gcr-public/zombie-monitor:$SHORT_SHA']
 images: [
