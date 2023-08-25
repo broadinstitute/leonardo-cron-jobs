@@ -43,8 +43,8 @@ class DbReaderGetDeletedOrErroredNodepoolsSpec extends AnyFlatSpec with CronJobs
 
           clustersToDelete <- dbReader.getDeletedAndErroredNodepools.compile.toList
         } yield clustersToDelete.map(_.nodepoolName).toSet shouldBe Set(NodepoolName(nodepool1Name),
-                                                                   NodepoolName(nodepool2Name),
-                                                                   NodepoolName(nodepool3Name)
+                                                                        NodepoolName(nodepool2Name),
+                                                                        NodepoolName(nodepool3Name)
         )
       }
       res.unsafeRunSync()
