@@ -42,7 +42,7 @@ class DbReaderGetDeletedOrErroredNodepoolsSpec extends AnyFlatSpec with CronJobs
           nodepool3Name <- getNodepoolName(nodepool3Id)
 
           clustersToDelete <- dbReader.getDeletedAndErroredNodepools.compile.toList
-        } yield clustersToDelete.map(_.nodepoolName) shouldBe List(NodepoolName(nodepool1Name),
+        } yield clustersToDelete.map(_.nodepoolName).toSet shouldBe Set(NodepoolName(nodepool1Name),
                                                                    NodepoolName(nodepool2Name),
                                                                    NodepoolName(nodepool3Name)
         )

@@ -61,7 +61,7 @@ object DbReaderImplicits {
                   s"${value} is not valid azure cloud context"
                 )
               case Right(value) =>
-                Runtime.AzureVM(id, CloudContext.Azure(value), runtimeName, cloudService, status)
+                Runtime.AzureVM(id, value, runtimeName, cloudService, status)
             }
           case CloudProvider.Gcp =>
             (zone, region) match {

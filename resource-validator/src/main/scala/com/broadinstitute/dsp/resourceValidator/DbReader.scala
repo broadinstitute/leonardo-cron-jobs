@@ -67,7 +67,7 @@ object DbReader {
           INNER JOIN RUNTIME_CONFIG AS rt ON c1.runtimeConfigId = rt.id
           WHERE
             c1.status = "Deleting" AND
-            c1.dataAccessed < now() - INTERVAL 60 MIN AND
+            c1.dateAccessed < now() - INTERVAL 1 HOUR AND
             NOT EXISTS (
               SELECT *
               FROM CLUSTER AS c2

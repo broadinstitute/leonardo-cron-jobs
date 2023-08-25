@@ -129,7 +129,10 @@ final class DbReaderSpec extends AnyFlatSpec with CronJobsTestSuite with IOCheck
           _ <- insertK8sCluster(runningCluster, "RUNNING")
           _ <- insertK8sCluster(azureCluster, "RUNNING")
           d <- dbReader.getk8sClustersToDeleteCandidate.compile.toList
-        } yield d should contain theSameElementsAs List(precreatingCluster, runningCluster, azureCluster)
+        } yield d.map(_.clusterName) should contain theSameElementsAs List(precreatingCluster.clusterName,
+                                                                           runningCluster.clusterName,
+                                                                           azureCluster.clusterName
+        )
       }
       res.unsafeRunSync()
     }

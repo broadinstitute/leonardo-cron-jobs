@@ -89,14 +89,14 @@ object DeletingRuntimeChecker {
       private def checkAzureRuntime(runtime: Runtime.AzureVM, isDryRun: Boolean): F[Option[Runtime]] =
         for {
           runtimeOpt <- deps.azureVmService
-            .getAzureVm(InstanceName(runtime.runtimeName), runtime.cloudContext.value)
+            .getAzureVm(InstanceName(runtime.runtimeName), runtime.azureCloudContext)
           _ <- runtimeOpt.traverse_ { _ =>
             if (isDryRun)
               logger.warn(s"${runtime} still exists in Azure. It needs to be deleted")
             else
               logger.warn(s"${runtime} still exists in Azure. Going to delete") >>
                 deps.azureVmService
-                  .deleteAzureVm(InstanceName(runtime.runtimeName), runtime.cloudContext.value, true)
+                  .deleteAzureVm(InstanceName(runtime.runtimeName), runtime.azureCloudContext, true)
                   .void
           }
         } yield runtimeOpt.fold(none[Runtime])(_ => Some(runtime))
