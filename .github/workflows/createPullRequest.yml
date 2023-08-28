@@ -45,7 +45,7 @@ jobs:
         if: steps.resource-validator.outputs.changed == 'true'
         with:
           command: |
-            yq --tag '!!str' w -i charts/leonardo/values.yaml cronjob.imageTag "${{ steps.setHash.outputs.git_short_sha }}"
+            yq --tag '!!str' w -i charts/leonardo/values.yaml resourceValidatorCron.imageTag "${{ steps.setHash.outputs.git_short_sha }}"
       - name: update janitor hash
         uses: databiosphere/github-actions/actions/yq@master
         if: steps.janitor.outputs.changed == 'true'
