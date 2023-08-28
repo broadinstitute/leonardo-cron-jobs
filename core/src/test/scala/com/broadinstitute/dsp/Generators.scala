@@ -21,7 +21,7 @@ object Generators {
     case CloudService.Gce =>
       Runtime.Gce(id, project, runtimeName, cloudService, status, DbTestHelper.zoneName)
     case CloudService.AzureVM =>
-      Runtime.AzureVM(id, CloudContext.Azure(azureCloudContext), runtimeName, cloudService, status)
+      Runtime.AzureVM(id, azureCloudContext, runtimeName, cloudService, status)
   }
   val genDataprocRuntime: Gen[Runtime.Dataproc] = for {
     id <- Gen.chooseNum(0, 100)

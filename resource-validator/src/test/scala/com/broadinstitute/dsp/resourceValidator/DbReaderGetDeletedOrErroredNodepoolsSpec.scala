@@ -16,7 +16,7 @@ import org.broadinstitute.dsde.workbench.model.google.GoogleProject
 import org.scalatest.flatspec.AnyFlatSpec
 
 class DbReaderGetDeletedOrErroredNodepoolsSpec extends AnyFlatSpec with CronJobsTestSuite with IOChecker {
-  implicit val config = ConfigSpec.config.database
+  implicit val config: DatabaseConfig = ConfigSpec.config.database
   val transactor = yoloTransactor
 
   it should "detect nodepools that are Deleted or Errored in the Leo DB" taggedAs DbTest in {
@@ -42,9 +42,9 @@ class DbReaderGetDeletedOrErroredNodepoolsSpec extends AnyFlatSpec with CronJobs
           nodepool3Name <- getNodepoolName(nodepool3Id)
 
           clustersToDelete <- dbReader.getDeletedAndErroredNodepools.compile.toList
-        } yield clustersToDelete.map(_.nodepoolName) shouldBe List(NodepoolName(nodepool1Name),
-                                                                   NodepoolName(nodepool2Name),
-                                                                   NodepoolName(nodepool3Name)
+        } yield clustersToDelete.map(_.nodepoolName).toSet shouldBe Set(NodepoolName(nodepool1Name),
+                                                                        NodepoolName(nodepool2Name),
+                                                                        NodepoolName(nodepool3Name)
         )
       }
       res.unsafeRunSync()

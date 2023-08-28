@@ -9,8 +9,8 @@ import org.broadinstitute.dsde.workbench.model.TraceId
 import org.broadinstitute.dsde.workbench.util2.InstanceName
 import org.typelevel.log4cats.Logger
 
-// Implements CheckRunner[F[_], A]
-object DeletedRuntimeChecker {
+// Looks for GCE, Dataproc, or Azure runtime that have been stuck in a `deleting` status for over 60 minutes
+object DeletingRuntimeChecker {
   def impl[F[_]](
     dbReader: DbReader[F],
     deps: RuntimeCheckerDeps[F]
@@ -18,11 +18,11 @@ object DeletedRuntimeChecker {
     new CheckRunner[F, Runtime] {
       override def appName: String = resourceValidator.appName
 
-      override def configs = CheckRunnerConfigs(s"deleted-runtime", shouldAlert = true)
+      override def configs = CheckRunnerConfigs(s"deleting-runtime", shouldAlert = true)
 
       override def dependencies: CheckRunnerDeps[F] = deps.checkRunnerDeps
 
-      override def resourceToScan: fs2.Stream[F, Runtime] = dbReader.getDeletedRuntimes
+      override def resourceToScan: fs2.Stream[F, Runtime] = dbReader.getDeletingRuntimes
 
       override def checkResource(runtime: Runtime, isDryRun: Boolean)(implicit
         ev: Ask[F, TraceId]

@@ -3,7 +3,12 @@ package com.broadinstitute.dsp
 import cats.Parallel
 import cats.effect.std.Semaphore
 import cats.effect.{Async, Resource}
-import org.broadinstitute.dsde.workbench.azure.{AzureAppRegistrationConfig, AzureContainerService, AzureVmService}
+import org.broadinstitute.dsde.workbench.azure.{
+  AzureAppRegistrationConfig,
+  AzureCloudContext,
+  AzureContainerService,
+  AzureVmService
+}
 import org.broadinstitute.dsde.workbench.google2.util.RetryPredicates
 import org.broadinstitute.dsde.workbench.google2.{
   GKEService,
@@ -58,13 +63,14 @@ sealed abstract class Runtime {
 
 object Runtime {
   final case class AzureVM(id: Long,
-                           cloudContext: CloudContext.Azure,
+                           azureCloudContext: AzureCloudContext,
                            runtimeName: String,
                            cloudService: CloudService,
                            status: String
   ) extends Runtime {
     // this is the format we'll output in report, which can be easily consumed by scripts if necessary
     override def toString: String = s"$id,${cloudService.asString},$runtimeName,$cloudService,$status"
+    override def cloudContext: CloudContext = CloudContext.Azure(azureCloudContext)
   }
 
   final case class Gce(id: Long,

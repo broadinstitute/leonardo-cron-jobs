@@ -57,7 +57,11 @@ object DbTestHelper {
          VALUES (${clusterId}, ${nodepoolName}, ${status}, "fake@broadinstitute.org", now(), now(), now(), "n1-standard-1", 1, 0, 1, ${isDefault})
          """.update.withUniqueGeneratedKeys[Long]("id").transact(xa)
 
-  def insertRuntime(runtime: Runtime, runtimeConfigId: Long, createdDate: Instant = Instant.now())(implicit
+  def insertRuntime(runtime: Runtime,
+                    runtimeConfigId: Long,
+                    createdDate: Instant = Instant.now(),
+                    dateAccessed: Instant = Instant.now()
+  )(implicit
     xa: HikariTransactor[IO]
   ): IO[Long] =
     sql"""INSERT INTO CLUSTER
@@ -83,7 +87,7 @@ object DbTestHelper {
          VALUES (
          ${runtime.runtimeName},
          ${runtime.cloudContext.asString},
-         "GCP",
+         ${runtime.cloudContext.cloudProvider},
          "op1",
          ${runtime.status},
          "fakeIp",
@@ -93,7 +97,7 @@ object DbTestHelper {
          "fake@broadinstitute.org",
          "pet@broadinstitute.org",
          "stagingBucket",
-         now(),
+         $dateAccessed,
          30,
          "clientId",
          now(),
@@ -102,7 +106,9 @@ object DbTestHelper {
          $runtimeConfigId)
          """.update.withUniqueGeneratedKeys[Long]("id").transact(xa)
 
-  def insertRuntimeConfig(cloudService: CloudService)(implicit xa: HikariTransactor[IO]): IO[Long] = {
+  def insertRuntimeConfig(cloudService: CloudService, dateAccessed: Instant = Instant.now())(implicit
+    xa: HikariTransactor[IO]
+  ): IO[Long] = {
     val zone = if (cloudService == CloudService.Gce) Some(zoneName.value) else None
     val region = if (cloudService == CloudService.Dataproc) Some(regionName.value) else None
     sql"""INSERT INTO RUNTIME_CONFIG
@@ -120,7 +126,7 @@ object DbTestHelper {
          "n1-standard-4",
          100,
          0,
-         now(),
+         $dateAccessed,
          30,
          ${zone},
          ${region}

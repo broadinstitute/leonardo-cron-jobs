@@ -131,7 +131,7 @@ object ActiveRuntimeChecker {
       def checkAzureRuntimeStatus(runtime: Runtime.AzureVM, isDryRun: Boolean): F[Option[Runtime]] =
         for {
           runtimeOpt <- deps.azureVmService
-            .getAzureVm(InstanceName(runtime.runtimeName), runtime.cloudContext.value)
+            .getAzureVm(InstanceName(runtime.runtimeName), runtime.azureCloudContext)
           res <-
             runtimeOpt match {
               case None =>

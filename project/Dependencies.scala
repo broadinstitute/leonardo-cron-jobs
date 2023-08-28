@@ -1,10 +1,11 @@
 import sbt._
 
 object Dependencies {
-  val workbenchLibsHash = "87b3b166-SNAP"
-  val workbenchGoogle2Version = s"0.25-${workbenchLibsHash}"
-  val workbenchAzureVersion = s"0.1-${workbenchLibsHash}"
-  val openTelemetryVersion = s"0.3-${workbenchLibsHash}"
+
+  val workbenchLibsHash = "92757f1"
+  val workbenchGoogle2Version = s"0.32-${workbenchLibsHash}"
+  val workbenchAzureVersion = s"0.5-${workbenchLibsHash}"
+  val openTelemetryVersion = s"0.6-${workbenchLibsHash}"
   val doobieVersion = "1.0.0-RC2"
   val declineVersion = "2.4.1"
 
@@ -22,19 +23,19 @@ object Dependencies {
     ExclusionRule(organization = "com.azure.resourcemanager", name = s"azure-resourcemanager-msi")
 
   val core = Seq(
-    "net.logstash.logback" % "logstash-logback-encoder" % "7.2",
-    "ch.qos.logback" % "logback-classic" % "1.4.5",
-    "ch.qos.logback" % "logback-core" % "1.4.5",
+    "net.logstash.logback" % "logstash-logback-encoder" % "7.4",
+    "ch.qos.logback" % "logback-classic" % "1.4.11",
+    "ch.qos.logback" % "logback-core" % "1.4.11",
     "org.tpolecat" %% "doobie-core" % doobieVersion,
     "org.tpolecat" %% "doobie-hikari" % doobieVersion,
     "org.tpolecat" %% "doobie-scalatest" % doobieVersion % Test,
-    "com.github.pureconfig" %% "pureconfig" % "0.17.2",
-    "mysql" % "mysql-connector-java" % "8.0.31",
-    "org.scalatest" %% "scalatest" % "3.2.14" % Test,
+    "com.github.pureconfig" %% "pureconfig" % "0.17.4",
+    "mysql" % "mysql-connector-java" % "8.0.33",
+    "org.scalatest" %% "scalatest" % "3.2.16" % Test,
     "com.monovore" %% "decline" % declineVersion,
     "com.monovore" %% "decline-effect" % declineVersion,
-    "dev.optics" %% "monocle-core" % "3.1.0",
-    "dev.optics" %% "monocle-macro" % "3.1.0",
+    "dev.optics" %% "monocle-core" % "3.2.0",
+    "dev.optics" %% "monocle-macro" % "3.2.0",
     "org.broadinstitute.dsde.workbench" %% "workbench-opentelemetry" % openTelemetryVersion excludeAll (excludeBouncyCastle,
     excludeBouncyCastleExt,
     excludeBouncyCastleUtil,
@@ -48,7 +49,7 @@ object Dependencies {
     "org.broadinstitute.dsde.workbench" %% "workbench-google2" % workbenchGoogle2Version % Test classifier "tests",
     "org.broadinstitute.dsde.workbench" %% "workbench-azure" % workbenchAzureVersion excludeAll (excludeResourceManagerMsi, excludeResourceManagerRelay),
     "org.broadinstitute.dsde.workbench" %% "workbench-azure" % workbenchAzureVersion % Test classifier "tests",
-    "org.scalatestplus" %% "scalacheck-1-15" % "3.2.11.0" % Test,
+    "org.scalatestplus" %% "scalacheck-1-16" % "3.2.14.0" % Test,
     "org.scalatestplus" %% "mockito-3-12" % "3.2.10.0" % Test, // https://github.com/scalatest/scalatestplus-selenium
     "ca.mrvisser" %% "sealerate" % "0.0.6"
   )

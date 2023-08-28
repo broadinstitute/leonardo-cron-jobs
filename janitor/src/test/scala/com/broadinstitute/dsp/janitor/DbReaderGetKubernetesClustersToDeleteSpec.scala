@@ -18,7 +18,7 @@ import java.time.Instant
  *   - Run this spec
  */
 final class DbReaderGetKubernetesClustersToDeleteSpec extends AnyFlatSpec with CronJobsTestSuite with IOChecker {
-  implicit val config = ConfigSpec.config.database
+  implicit val config: DatabaseConfig = ConfigSpec.config.database
   val transactor = yoloTransactor
 
   val now = Instant.now()

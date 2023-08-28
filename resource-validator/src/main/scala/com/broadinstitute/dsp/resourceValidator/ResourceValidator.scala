@@ -26,6 +26,7 @@ object ResourceValidator {
   def run[F[_]: Async: Parallel](isDryRun: Boolean,
                                  shouldCheckAll: Boolean,
                                  shouldCheckDeletedRuntimes: Boolean,
+                                 shouldCheckDeletingRuntimes: Boolean,
                                  shouldCheckErroredRuntimes: Boolean,
                                  shouldCheckStoppedRuntimes: Boolean,
                                  shouldCheckDeletedKubernetesCluster: Boolean,
@@ -48,6 +49,11 @@ object ResourceValidator {
           Stream.eval(DeletedRuntimeChecker.impl(deps.dbReader, deps.runtimeCheckerDeps).run(isDryRun))
         else Stream.empty
 
+      deletingRuntimeCheckerProcess =
+        if (shouldCheckAll || shouldCheckDeletingRuntimes)
+          Stream.eval(DeletingRuntimeChecker.impl(deps.dbReader, deps.runtimeCheckerDeps).run(isDryRun))
+        else Stream.empty
+
       deleteDiskCheckerProcess =
         if (shouldCheckAll || shouldCheckDeletedDisks)
           Stream.eval(DeletedDiskChecker.impl[F](deps.dbReader, deps.deletedDiskCheckerDeps).run(isDryRun))
@@ -57,6 +63,7 @@ object ResourceValidator {
         if (shouldCheckAll || shouldCheckErroredRuntimes)
           Stream.eval(ErroredRuntimeChecker.iml(deps.dbReader, deps.runtimeCheckerDeps).run(isDryRun))
         else Stream.empty
+
       deleteKubernetesClusterCheckerProcess =
         if (shouldCheckAll || shouldCheckDeletedKubernetesCluster)
           Stream.eval(
@@ -65,6 +72,7 @@ object ResourceValidator {
               .run(isDryRun)
           )
         else Stream.empty
+
       deleteNodepoolCheckerProcess =
         if (shouldCheckAll || shouldCheckDeletedNodepool)
           Stream.eval(
@@ -89,6 +97,7 @@ object ResourceValidator {
 
       processes = Stream(
         deleteRuntimeCheckerProcess,
+        deletingRuntimeCheckerProcess,
         errorRuntimeCheckerProcess,
         stoppedRuntimeCheckerProcess,
         deleteDiskCheckerProcess,

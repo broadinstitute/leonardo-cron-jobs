@@ -11,6 +11,7 @@ import org.broadinstitute.dsde.workbench.model.google.{GcsBucketName, GoogleProj
 trait DbReader[F[_]] {
   def getDeletedDisks: Stream[F, Disk]
   def getDeletedRuntimes: Stream[F, Runtime]
+  def getDeletingRuntimes: Stream[F, Runtime]
   def getErroredRuntimes: Stream[F, Runtime]
   def getStoppedRuntimes: Stream[F, Runtime]
   def getInitBucketsToDelete: Stream[F, InitBucketToRemove]
@@ -50,6 +51,23 @@ object DbReader {
           WHERE
             c1.status = "Deleted" AND
             c1.destroyedDate > now() - INTERVAL 30 DAY AND
+            NOT EXISTS (
+              SELECT *
+              FROM CLUSTER AS c2
+              WHERE
+                c2.cloudContext = c1.cloudContext AND
+                c2.runtimeName = c1.runtimeName AND
+                (c2.status = "Stopped" OR c2.status = "Running")
+          )"""
+      .query[Runtime]
+
+  val deletingRuntimeQuery =
+    sql"""SELECT DISTINCT c1.id, cloudContext, c1.cloudProvider, runtimeName, rt.cloudService, c1.status, rt.zone, rt.region
+          FROM CLUSTER AS c1
+          INNER JOIN RUNTIME_CONFIG AS rt ON c1.runtimeConfigId = rt.id
+          WHERE
+            c1.status = "Deleting" AND
+            c1.dateAccessed < now() - INTERVAL 1 HOUR AND
             NOT EXISTS (
               SELECT *
               FROM CLUSTER AS c2
@@ -128,6 +146,9 @@ object DbReader {
      */
     override def getDeletedRuntimes: Stream[F, Runtime] =
       deletedRuntimeQuery.stream.transact(xa)
+
+    override def getDeletingRuntimes: Stream[F, Runtime] =
+      deletingRuntimeQuery.stream.transact(xa)
 
     override def getErroredRuntimes: Stream[F, Runtime] =
       erroredRuntimeQuery.stream.transact(xa)
