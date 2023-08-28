@@ -63,7 +63,7 @@ sealed abstract class Runtime {
 
 object Runtime {
   final case class AzureVM(id: Long,
-                           azureCloudContext: AzureCloudContext, //                           cloudContext: CloudContext.Azure,
+                           azureCloudContext: AzureCloudContext,
                            runtimeName: String,
                            cloudService: CloudService,
                            status: String
