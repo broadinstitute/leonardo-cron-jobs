@@ -16,12 +16,12 @@ object DbTestHelper {
   val zoneName = ZoneName("us-central1-a")
   val regionName = RegionName("us-central1")
 
-  def yoloTransactor(implicit databaseConfig: DatabaseConfig): Transactor[IO] =
+  val yoloTransactor: Transactor[IO] =
     Transactor.fromDriverManager[IO](
       "com.mysql.cj.jdbc.Driver", // driver classname
-      databaseConfig.url,
-      databaseConfig.user,
-      databaseConfig.password
+      "jdbc:mysql://localhost:3311/leotestdb?createDatabaseIfNotExist=true&useSSL=false&rewriteBatchedStatements=true&nullNamePatternMatchesAll=true&generateSimpleParameterMetadata=TRUE",
+      "leonardo-test",
+      "leonardo-test"
     )
 
   def transactorResource(implicit
@@ -158,7 +158,7 @@ object DbTestHelper {
          """.update.withUniqueGeneratedKeys[Long]("id").transact(xa)
 
   def insertAppUsage(appId: Long)(implicit
-                                  xa: HikariTransactor[IO]
+    xa: HikariTransactor[IO]
   ): IO[Int] =
     sql"""
         INSERT INTO APP_USAGE (appId, startTime, stopTime) values (${appId}, "2023-09-28 17:24:29.568559", "1970-01-01 00:00:01.000000")

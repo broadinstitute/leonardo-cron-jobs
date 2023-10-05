@@ -31,15 +31,15 @@ final class DbReaderSpec extends AnyFlatSpec with CronJobsTestSuite with IOCheck
     check(DbReader.activeDisksQuery)
   }
 
-  it should "build activeK8sClustersQuery properly" taggedAs (DbTest) in {
+  it should "build activeK8sClustersQuery properly" taggedAs DbTest in {
     check(DbReader.activeK8sClustersQuery)
   }
 
-  it should "build activeNodepoolsQuery properly" taggedAs (DbTest) in {
+  it should "build activeNodepoolsQuery properly" taggedAs DbTest in {
     check(DbReader.activeNodepoolsQuery)
   }
 
-  it should "build activeRuntime properly" taggedAs (DbTest) in {
+  it should "build activeRuntime properly" taggedAs DbTest in {
     check(DbReader.activeRuntimeQuery)
   }
 
@@ -49,7 +49,7 @@ final class DbReaderSpec extends AnyFlatSpec with CronJobsTestSuite with IOCheck
     check(DbReader.updateDiskStatusQuery(82))
   }
 
-  it should "return active runtimes that are older than an hour" taggedAs (DbTest) in {
+  it should "return active runtimes that are older than an hour" taggedAs DbTest in {
     forAll { (rt: Runtime) =>
       val runtime = Runtime.setStatus(rt, "Running")
       val res = transactorResource.use { implicit xa =>
@@ -66,7 +66,7 @@ final class DbReaderSpec extends AnyFlatSpec with CronJobsTestSuite with IOCheck
     }
   }
 
-  it should "not return runtimes that were created within the past hour" taggedAs (DbTest) in {
+  it should "not return runtimes that were created within the past hour" taggedAs DbTest in {
     forAll { (rt: Runtime) =>
       val runtime = Runtime.setStatus(rt, "Running")
       val res = transactorResource.use { implicit xa =>
@@ -82,7 +82,7 @@ final class DbReaderSpec extends AnyFlatSpec with CronJobsTestSuite with IOCheck
     }
   }
 
-  it should "read a disk properly" taggedAs (DbTest) in {
+  it should "read a disk properly" taggedAs DbTest in {
     forAll { (disk: Disk) =>
       val res = transactorResource.use { implicit xa =>
         val dbReader = DbReader.impl(xa)
@@ -103,7 +103,7 @@ final class DbReaderSpec extends AnyFlatSpec with CronJobsTestSuite with IOCheck
     }
   }
 
-  it should "read a KubernetesCluster properly" taggedAs (DbTest) in {
+  it should "read a KubernetesCluster properly" taggedAs DbTest in {
     forAll { (cluster: KubernetesCluster) =>
       val res = transactorResource.use { implicit xa =>
         val dbReader = DbReader.impl(xa)
@@ -138,7 +138,7 @@ final class DbReaderSpec extends AnyFlatSpec with CronJobsTestSuite with IOCheck
     }
   }
 
-  it should "update disk properly" taggedAs (DbTest) in {
+  it should "update disk properly" taggedAs DbTest in {
     forAll { (disk: Disk) =>
       val res = transactorResource.use { implicit xa =>
         val dbReader = DbReader.impl(xa)
@@ -152,7 +152,7 @@ final class DbReaderSpec extends AnyFlatSpec with CronJobsTestSuite with IOCheck
     }
   }
 
-  it should "update k8s cluster and unlink PD properly" taggedAs (DbTest) in {
+  it should "update k8s cluster and unlink PD properly" taggedAs DbTest in {
     forAll { (cluster: KubernetesCluster, disk: Disk) =>
       val res = transactorResource.use { implicit xa =>
         val dbReader = DbReader.impl(xa)
@@ -178,7 +178,7 @@ final class DbReaderSpec extends AnyFlatSpec with CronJobsTestSuite with IOCheck
     }
   }
 
-  it should "update k8s cluster when there's no nodepool or app row" taggedAs (DbTest) in {
+  it should "update k8s cluster when there's no nodepool or app row" taggedAs DbTest in {
     forAll { (cluster: KubernetesCluster) =>
       val res = transactorResource.use { implicit xa =>
         val dbReader = DbReader.impl(xa)
@@ -192,7 +192,7 @@ final class DbReaderSpec extends AnyFlatSpec with CronJobsTestSuite with IOCheck
     }
   }
 
-  it should "update k8s cluster and nodepool when there's no App record" taggedAs (DbTest) in {
+  it should "update k8s cluster and nodepool when there's no App record" taggedAs DbTest in {
     forAll { (cluster: KubernetesCluster) =>
       val res = transactorResource.use { implicit xa =>
         val dbReader = DbReader.impl(xa)
@@ -211,7 +211,7 @@ final class DbReaderSpec extends AnyFlatSpec with CronJobsTestSuite with IOCheck
     }
   }
 
-  it should "update nodepool status properly" taggedAs (DbTest) in {
+  it should "update nodepool status properly" taggedAs DbTest in {
     forAll { (cluster: KubernetesCluster) =>
       val res = transactorResource.use { implicit xa =>
         for {
@@ -225,7 +225,7 @@ final class DbReaderSpec extends AnyFlatSpec with CronJobsTestSuite with IOCheck
     }
   }
 
-  it should "update App status properly" taggedAs (DbTest) in {
+  it should "update App status properly" taggedAs DbTest in {
     forAll { (cluster: KubernetesCluster, disk: Disk) =>
       val res = transactorResource.use { implicit xa =>
         for {
@@ -242,7 +242,7 @@ final class DbReaderSpec extends AnyFlatSpec with CronJobsTestSuite with IOCheck
     }
   }
 
-  it should "update nodepool and app status properly" taggedAs (DbTest) in {
+  it should "update nodepool and app status properly" taggedAs DbTest in {
     forAll { (cluster: KubernetesCluster, disk: Disk) =>
       val res = transactorResource.use { implicit xa =>
         val dbReader = DbReader.impl(xa)
@@ -265,7 +265,7 @@ final class DbReaderSpec extends AnyFlatSpec with CronJobsTestSuite with IOCheck
     }
   }
 
-  it should "update DB properly when Nodepool is deleted" taggedAs (DbTest) in {
+  it should "update DB properly when Nodepool is deleted" taggedAs DbTest in {
     forAll { (cluster: KubernetesCluster, disk: Disk) =>
       val res = transactorResource.use { implicit xa =>
         val dbReader = DbReader.impl(xa)
@@ -285,14 +285,14 @@ final class DbReaderSpec extends AnyFlatSpec with CronJobsTestSuite with IOCheck
         } yield {
           appStatus shouldBe "DELETED"
           nodepoolStatus shouldBe "DELETED"
-          appUsageStopTime shouldBe(appDateAccessedTime)
+          appUsageStopTime shouldBe appDateAccessedTime
         }
       }
       res.unsafeRunSync()
     }
   }
 
-  it should "update runtime status and unlink PD properly" taggedAs (DbTest) in {
+  it should "update runtime status and unlink PD properly" taggedAs DbTest in {
     forAll { (runtime: Runtime, cloudService: CloudService) =>
       val res = transactorResource.use { implicit xa =>
         val dbReader = DbReader.impl(xa)
@@ -312,7 +312,7 @@ final class DbReaderSpec extends AnyFlatSpec with CronJobsTestSuite with IOCheck
     }
   }
 
-  it should "update CLUSTER_ERROR table properly" taggedAs (DbTest) in {
+  it should "update CLUSTER_ERROR table properly" taggedAs DbTest in {
     forAll { (runtime: Runtime, cloudService: CloudService) =>
       val res = transactorResource.use { implicit xa =>
         val dbReader = DbReader.impl(xa)
