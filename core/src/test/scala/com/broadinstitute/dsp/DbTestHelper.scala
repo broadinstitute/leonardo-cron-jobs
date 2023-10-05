@@ -29,7 +29,7 @@ object DbTestHelper {
   ): Resource[IO, HikariTransactor[IO]] =
     for {
       xa <- DbTransactor.init[IO](databaseConfig)
-      _ <- Resource.eval(truncateTables(xa))
+      _ <- Resource.make(IO.unit)(_ => truncateTables(xa))
     } yield xa
 
   def insertDiskQuery(disk: Disk, status: String) =
@@ -157,6 +157,13 @@ object DbTestHelper {
          VALUES (${nodepoolId}, "GALAXY", ${appName}, ${status}, "samId", "fake@broadinstitute.org", ${createdDate}, ${destroyedDate}, now(), ${namespaceId}, ${diskId}, "", "gsa", "ksa", "chart1", "release1")
          """.update.withUniqueGeneratedKeys[Long]("id").transact(xa)
 
+  def insertAppUsage(appId: Long)(implicit
+                                  xa: HikariTransactor[IO]
+  ): IO[Int] =
+    sql"""
+        INSERT INTO APP_USAGE (appId, startTime, stopTime) values (${appId}, "2023-09-28 17:24:29.568559", "1970-01-01 00:00:01.000000")
+       """.update.run.transact(xa)
+
   def getDiskStatus(diskId: Long)(implicit xa: HikariTransactor[IO]): IO[String] =
     sql"""
          SELECT status FROM PERSISTENT_DISK where id = ${diskId}
@@ -171,6 +178,16 @@ object DbTestHelper {
     sql"""
          SELECT status FROM NODEPOOL where id = ${id}
          """.query[String].unique.transact(xa)
+
+  def getAppUsageStopTime(appId: Long)(implicit xa: HikariTransactor[IO]): IO[Instant] =
+    sql"""
+         SELECT stopTime FROM APP_USAGE where appId = ${appId}
+         """.query[Instant].unique.transact(xa)
+
+  def getAppDateAccessed(id: Long)(implicit xa: HikariTransactor[IO]): IO[Instant] =
+    sql"""
+         SELECT dateAccessed FROM APP where id = ${id}
+         """.query[Instant].unique.transact(xa)
 
   def getAppStatus(id: Long)(implicit xa: HikariTransactor[IO]): IO[String] =
     sql"""
@@ -209,6 +226,7 @@ object DbTestHelper {
 
   private def truncateTables(xa: HikariTransactor[IO]): IO[Unit] = {
     val res = for {
+      _ <- sql"Delete from APP_USAGE".update.run
       _ <- sql"Delete from APP".update.run
       _ <- sql"Delete from NAMESPACE".update.run
       _ <- sql"Delete from NODEPOOL".update.run
