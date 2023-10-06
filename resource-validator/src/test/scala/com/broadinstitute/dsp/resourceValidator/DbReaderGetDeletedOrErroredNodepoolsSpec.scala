@@ -7,7 +7,7 @@ import com.broadinstitute.dsp.DbTestHelper.{
   getNodepoolName,
   insertK8sCluster,
   insertNodepool,
-  transactorResource,
+  isolatedDbTest,
   yoloTransactor
 }
 import com.broadinstitute.dsp.Generators._
@@ -23,7 +23,7 @@ class DbReaderGetDeletedOrErroredNodepoolsSpec extends AnyFlatSpec with CronJobs
 
   it should "detect nodepools that are Deleted or Errored in the Leo DB" taggedAs DbTest in {
     forAll { (cluster: KubernetesCluster) =>
-      val res = transactorResource.use { _ =>
+      val res = isolatedDbTest.use { _ =>
         val dbReader = DbReader.impl(transactor)
 
         val cluster2 =

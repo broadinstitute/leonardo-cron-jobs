@@ -4,7 +4,7 @@ package resourceValidator
 import cats.effect.IO
 import cats.effect.unsafe.implicits.global
 import com.broadinstitute.dsp.Generators._
-import com.broadinstitute.dsp.DbTestHelper.{insertRuntime, insertRuntimeConfig, transactorResource, yoloTransactor}
+import com.broadinstitute.dsp.DbTestHelper.{insertRuntime, insertRuntimeConfig, isolatedDbTest, yoloTransactor}
 import doobie.Transactor
 import doobie.scalatest.IOChecker
 import org.scalatest.flatspec.AnyFlatSpec
@@ -19,7 +19,7 @@ class DbReaderGetDeletingRuntimesSpec extends AnyFlatSpec with CronJobsTestSuite
   it should "return runtimes that have been deleting for over an hour in the Leo DB" taggedAs DbTest in {
     forAll { (rt: Runtime) =>
       val runtime = Runtime.setStatus(rt, "Deleting")
-      val res = transactorResource.use { _ =>
+      val res = isolatedDbTest.use { _ =>
         val dbReader = DbReader.impl(transactor)
 
         val oldTimeStamp = Instant.now.minus(2, ChronoUnit.HOURS)
@@ -36,7 +36,7 @@ class DbReaderGetDeletingRuntimesSpec extends AnyFlatSpec with CronJobsTestSuite
   it should "not return runtimes that have been deleting within the past hour" taggedAs DbTest in {
     forAll { (rt: Runtime) =>
       val runtime = Runtime.setStatus(rt, "Deleting")
-      val res = transactorResource.use { _ =>
+      val res = isolatedDbTest.use { _ =>
         val dbReader = DbReader.impl(transactor)
 
         for {

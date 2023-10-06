@@ -25,7 +25,7 @@ object DbTestHelper {
       logHandler = None
     )
 
-  def transactorResource(implicit
+  def isolatedDbTest(implicit
     xa: Transactor[IO]
   ): Resource[IO, Unit] =
     for {

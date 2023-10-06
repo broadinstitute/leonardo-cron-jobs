@@ -17,7 +17,7 @@ class DbReaderGetDeletedAndErroredKubernetesClustersSpec extends AnyFlatSpec wit
 
   it should "detect kubernetes clusters that are Deleted or Errored in the Leo DB" taggedAs DbTest in {
     forAll { (cluster: KubernetesCluster) =>
-      val res = transactorResource.use { _ =>
+      val res = isolatedDbTest.use { _ =>
         val dbReader = DbReader.impl(transactor)
 
         val cluster2 =

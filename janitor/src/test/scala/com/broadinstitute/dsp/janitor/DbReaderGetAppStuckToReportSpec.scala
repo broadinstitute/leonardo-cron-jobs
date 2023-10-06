@@ -9,7 +9,7 @@ import com.broadinstitute.dsp.DbTestHelper.{
   insertK8sCluster,
   insertNamespace,
   insertNodepool,
-  transactorResource,
+  isolatedDbTest,
   yoloTransactor
 }
 import com.broadinstitute.dsp.Generators._
@@ -37,7 +37,7 @@ class DbReaderGetAppStuckToReportSpec extends AnyFlatSpec with CronJobsTestSuite
 
   it should "detect for reporting: App in DELETING or CREATING status BEYOND grace period" taggedAs DbTest in {
     forAll { (cluster: KubernetesCluster, disk: Disk) =>
-      val res = transactorResource.use { _ =>
+      val res = isolatedDbTest.use { _ =>
         val dbReader = DbReader.impl(transactor)
 
         for {
@@ -72,7 +72,7 @@ class DbReaderGetAppStuckToReportSpec extends AnyFlatSpec with CronJobsTestSuite
 
   it should "not detect for reporting: App in DELETING or CREATING status WITHIN grace period" taggedAs DbTest in {
     forAll { (cluster: KubernetesCluster, disk: Disk) =>
-      val res = transactorResource.use { _ =>
+      val res = isolatedDbTest.use { _ =>
         val dbReader = DbReader.impl(transactor)
 
         for {
