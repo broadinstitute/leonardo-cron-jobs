@@ -66,14 +66,22 @@ e.g. `sbt "resourceValidator/run --dryRun --all"`
   * Run each unit test individually as running them concurrently causes some of them to fail.
 
 ## Contributing
-1. Run these unit tests locally before making a PR:
-- `com.broadinstitute.dsp.zombieMonitor.DbReaderSpec`
-- `com.broadinstitute.dsp.resourceValidator.DbQueryBuilderSpec`
-- `com.broadinstitute.dsp.resourceValidator.DbReader*Spec`
-- `com.broadinstitute.dsp.janitor.DbQueryBuilderSpec`
-- `com.broadinstitute.dsp.janitor.DbReader*Spec`
 
-   These are not run in CI, so you have to make sure you run them manually before merging any PRs. Instructions on running these can be found in the respective `DbReaderSpec` files.
+1. Ideally, we should be able to just run `sbt test`. But for some reason, DB unit tests will fail if they're run this way. So you'd have to run them separately.
+
+Run DB tests by projects will have fewer failures. Here's how you can run them by each project:
+
+- `sbt zombieMonitor/test`
+
+- `sbt resourceValidator/test`
+  The following two specs will fail but should succeed when run individually
+  - `com.broadinstitute.dsp.resourceValidator.DbReaderGetDeletedOrErroredNodepoolsSpec`
+  - `com.broadinstitute.dsp.resourceValidator.DbReaderGetDeletedAndErroredKubernetesClustersSpec`
+
+- `sbt janitor/test`
+  There will be a few failures, but should succeed when run individually. (Currently `com.broadinstitute.dsp.janitor.DbQueryBuilderSpec` has real error that we need to fix at some point).
+
+  These are not run in CI, so you have to make sure you run them manually before merging any PRs. Instructions on running these can be found in the respective `DbReaderSpec` files.
 
 2. Once your PR is approved you can merge it and a new PR will be automatically created in [terra-helm](https://github.com/broadinstitute/terra-helm). 
 

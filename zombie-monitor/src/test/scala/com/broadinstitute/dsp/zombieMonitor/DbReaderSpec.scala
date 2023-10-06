@@ -28,7 +28,7 @@ final class DbReaderSpec extends AnyFlatSpec with CronJobsTestSuite with IOCheck
   implicit val databaseConfig: DatabaseConfig = ConfigSpec.config.database
   implicit val transactor: Transactor[IO] = yoloTransactor
 
-  it should "build activeDisksQuery properly" in {
+  it should "build activeDisksQuery properly" taggedAs DbTest in {
     check(DbReader.activeDisksQuery)
   }
 
