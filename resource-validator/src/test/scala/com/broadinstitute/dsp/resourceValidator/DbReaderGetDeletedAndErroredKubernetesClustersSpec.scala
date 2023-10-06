@@ -1,21 +1,24 @@
 package com.broadinstitute.dsp
 package resourceValidator
 
+import cats.effect.IO
 import cats.effect.unsafe.implicits.global
 import com.broadinstitute.dsp.DbTestHelper.{insertK8sCluster, _}
 import com.broadinstitute.dsp.Generators._
+import doobie.Transactor
 import doobie.scalatest.IOChecker
 import org.broadinstitute.dsde.workbench.google2.GKEModels.KubernetesClusterName
 import org.broadinstitute.dsde.workbench.model.google.GoogleProject
 import org.scalatest.flatspec.AnyFlatSpec
+
 class DbReaderGetDeletedAndErroredKubernetesClustersSpec extends AnyFlatSpec with CronJobsTestSuite with IOChecker {
   implicit val config: DatabaseConfig = ConfigSpec.config.database
-  val transactor = yoloTransactor
+  implicit val transactor: Transactor[IO] = yoloTransactor
 
   it should "detect kubernetes clusters that are Deleted or Errored in the Leo DB" taggedAs DbTest in {
     forAll { (cluster: KubernetesCluster) =>
-      val res = transactorResource.use { implicit xa =>
-        val dbReader = DbReader.impl(xa)
+      val res = isolatedDbTest.use { _ =>
+        val dbReader = DbReader.impl(transactor)
 
         val cluster2 =
           cluster.copy(cloudContext = CloudContext.Gcp(GoogleProject("project2")))

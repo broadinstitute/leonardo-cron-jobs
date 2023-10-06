@@ -59,12 +59,13 @@ object DbReader {
            update PERSISTENT_DISK set status = "Deleted", destroyedDate = now() where id = $id
            """.update
 
-  def markK8sClusterDeletedQuery(id: Int) =
+  def markK8sClusterDeletedQuery(id: Int): Update0 =
     sql"""
           UPDATE KUBERNETES_CLUSTER
           LEFT JOIN NODEPOOL ON KUBERNETES_CLUSTER.id = NODEPOOL.clusterId
           LEFT JOIN APP ON APP.nodepoolId = NODEPOOL.id
-          SET diskId = NULL, KUBERNETES_CLUSTER.status = "DELETED", KUBERNETES_CLUSTER.destroyedDate = now(), NODEPOOL.status = "DELETED", NODEPOOL.destroyedDate=now()
+          LEFT JOIN APP_USAGE on APP.id = APP_USAGE.appId
+          SET diskId = NULL, KUBERNETES_CLUSTER.status = "DELETED", KUBERNETES_CLUSTER.destroyedDate = now(), NODEPOOL.status = "DELETED", NODEPOOL.destroyedDate=now(), APP_USAGE.`stopTime` = APP.dateAccessed
           where KUBERNETES_CLUSTER.id = $id""".update
 
   def markNodepoolDeletedQuery(id: Long) =
@@ -94,6 +95,15 @@ object DbReader {
     sql"""
            update APP set status = "DELETED", destroyedDate = now() where nodepoolId = $nodepoolId
            """.update
+
+  def markAppUsageStopTimeQuery(nodepoolId: Long): Update0 =
+    sql"""
+         update APP_USAGE
+         INNER JOIN APP ON APP.id = APP_USAGE.`appId`
+         INNER JOIN NODEPOOL ON NODEPOOL.id = APP.nodepoolId
+         set APP_USAGE.stopTime = APP.dateAccessed
+         where NODEPOOL.id = ${nodepoolId}
+         """.update
 
   def updateAppStatusForNodepoolId(nodepoolId: Long, status: String) =
     sql"""
@@ -134,6 +144,7 @@ object DbReader {
       val res = for {
         _ <- markNodepoolDeletedQuery(nodepoolId).run
         _ <- markAppDeletedForNodepoolIdQuery(nodepoolId).run
+        _ <- markAppUsageStopTimeQuery(nodepoolId).run
       } yield ()
       res.transact(xa)
     }

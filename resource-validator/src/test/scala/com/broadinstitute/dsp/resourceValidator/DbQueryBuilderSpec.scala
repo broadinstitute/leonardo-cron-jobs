@@ -1,7 +1,9 @@
 package com.broadinstitute.dsp
 package resourceValidator
 
+import cats.effect.IO
 import com.broadinstitute.dsp.DbTestHelper._
+import doobie.Transactor
 import doobie.scalatest.IOChecker
 import org.scalatest.flatspec.AnyFlatSpec
 
@@ -14,7 +16,7 @@ import org.scalatest.flatspec.AnyFlatSpec
  */
 final class DbQueryBuilderSpec extends AnyFlatSpec with CronJobsTestSuite with IOChecker {
   implicit val config: DatabaseConfig = ConfigSpec.config.database
-  val transactor = yoloTransactor
+  implicit val transactor: Transactor[IO] = yoloTransactor
 
   it should "build deletedDisksQuery properly" taggedAs DbTest in {
     check(DbReader.shouldBedeletedDisksQuery)
