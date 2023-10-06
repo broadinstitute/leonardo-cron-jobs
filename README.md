@@ -74,9 +74,7 @@ Run DB tests by projects will have fewer failures. Here's how you can run them b
 - `sbt zombieMonitor/test`
 
 - `sbt resourceValidator/test`
-  The following two specs will fail but should succeed when run individually
-  - `com.broadinstitute.dsp.resourceValidator.DbReaderGetDeletedOrErroredNodepoolsSpec`
-  - `com.broadinstitute.dsp.resourceValidator.DbReaderGetDeletedAndErroredKubernetesClustersSpec`
+  There will be a few failures, but should succeed when run individually.
 
 - `sbt janitor/test`
   There will be a few failures, but should succeed when run individually. (Currently `com.broadinstitute.dsp.janitor.DbQueryBuilderSpec` has real error that we need to fix at some point).
