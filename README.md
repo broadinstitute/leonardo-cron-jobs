@@ -74,8 +74,6 @@ Run DB tests by projects will have fewer failures. Here's how you can run them b
 - `sbt zombieMonitor/test`
 
 - `sbt resourceValidator/test`
-  
-    There will be a few failures, but should succeed when run individually.
 
 - `sbt janitor/test`
   
