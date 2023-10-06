@@ -1,14 +1,14 @@
 package com.broadinstitute.dsp
 
 import cats.effect.{IO, Resource}
+import com.broadinstitute.dsp.DbReaderImplicits._
 import doobie.Put
-import doobie.hikari.HikariTransactor
 import doobie.implicits._
 import doobie.util.transactor.Transactor
 import org.broadinstitute.dsde.workbench.google2.KubernetesSerializableName.NamespaceName
 import org.broadinstitute.dsde.workbench.google2.{RegionName, ZoneName}
 import org.scalatest.Tag
-import DbReaderImplicits._
+
 import java.time.Instant
 
 object DbTestHelper {
@@ -16,21 +16,21 @@ object DbTestHelper {
   val zoneName = ZoneName("us-central1-a")
   val regionName = RegionName("us-central1")
 
-  val yoloTransactor: Transactor[IO] =
+  def yoloTransactor(implicit databaseConfig: DatabaseConfig): Transactor[IO] =
     Transactor.fromDriverManager[IO](
-      "com.mysql.cj.jdbc.Driver", // driver classname
-      "jdbc:mysql://localhost:3311/leotestdb?createDatabaseIfNotExist=true&useSSL=false&rewriteBatchedStatements=true&nullNamePatternMatchesAll=true&generateSimpleParameterMetadata=TRUE",
-      "leonardo-test",
-      "leonardo-test"
+      driver = "com.mysql.cj.jdbc.Driver", // driver classname
+      databaseConfig.url,
+      databaseConfig.user,
+      databaseConfig.password,
+      logHandler = None
     )
 
   def transactorResource(implicit
-    databaseConfig: DatabaseConfig
-  ): Resource[IO, HikariTransactor[IO]] =
+    xa: Transactor[IO]
+  ): Resource[IO, Unit] =
     for {
-      xa <- DbTransactor.init[IO](databaseConfig)
       _ <- Resource.make(IO.unit)(_ => truncateTables(xa))
-    } yield xa
+    } yield ()
 
   def insertDiskQuery(disk: Disk, status: String) =
     sql"""INSERT INTO PERSISTENT_DISK
@@ -38,11 +38,11 @@ object DbTestHelper {
          VALUES (${disk.cloudContext.asString}, ${disk.cloudContext.cloudProvider}, ${disk.zone}, ${disk.diskName}, "fakeGoogleId", "fakeSamResourceId", ${status}, "fake@broadinstitute.org", now(), now(), now(), 50, "Standard", "4096", "pet@broadinsitute.org", "GCE")
          """.update
 
-  def insertDisk(disk: Disk, status: String = "Ready")(implicit xa: HikariTransactor[IO]): IO[Long] =
+  def insertDisk(disk: Disk, status: String = "Ready")(implicit xa: Transactor[IO]): IO[Long] =
     insertDiskQuery(disk, status: String).withUniqueGeneratedKeys[Long]("id").transact(xa)
 
   def insertK8sCluster(cluster: KubernetesCluster, status: String = "RUNNING")(implicit
-    xa: HikariTransactor[IO]
+    xa: Transactor[IO]
   ): IO[Long] =
     sql"""INSERT INTO KUBERNETES_CLUSTER
          (cloudContext, clusterName, location, status, creator, createdDate, destroyedDate, dateAccessed, loadBalancerIp, networkName, subNetworkName, subNetworkIpRange, region, apiServerIp, ingressChart)
@@ -50,7 +50,7 @@ object DbTestHelper {
          """.update.withUniqueGeneratedKeys[Long]("id").transact(xa)
 
   def insertNodepool(clusterId: Long, nodepoolName: String, isDefault: Boolean, status: String = "RUNNING")(implicit
-    xa: HikariTransactor[IO]
+    xa: Transactor[IO]
   ): IO[Long] =
     sql"""INSERT INTO NODEPOOL
          (clusterId, nodepoolName, status, creator, createdDate, destroyedDate, dateAccessed, machineType, numNodes, autoScalingMin, autoScalingMax, isDefault)
@@ -62,7 +62,7 @@ object DbTestHelper {
                     createdDate: Instant = Instant.now(),
                     dateAccessed: Instant = Instant.now()
   )(implicit
-    xa: HikariTransactor[IO]
+    xa: Transactor[IO]
   ): IO[Long] =
     sql"""INSERT INTO CLUSTER
          (runtimeName,
@@ -107,7 +107,7 @@ object DbTestHelper {
          """.update.withUniqueGeneratedKeys[Long]("id").transact(xa)
 
   def insertRuntimeConfig(cloudService: CloudService, dateAccessed: Instant = Instant.now())(implicit
-    xa: HikariTransactor[IO]
+    xa: Transactor[IO]
   ): IO[Long] = {
     val zone = if (cloudService == CloudService.Gce) Some(zoneName.value) else None
     val region = if (cloudService == CloudService.Dataproc) Some(regionName.value) else None
@@ -135,7 +135,7 @@ object DbTestHelper {
   }
 
   def insertNamespace(clusterId: Long, namespaceName: NamespaceName)(implicit
-    xa: HikariTransactor[IO]
+    xa: Transactor[IO]
   ): IO[Long] =
     sql"""INSERT INTO NAMESPACE
          (clusterId, namespaceName)
@@ -150,7 +150,7 @@ object DbTestHelper {
                 createdDate: Instant = Instant.now(),
                 destroyedDate: Instant = Instant.now()
   )(implicit
-    xa: HikariTransactor[IO]
+    xa: Transactor[IO]
   ): IO[Long] =
     sql"""INSERT INTO APP
          (nodepoolId, appType, appName, status, samResourceId, creator, createdDate, destroyedDate, dateAccessed, namespaceId, diskId, customEnvironmentVariables, googleServiceAccount, kubernetesServiceAccount, chart, `release`)
@@ -158,73 +158,73 @@ object DbTestHelper {
          """.update.withUniqueGeneratedKeys[Long]("id").transact(xa)
 
   def insertAppUsage(appId: Long)(implicit
-    xa: HikariTransactor[IO]
+    xa: Transactor[IO]
   ): IO[Int] =
     sql"""
         INSERT INTO APP_USAGE (appId, startTime, stopTime) values (${appId}, "2023-09-28 17:24:29.568559", "1970-01-01 00:00:01.000000")
        """.update.run.transact(xa)
 
-  def getDiskStatus(diskId: Long)(implicit xa: HikariTransactor[IO]): IO[String] =
+  def getDiskStatus(diskId: Long)(implicit xa: Transactor[IO]): IO[String] =
     sql"""
          SELECT status FROM PERSISTENT_DISK where id = ${diskId}
          """.query[String].unique.transact(xa)
 
-  def getK8sClusterStatus(id: Long)(implicit xa: HikariTransactor[IO]): IO[String] =
+  def getK8sClusterStatus(id: Long)(implicit xa: Transactor[IO]): IO[String] =
     sql"""
          SELECT status FROM KUBERNETES_CLUSTER where id = ${id}
          """.query[String].unique.transact(xa)
 
-  def getNodepoolStatus(id: Long)(implicit xa: HikariTransactor[IO]): IO[String] =
+  def getNodepoolStatus(id: Long)(implicit xa: Transactor[IO]): IO[String] =
     sql"""
          SELECT status FROM NODEPOOL where id = ${id}
          """.query[String].unique.transact(xa)
 
-  def getAppUsageStopTime(appId: Long)(implicit xa: HikariTransactor[IO]): IO[Instant] =
+  def getAppUsageStopTime(appId: Long)(implicit xa: Transactor[IO]): IO[Instant] =
     sql"""
          SELECT stopTime FROM APP_USAGE where appId = ${appId}
          """.query[Instant].unique.transact(xa)
 
-  def getAppDateAccessed(id: Long)(implicit xa: HikariTransactor[IO]): IO[Instant] =
+  def getAppDateAccessed(id: Long)(implicit xa: Transactor[IO]): IO[Instant] =
     sql"""
          SELECT dateAccessed FROM APP where id = ${id}
          """.query[Instant].unique.transact(xa)
 
-  def getAppStatus(id: Long)(implicit xa: HikariTransactor[IO]): IO[String] =
+  def getAppStatus(id: Long)(implicit xa: Transactor[IO]): IO[String] =
     sql"""
          SELECT status FROM APP where id = ${id}
          """.query[String].unique.transact(xa)
 
-  def getRuntimeStatus(id: Long)(implicit xa: HikariTransactor[IO]): IO[String] =
+  def getRuntimeStatus(id: Long)(implicit xa: Transactor[IO]): IO[String] =
     sql"""
          SELECT status FROM CLUSTER where id = ${id}
          """.query[String].unique.transact(xa)
 
-  def getRuntimeError(runtimeId: Long)(implicit xa: HikariTransactor[IO]): IO[RuntimeError] =
+  def getRuntimeError(runtimeId: Long)(implicit xa: Transactor[IO]): IO[RuntimeError] =
     sql"""
          SELECT errorCode, errorMessage FROM CLUSTER_ERROR where clusterId = ${runtimeId}
          """.query[RuntimeError].unique.transact(xa)
 
-  def getK8sClusterName(id: Long)(implicit xa: HikariTransactor[IO]): IO[String] =
+  def getK8sClusterName(id: Long)(implicit xa: Transactor[IO]): IO[String] =
     sql"""
          SELECT clusterName FROM KUBERNETES_CLUSTER where id = ${id}
          """.query[String].unique.transact(xa)
 
-  def getPdIdFromRuntimeConfig(id: Long)(implicit xa: HikariTransactor[IO]): IO[Option[Long]] =
+  def getPdIdFromRuntimeConfig(id: Long)(implicit xa: Transactor[IO]): IO[Option[Long]] =
     sql"""
          SELECT persistentDiskId FROM RUNTIME_CONFIG where id = ${id}
          """.query[Option[Long]].unique.transact(xa)
 
-  def getPdIdFromK8sCluster(id: Long)(implicit xa: HikariTransactor[IO]): IO[Option[Long]] =
+  def getPdIdFromK8sCluster(id: Long)(implicit xa: Transactor[IO]): IO[Option[Long]] =
     sql"""
          SELECT diskId FROM APP where id = ${id}
          """.query[Option[Long]].unique.transact(xa)
 
-  def getNodepoolName(id: Long)(implicit xa: HikariTransactor[IO]): IO[String] =
+  def getNodepoolName(id: Long)(implicit xa: Transactor[IO]): IO[String] =
     sql"""
          SELECT nodepoolName FROM NODEPOOL where id = ${id}
          """.query[String].unique.transact(xa)
 
-  private def truncateTables(xa: HikariTransactor[IO]): IO[Unit] = {
+  private def truncateTables(xa: Transactor[IO]): IO[Unit] = {
     val res = for {
       _ <- sql"Delete from APP_USAGE".update.run
       _ <- sql"Delete from APP".update.run
