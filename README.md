@@ -74,12 +74,14 @@ Run DB tests by projects will have fewer failures. Here's how you can run them b
 - `sbt zombieMonitor/test`
 
 - `sbt resourceValidator/test`
-  There will be a few failures, but should succeed when run individually.
+  
+    There will be a few failures, but should succeed when run individually.
 
 - `sbt janitor/test`
+  
   There will be a few failures, but should succeed when run individually. (Currently `com.broadinstitute.dsp.janitor.DbQueryBuilderSpec` has real error that we need to fix at some point).
 
-  These are not run in CI, so you have to make sure you run them manually before merging any PRs. Instructions on running these can be found in the respective `DbReaderSpec` files.
+These are not run in CI, so you have to make sure you run them manually before merging any PRs. Instructions on running these can be found in the respective `DbReaderSpec` files.
 
 2. Once your PR is approved you can merge it and a new PR will be automatically created in [terra-helm](https://github.com/broadinstitute/terra-helm). 
 
