@@ -32,4 +32,4 @@ lazy val nuker = (project in file("nuker"))
   .enablePlugins(JavaAppPackaging)
   .dependsOn(core % "test->test;compile->compile")
 
-Test / parallelExecution := false
+concurrentRestrictions in Global += Tags.limit(Tags.Test, 1)

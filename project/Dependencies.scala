@@ -6,7 +6,7 @@ object Dependencies {
   val workbenchGoogle2Version = s"0.32-${workbenchLibsHash}"
   val workbenchAzureVersion = s"0.5-${workbenchLibsHash}"
   val openTelemetryVersion = s"0.6-${workbenchLibsHash}"
-  val doobieVersion = "1.0.0-RC2"
+  val doobieVersion = "1.0.0-RC4"
   val declineVersion = "2.4.1"
 
   val excludeBouncyCastle = ExclusionRule(organization = "org.bouncycastle", name = s"bcprov-jdk15on")
@@ -31,7 +31,7 @@ object Dependencies {
     "org.tpolecat" %% "doobie-scalatest" % doobieVersion % Test,
     "com.github.pureconfig" %% "pureconfig" % "0.17.4",
     "mysql" % "mysql-connector-java" % "8.0.33",
-    "org.scalatest" %% "scalatest" % "3.2.16" % Test,
+    "org.scalatest" %% "scalatest" % "3.2.17" % Test,
     "com.monovore" %% "decline" % declineVersion,
     "com.monovore" %% "decline-effect" % declineVersion,
     "dev.optics" %% "monocle-core" % "3.2.0",

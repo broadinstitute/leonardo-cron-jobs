@@ -1,6 +1,7 @@
 package com.broadinstitute.dsp
 package janitor
 
+import cats.effect.IO
 import cats.effect.unsafe.implicits.global
 import com.broadinstitute.dsp.DbTestHelper.{
   insertApp,
@@ -8,11 +9,12 @@ import com.broadinstitute.dsp.DbTestHelper.{
   insertK8sCluster,
   insertNamespace,
   insertNodepool,
-  transactorResource,
+  isolatedDbTest,
   yoloTransactor
 }
 import com.broadinstitute.dsp.Generators._
 import com.broadinstitute.dsp.RemovableNodepoolStatus.removableStatuses
+import doobie.Transactor
 import doobie.scalatest.IOChecker
 import org.broadinstitute.dsde.workbench.google2.KubernetesSerializableName.NamespaceName
 import org.scalatest.flatspec.AnyFlatSpec
@@ -28,7 +30,7 @@ import java.time.Instant
  */
 class DbReaderGetNodepoolsToDeleteSpec extends AnyFlatSpec with CronJobsTestSuite with IOChecker {
   implicit val config: DatabaseConfig = ConfigSpec.config.database
-  val transactor = yoloTransactor
+  implicit val transactor: Transactor[IO] = yoloTransactor
 
   val now = Instant.now()
   val gracePeriod = 3600 // in seconds
@@ -41,8 +43,8 @@ class DbReaderGetNodepoolsToDeleteSpec extends AnyFlatSpec with CronJobsTestSuit
 
   it should s"detect for removal: Nodepool in status $removableStatuses status with app in DELETED status BEYOND grace period" taggedAs DbTest in {
     forAll { (cluster: KubernetesCluster, disk: Disk, removableStatuses: RemovableNodepoolStatus) =>
-      val res = transactorResource.use { implicit xa =>
-        val dbReader = DbReader.impl(xa)
+      val res = isolatedDbTest.use { _ =>
+        val dbReader = DbReader.impl(transactor)
 
         for {
           diskId <- insertDisk(disk)
@@ -68,8 +70,8 @@ class DbReaderGetNodepoolsToDeleteSpec extends AnyFlatSpec with CronJobsTestSuit
 
   it should s"detect for removal: Nodepool in $removableStatuses status with app in ERROR status BEYOND grace period" taggedAs DbTest in {
     forAll { (cluster: KubernetesCluster, disk: Disk, removableStatuses: RemovableNodepoolStatus) =>
-      val res = transactorResource.use { implicit xa =>
-        val dbReader = DbReader.impl(xa)
+      val res = isolatedDbTest.use { _ =>
+        val dbReader = DbReader.impl(transactor)
 
         for {
           diskId <- insertDisk(disk)
@@ -94,8 +96,8 @@ class DbReaderGetNodepoolsToDeleteSpec extends AnyFlatSpec with CronJobsTestSuit
 
   it should "not detect for removal: default nodepool" taggedAs DbTest in {
     forAll { (cluster: KubernetesCluster) =>
-      val res = transactorResource.use { implicit xa =>
-        val dbReader = DbReader.impl(xa)
+      val res = isolatedDbTest.use { _ =>
+        val dbReader = DbReader.impl(transactor)
 
         for {
           clusterId <- insertK8sCluster(cluster, "RUNNING")
@@ -109,8 +111,8 @@ class DbReaderGetNodepoolsToDeleteSpec extends AnyFlatSpec with CronJobsTestSuit
 
   it should "NOT detect for removal: Nodepool in DELETED status" taggedAs DbTest in {
     forAll { (cluster: KubernetesCluster, disk: Disk) =>
-      val res = transactorResource.use { implicit xa =>
-        val dbReader = DbReader.impl(xa)
+      val res = isolatedDbTest.use { _ =>
+        val dbReader = DbReader.impl(transactor)
 
         for {
           diskId <- insertDisk(disk)
@@ -135,8 +137,8 @@ class DbReaderGetNodepoolsToDeleteSpec extends AnyFlatSpec with CronJobsTestSuit
 
   it should s"NOT detect for removal: Nodepool in $removableStatuses status with app in RUNNING status" taggedAs DbTest in {
     forAll { (cluster: KubernetesCluster, disk: Disk, removableStatus: RemovableNodepoolStatus) =>
-      val res = transactorResource.use { implicit xa =>
-        val dbReader = DbReader.impl(xa)
+      val res = isolatedDbTest.use { _ =>
+        val dbReader = DbReader.impl(transactor)
 
         for {
           diskId <- insertDisk(disk)
@@ -162,8 +164,8 @@ class DbReaderGetNodepoolsToDeleteSpec extends AnyFlatSpec with CronJobsTestSuit
 
   it should s"NOT detect for removal: Nodepool in $removableStatuses status with app in DELETED status WITHIN grace period" taggedAs DbTest in {
     forAll { (cluster: KubernetesCluster, disk: Disk, removableStatus: RemovableNodepoolStatus) =>
-      val res = transactorResource.use { implicit xa =>
-        val dbReader = DbReader.impl(xa)
+      val res = isolatedDbTest.use { _ =>
+        val dbReader = DbReader.impl(transactor)
 
         for {
           diskId <- insertDisk(disk)
@@ -189,8 +191,8 @@ class DbReaderGetNodepoolsToDeleteSpec extends AnyFlatSpec with CronJobsTestSuit
 
   it should s"NOT detect for removal: Nodepool in $removableStatuses status with app in ERROR status WITHIN grace period" taggedAs DbTest in {
     forAll { (cluster: KubernetesCluster, disk: Disk, removableStatus: RemovableNodepoolStatus) =>
-      val res = transactorResource.use { implicit xa =>
-        val dbReader = DbReader.impl(xa)
+      val res = isolatedDbTest.use { _ =>
+        val dbReader = DbReader.impl(transactor)
 
         for {
           diskId <- insertDisk(disk)
