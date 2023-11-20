@@ -6,7 +6,7 @@ object Dependencies {
   val workbenchGoogle2Version = s"0.32-${workbenchLibsHash}"
   val workbenchAzureVersion = s"0.5-${workbenchLibsHash}"
   val openTelemetryVersion = s"0.6-${workbenchLibsHash}"
-  val doobieVersion = "1.0.0-RC4"
+  val doobieVersion = "1.0.0-RC5"
   val declineVersion = "2.4.1"
 
   val excludeBouncyCastle = ExclusionRule(organization = "org.bouncycastle", name = s"bcprov-jdk15on")
