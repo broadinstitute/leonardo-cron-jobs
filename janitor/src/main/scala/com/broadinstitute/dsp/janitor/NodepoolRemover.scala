@@ -21,8 +21,11 @@ object NodepoolRemover {
       override def resourceToScan: Stream[F, Nodepool] = {
         val res = for {
           kubernetesClusterToRemoveCandidates <- dbReader.getKubernetesClustersToDelete.compile.toList
+          kubernestesClusterToRemoveIds = kubernetesClusterToRemoveCandidates.map(_.id)
           nodepoolTORemoveCandidate <- dbReader.getNodepoolsToDelete
-            .filter(n => !kubernetesClusterToRemoveCandidates.contains(n.kubernetesClusterId))
+            .filter { n =>
+              !kubernestesClusterToRemoveIds.contains(n.kubernetesClusterId)
+            }
             .compile
             .toList
         } yield nodepoolTORemoveCandidate

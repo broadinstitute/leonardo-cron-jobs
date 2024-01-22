@@ -61,32 +61,17 @@ object Generators {
 
   val genNodepool: Gen[Nodepool] = for {
     id <- Gen.chooseNum(0, 100)
+    k8sClusterId <- Gen.chooseNum(0, 100)
     nodepoolName <- genNodepoolName
     clusterName <- Gen.uuid.map(x => KubernetesClusterName(x.toString))
-    cloudService <- genCloudService
     project <- genGoogleProject
-    azureCloudContext <- genAzureCloudContext
     location <- genLocation
-  } yield cloudService match {
-    case CloudService.Gce => Nodepool(id, nodepoolName, clusterName, CloudContext.Gcp(project), location)
-
-    case CloudService.Dataproc => Nodepool(id, nodepoolName, clusterName, CloudContext.Gcp(project), location)
-
-    case CloudService.AzureVM =>
-      Nodepool(id, nodepoolName, clusterName, CloudContext.Azure(azureCloudContext), location)
-
-  }
+  } yield Nodepool(id, nodepoolName, k8sClusterId, clusterName, CloudContext.Gcp(project), location)
 
   val genKubernetesClusterToRemove: Gen[KubernetesClusterToRemove] = for {
     id <- Gen.chooseNum(0, 100)
-    cloudService <- genCloudService
     project <- genGoogleProject
-    azureCloudContext <- genAzureCloudContext
-  } yield cloudService match {
-    case CloudService.Gce      => KubernetesClusterToRemove(id, CloudContext.Gcp(project))
-    case CloudService.Dataproc => KubernetesClusterToRemove(id, CloudContext.Gcp(project))
-    case CloudService.AzureVM  => KubernetesClusterToRemove(id, CloudContext.Azure(azureCloudContext))
-  }
+  } yield KubernetesClusterToRemove(id, CloudContext.Gcp(project))
 
   val genRuntimeWithWorkers: Gen[RuntimeWithWorkers] = for {
     runtime <- genDataprocRuntime

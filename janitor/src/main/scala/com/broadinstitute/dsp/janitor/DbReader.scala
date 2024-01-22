@@ -60,6 +60,7 @@ object DbReader {
       FROM KUBERNETES_CLUSTER kc
       WHERE
         kc.status != "DELETED" AND
+        kc.cloudProvider = "GCP" AND
         NOT EXISTS (
           SELECT *
           FROM NODEPOOL np
@@ -95,6 +96,7 @@ object DbReader {
         WHERE
         (
             np.status IN ("STATUS_UNSPECIFIED", "RUNNING", "RECONCILING", "ERROR", "RUNNING_WITH_ERROR")
+            AND kc.cloudProvider = "GCP"
             AND np.isDefault = 0
             AND NOT EXISTS
             (
