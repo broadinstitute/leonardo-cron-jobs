@@ -5,6 +5,7 @@ import cats.effect.Concurrent
 import cats.mtl.Ask
 import cats.syntax.all._
 import com.broadinstitute.dsp.JsonCodec._
+import fs2.Stream
 import org.broadinstitute.dsde.workbench.model.TraceId
 import org.typelevel.log4cats.Logger
 
@@ -12,12 +13,21 @@ object NodepoolRemover {
   def impl[F[_]](
     dbReader: DbReader[F],
     deps: LeoPublisherDeps[F]
-  )(implicit F: Concurrent[F], logger: Logger[F], ev: Ask[F, TraceId]): CheckRunner[F, Nodepool] =
+  )(implicit F: Concurrent[F], logger: Logger[F]): CheckRunner[F, Nodepool] =
     new CheckRunner[F, Nodepool] {
       override def appName: String = janitor.appName
       override def configs = CheckRunnerConfigs(s"remove-kubernetes-nodepools", shouldAlert = false)
       override def dependencies: CheckRunnerDeps[F] = deps.checkRunnerDeps
-      override def resourceToScan: fs2.Stream[F, Nodepool] = dbReader.getNodepoolsToDelete
+      override def resourceToScan: Stream[F, Nodepool] = {
+        val res = for {
+          kubernetesClusterToRemoveCandidates <- dbReader.getKubernetesClustersToDelete.compile.toList
+          nodepoolTORemoveCandidate <- dbReader.getNodepoolsToDelete
+            .filter(n => !kubernetesClusterToRemoveCandidates.contains(n.kubernetesClusterId))
+            .compile
+            .toList
+        } yield nodepoolTORemoveCandidate
+        Stream.evals(res)
+      }
 
       override def checkResource(n: Nodepool, isDryRun: Boolean)(implicit
         ev: Ask[F, TraceId]

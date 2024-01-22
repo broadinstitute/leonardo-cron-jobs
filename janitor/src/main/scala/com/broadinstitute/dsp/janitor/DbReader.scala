@@ -88,7 +88,7 @@ object DbReader {
   // TODO: Read the grace period (hardcoded to '1 HOUR' below) from config
   val applessNodepoolQuery =
     sql"""
-        SELECT np.id, np.nodepoolName, kc.clusterName, kc.cloudProvider, kc.cloudContext, kc.location
+        SELECT np.id, np.nodepoolName, kc.id, kc.clusterName, kc.cloudProvider, kc.cloudContext, kc.location
         FROM NODEPOOL AS np
         INNER JOIN KUBERNETES_CLUSTER AS kc
         ON np.clusterId = kc.id
