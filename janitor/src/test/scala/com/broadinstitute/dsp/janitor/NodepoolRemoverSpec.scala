@@ -29,14 +29,14 @@ final class NodepoolRemoverSpec extends AnyFlatSpec with CronJobsTestSuite {
 
       val publisher = new FakeGooglePublisher {
         override def publishOne[MessageType](message: MessageType)(implicit
-          evidence$2: Encoder[MessageType],
+          evidence: Encoder[MessageType],
           ev: Ask[IO, TraceId]
         ): IO[Unit] =
           if (dryRun)
             IO.raiseError(fail("Shouldn't publish message in dryRun mode"))
           else {
             count = count + 1
-            super.publishOne(message)(evidence$2, ev)
+            super.publishOne(message)(evidence, ev)
           }
       }
 
@@ -51,6 +51,48 @@ final class NodepoolRemoverSpec extends AnyFlatSpec with CronJobsTestSuite {
           res.unsafeRunSync() shouldBe None
           count shouldBe 0
       }
+    }
+  }
+
+  it should "not send DeleteNodepoolMessage when nodepool's kubernetes cluster is also detected to be deleted" in {
+    forAll { (nodepoolWithAssociatedCluster: Nodepool, clusterToRemove: KubernetesClusterToRemove) =>
+      val clusterToRemoveCandidate = clusterToRemove.copy(id = nodepoolWithAssociatedCluster.kubernetesClusterId,
+                                                          nodepoolWithAssociatedCluster.cloudContext
+      )
+      // nodepool that's not on a kubernetes clusters candidates to remove
+      val nodepoolToRemove = nodepoolWithAssociatedCluster.copy(
+        nodepoolId = nodepoolWithAssociatedCluster.nodepoolId + 1,
+        kubernetesClusterId = clusterToRemoveCandidate.id + 1,
+        cloudContext = clusterToRemoveCandidate.cloudContext
+      )
+      val dbReader = new FakeDbReader {
+        override def getNodepoolsToDelete: Stream[IO, Nodepool] =
+          Stream.emits(List(nodepoolWithAssociatedCluster, nodepoolToRemove))
+
+        override def getKubernetesClustersToDelete: Stream[IO, KubernetesClusterToRemove] =
+          Stream.emit(
+            clusterToRemoveCandidate
+          )
+      }
+
+      var count = 0
+
+      val publisher = new FakeGooglePublisher {
+        override def publishOne[MessageType](message: MessageType)(implicit
+          evidence: Encoder[MessageType],
+          ev: Ask[IO, TraceId]
+        ): IO[Unit] = {
+          count = count + 1
+          message shouldBe nodepoolToRemove
+          super.publishOne(message)(evidence, ev)
+        }
+      }
+
+      val deps = initDeps(publisher)
+      val checker = NodepoolRemover.impl(dbReader, deps)
+      val res = checker.run(false)
+      res.unsafeRunSync()
+      count shouldBe 1
     }
   }
 

@@ -59,6 +59,7 @@ final case class KubernetesCluster(id: Long,
 
 final case class Nodepool(nodepoolId: Long,
                           nodepoolName: NodepoolName,
+                          kubernetesClusterId: Long,
                           clusterName: KubernetesClusterName,
                           cloudContext: CloudContext,
                           location: Location

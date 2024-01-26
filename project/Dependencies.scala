@@ -22,6 +22,9 @@ object Dependencies {
   val excludeResourceManagerMsi =
     ExclusionRule(organization = "com.azure.resourcemanager", name = s"azure-resourcemanager-msi")
 
+  val googleCloudNio: ModuleID =
+    "com.google.cloud" % "google-cloud-nio" % "0.127.9" % Test // brought in for FakeStorageInterpreter
+
   val core = Seq(
     "net.logstash.logback" % "logstash-logback-encoder" % "7.4",
     "ch.qos.logback" % "logback-classic" % "1.4.11",
@@ -51,7 +54,8 @@ object Dependencies {
     "org.broadinstitute.dsde.workbench" %% "workbench-azure" % workbenchAzureVersion % Test classifier "tests",
     "org.scalatestplus" %% "scalacheck-1-16" % "3.2.14.0" % Test,
     "org.scalatestplus" %% "mockito-3-12" % "3.2.10.0" % Test, // https://github.com/scalatest/scalatestplus-selenium
-    "ca.mrvisser" %% "sealerate" % "0.0.6"
+    "ca.mrvisser" %% "sealerate" % "0.0.6",
+    googleCloudNio
   )
 
   val resourceValidator =

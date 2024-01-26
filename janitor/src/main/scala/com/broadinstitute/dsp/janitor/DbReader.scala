@@ -45,8 +45,9 @@ object DbReader {
   implicit def apply[F[_]](implicit ev: DbReader[F]): DbReader[F] = ev
 
   /**
-   * Return all non-deleted clusters with non-default nodepools that have apps that were all deleted
-   * or errored outside the grace period (1 hour)
+   * Return all non-deleted GCP clusters with non-default nodepools that have apps that were all deleted
+   * or errored outside the grace period (1 hour). Note Azure Kubernetes clusters's lifecycle are managed by WSM separately. Hence
+   * we don't need to check for Azure clusters.
    * We are including clusters with no nodepools and apps as well.
    * We are calculating the grace period for cluster deletion assuming that the following are valid proxies
    * for an app's last activity:
@@ -60,6 +61,7 @@ object DbReader {
       FROM KUBERNETES_CLUSTER kc
       WHERE
         kc.status != "DELETED" AND
+        kc.cloudProvider = "GCP" AND
         NOT EXISTS (
           SELECT *
           FROM NODEPOOL np
@@ -88,13 +90,14 @@ object DbReader {
   // TODO: Read the grace period (hardcoded to '1 HOUR' below) from config
   val applessNodepoolQuery =
     sql"""
-        SELECT np.id, np.nodepoolName, kc.clusterName, kc.cloudProvider, kc.cloudContext, kc.location
+        SELECT np.id, np.nodepoolName, kc.id, kc.clusterName, kc.cloudProvider, kc.cloudContext, kc.location
         FROM NODEPOOL AS np
         INNER JOIN KUBERNETES_CLUSTER AS kc
         ON np.clusterId = kc.id
         WHERE
         (
             np.status IN ("STATUS_UNSPECIFIED", "RUNNING", "RECONCILING", "ERROR", "RUNNING_WITH_ERROR")
+            AND kc.cloudProvider = "GCP"
             AND np.isDefault = 0
             AND NOT EXISTS
             (

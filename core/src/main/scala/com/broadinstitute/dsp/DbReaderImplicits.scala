@@ -113,34 +113,30 @@ object DbReaderImplicits {
       case (id, name, cloudContextDb, location, cloudProvider) =>
         cloudProvider match {
           case CloudProvider.Azure =>
-            AzureCloudContext.fromString(cloudContextDb) match {
-              case Left(value) =>
-                throw new RuntimeException(
-                  s"${value} is not valid azure cloud context"
-                )
-              case Right(value) =>
-                KubernetesCluster(id, name, CloudContext.Azure(value), location)
-            }
+            throw new RuntimeException(
+              s"kubernetesCluster(${id}) is Azure cluster. We should filter out Azure clusters in the query"
+            )
           case CloudProvider.Gcp =>
             KubernetesCluster(id, name, CloudContext.Gcp(GoogleProject(cloudContextDb)), location)
         }
     }
 
   implicit val nodepoolRead: Read[Nodepool] =
-    Read[(Long, NodepoolName, KubernetesClusterName, CloudProvider, String, Location)].map {
-      case (id, nodepoolName, k8sClusterName, cloudProvider, cloudContextDb, location) =>
+    Read[(Long, NodepoolName, Long, KubernetesClusterName, CloudProvider, String, Location)].map {
+      case (id, nodepoolName, k8sClusterId, k8sClusterName, cloudProvider, cloudContextDb, location) =>
         cloudProvider match {
           case CloudProvider.Azure =>
-            AzureCloudContext.fromString(cloudContextDb) match {
-              case Left(value) =>
-                throw new RuntimeException(
-                  s"${value} is not valid azure cloud context"
-                )
-              case Right(value) =>
-                Nodepool(id, nodepoolName, k8sClusterName, CloudContext.Azure(value), location)
-            }
+            throw new RuntimeException(
+              s"nodepool(${id}) is an Azure nodepool. This is impossible. Fix this in DB"
+            )
           case CloudProvider.Gcp =>
-            Nodepool(id, nodepoolName, k8sClusterName, CloudContext.Gcp(GoogleProject(cloudContextDb)), location)
+            Nodepool(id,
+                     nodepoolName,
+                     k8sClusterId,
+                     k8sClusterName,
+                     CloudContext.Gcp(GoogleProject(cloudContextDb)),
+                     location
+            )
         }
     }
 }
