@@ -52,7 +52,7 @@ object Dependencies {
     "org.scalatestplus" %% "scalacheck-1-16" % "3.2.14.0" % Test,
     "org.scalatestplus" %% "mockito-3-12" % "3.2.10.0" % Test, // https://github.com/scalatest/scalatestplus-selenium
     "ca.mrvisser" %% "sealerate" % "0.0.6",
-    "com.google.cloud" % "google-cloud-nio" % "0.127.7" % Test classifier "tests"
+    "com.google.cloud" % "google-cloud-nio" % "0.127.9" % Test classifier "tests"
   )
 
   val resourceValidator =
