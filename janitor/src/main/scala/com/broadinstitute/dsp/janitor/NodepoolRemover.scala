@@ -22,13 +22,13 @@ object NodepoolRemover {
         val res = for {
           kubernetesClusterToRemoveCandidates <- dbReader.getKubernetesClustersToDelete.compile.toList
           kubernestesClusterToRemoveIds = kubernetesClusterToRemoveCandidates.map(_.id)
-          nodepoolTORemoveCandidate <- dbReader.getNodepoolsToDelete
+          nodepoolToRemoveCandidates <- dbReader.getNodepoolsToDelete
             .filter { n =>
               !kubernestesClusterToRemoveIds.contains(n.kubernetesClusterId)
             }
             .compile
             .toList
-        } yield nodepoolTORemoveCandidate
+        } yield nodepoolToRemoveCandidates
         Stream.evals(res)
       }
 

@@ -114,7 +114,7 @@ object DbReaderImplicits {
         cloudProvider match {
           case CloudProvider.Azure =>
             throw new RuntimeException(
-              s"kubernetesCluster(${id}) is Azure cluster. This is impossible. Fix this in DB"
+              s"kubernetesCluster(${id}) is Azure cluster. We should filter out Azure clusters in the query"
             )
           case CloudProvider.Gcp =>
             KubernetesCluster(id, name, CloudContext.Gcp(GoogleProject(cloudContextDb)), location)
