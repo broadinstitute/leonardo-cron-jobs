@@ -22,7 +22,6 @@ object NodepoolRemover {
         val res = for {
           kubernetesClusterToRemoveCandidates <- dbReader.getKubernetesClustersToDelete.compile.toList
           kubernestesClusterToRemoveIds = kubernetesClusterToRemoveCandidates.map(_.id)
-          _ <- logger.info("clusters to remove: " + kubernestesClusterToRemoveIds)
           nodepoolToRemoveCandidates <- dbReader.getNodepoolsToDelete
             .filter { n =>
               !kubernestesClusterToRemoveIds.contains(n.kubernetesClusterId)
