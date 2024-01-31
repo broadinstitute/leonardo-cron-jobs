@@ -113,9 +113,18 @@ object DbReaderImplicits {
       case (id, name, cloudContextDb, location, cloudProvider) =>
         cloudProvider match {
           case CloudProvider.Azure =>
-            throw new RuntimeException(
-              s"kubernetesCluster(${id}) is Azure cluster. We should filter out Azure clusters in the query"
-            )
+            AzureCloudContext.fromString(cloudContextDb) match {
+              case Left(value) =>
+                throw new RuntimeException(
+                  s"${value} is not valid azure cloud context"
+                )
+              case Right(value) =>
+                KubernetesCluster(id, name, CloudContext.Azure(value), location)
+            }
+//           TODO: throw exception once we fix query in zombie monitor and resource validator
+//            throw new RuntimeException(
+//              s"kubernetesCluster(${id}) is Azure cluster. We should filter out Azure clusters in the query"
+//            )
           case CloudProvider.Gcp =>
             KubernetesCluster(id, name, CloudContext.Gcp(GoogleProject(cloudContextDb)), location)
         }
@@ -126,9 +135,18 @@ object DbReaderImplicits {
       case (id, nodepoolName, k8sClusterId, k8sClusterName, cloudProvider, cloudContextDb, location) =>
         cloudProvider match {
           case CloudProvider.Azure =>
-            throw new RuntimeException(
-              s"nodepool(${id}) is an Azure nodepool. This is impossible. Fix this in DB"
-            )
+            AzureCloudContext.fromString(cloudContextDb) match {
+              case Left(value) =>
+                throw new RuntimeException(
+                  s"${value} is not valid azure cloud context"
+                )
+              case Right(value) =>
+                Nodepool(id, nodepoolName, k8sClusterId, k8sClusterName, CloudContext.Azure(value), location)
+            }
+//           TODO: throw exception once we fix query in zombie monitor and resource validator
+//            throw new RuntimeException(
+//              s"nodepool(${id}) is an Azure nodepool. This is impossible. Fix this in DB"
+//            )
           case CloudProvider.Gcp =>
             Nodepool(id,
                      nodepoolName,

@@ -120,7 +120,7 @@ object DbReader {
 
   // Leonardo doesn't manage nodepool for Azure. Hence excluding Azure nodepools
   val deletedAndErroredNodepoolQuery =
-    sql"""SELECT np.id, np.nodepoolName, kc.clusterName, kc.cloudProvider, kc.cloudContext, kc.location
+    sql"""SELECT np.id, np.nodepoolName, kc.id, kc.clusterName, kc.cloudProvider, kc.cloudContext, kc.location
          FROM NODEPOOL AS np
          INNER JOIN KUBERNETES_CLUSTER AS kc ON np.clusterId = kc.id
          WHERE (np.status="DELETED" OR np.status="ERROR") AND kc.cloudProvider = "GCP"

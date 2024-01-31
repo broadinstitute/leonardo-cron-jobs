@@ -48,7 +48,7 @@ object DbReader {
         """.query[KubernetesCluster]
 
   val activeNodepoolsQuery =
-    sql"""select np.id, np.nodepoolName, cluster.clusterName, cluster.cloudProvider, cluster.cloudContext, cluster.location from
+    sql"""select np.id, np.nodepoolName, cluster.id, cluster.clusterName, cluster.cloudProvider, cluster.cloudContext, cluster.location from
          	NODEPOOL AS np INNER JOIN KUBERNETES_CLUSTER AS cluster
          	on cluster.id = np.clusterId
          	where np.status != "DELETED" and np.status != "ERROR"
