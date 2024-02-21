@@ -67,7 +67,7 @@ final case class Nodepool(nodepoolId: Long,
   override def toString: String = s"${cloudContext.asStringWithProvider}/${nodepoolName.value}"
 }
 
-final case class DeleteNodepoolMeesage(nodepoolId: Long, googleProject: GoogleProject, traceId: Option[TraceId]) {
+final case class DeleteNodepoolMessage(nodepoolId: Long, googleProject: GoogleProject, traceId: Option[TraceId]) {
   val messageType: String = "deleteNodepool"
 }
 
@@ -128,7 +128,7 @@ object CloudContext {
 }
 
 object JsonCodec {
-  implicit val deleteNodepoolMessageEncoder: Encoder[DeleteNodepoolMeesage] =
+  implicit val deleteNodepoolMessageEncoder: Encoder[DeleteNodepoolMessage] =
     Encoder.forProduct4("messageType", "nodepoolId", "googleProject", "traceId")(x =>
       (x.messageType, x.nodepoolId, x.googleProject, x.traceId)
     )

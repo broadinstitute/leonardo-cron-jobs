@@ -43,7 +43,7 @@ object DeletedOrErroredNodepoolChecker {
                   if (isDryRun) {
                     logger.warn(s"${nodepool.toString} still exists in Google. It needs to be deleted")
                   } else {
-                    val msg = DeleteNodepoolMeesage(nodepool.nodepoolId,
+                    val msg = DeleteNodepoolMessage(nodepool.nodepoolId,
                                                     value,
                                                     Some(TraceId(s"DeletedOrErroredNodepoolChecker-$now"))
                     )

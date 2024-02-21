@@ -108,27 +108,41 @@ object DbReaderImplicits {
       }
     }
 
+  /** Marshal a kubernetes cluster from the DB. Resource Validator and Janitor work only with GCP clusters, but
+   * Zombie Monitor accepts both GCP and Azure clusters. */
   implicit val kubernetesClusterRead: Read[KubernetesCluster] =
     Read[(Long, KubernetesClusterName, String, Location, CloudProvider)].map {
       case (id, name, cloudContextDb, location, cloudProvider) =>
         cloudProvider match {
           case CloudProvider.Azure =>
-            throw new RuntimeException(
-              s"kubernetesCluster(${id}) is Azure cluster. We should filter out Azure clusters in the query"
-            )
+            AzureCloudContext.fromString(cloudContextDb) match {
+              case Left(value) =>
+                throw new RuntimeException(
+                  s"${value} is not valid azure cloud context"
+                )
+              case Right(value) =>
+                KubernetesCluster(id, name, CloudContext.Azure(value), location)
+            }
           case CloudProvider.Gcp =>
             KubernetesCluster(id, name, CloudContext.Gcp(GoogleProject(cloudContextDb)), location)
         }
     }
 
+  /** Marshal a nodepool from the DB. Resource Validator and Janitor work only with GCP nodepools, but
+   * Zombie Monitor accepts both GCP and Azure nodepools. */
   implicit val nodepoolRead: Read[Nodepool] =
     Read[(Long, NodepoolName, Long, KubernetesClusterName, CloudProvider, String, Location)].map {
       case (id, nodepoolName, k8sClusterId, k8sClusterName, cloudProvider, cloudContextDb, location) =>
         cloudProvider match {
           case CloudProvider.Azure =>
-            throw new RuntimeException(
-              s"nodepool(${id}) is an Azure nodepool. This is impossible. Fix this in DB"
-            )
+            AzureCloudContext.fromString(cloudContextDb) match {
+              case Left(value) =>
+                throw new RuntimeException(
+                  s"${value} is not valid azure cloud context"
+                )
+              case Right(value) =>
+                Nodepool(id, nodepoolName, k8sClusterId, k8sClusterName, CloudContext.Azure(value), location)
+            }
           case CloudProvider.Gcp =>
             Nodepool(id,
                      nodepoolName,

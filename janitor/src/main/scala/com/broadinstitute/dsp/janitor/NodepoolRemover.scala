@@ -40,7 +40,7 @@ object NodepoolRemover {
           res <-
             n.cloudContext match {
               case CloudContext.Gcp(value) =>
-                val msg = DeleteNodepoolMeesage(n.nodepoolId, value, Some(ctx))
+                val msg = DeleteNodepoolMessage(n.nodepoolId, value, Some(ctx))
                 val publish = if (isDryRun) F.unit else deps.publisher.publishOne(msg)
                 publish.as(n.some)
               case CloudContext.Azure(_) =>
