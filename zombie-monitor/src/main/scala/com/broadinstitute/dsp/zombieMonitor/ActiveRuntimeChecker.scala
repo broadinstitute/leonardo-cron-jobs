@@ -105,8 +105,13 @@ object ActiveRuntimeChecker {
 
       def checkGceRuntimeStatus(runtime: Runtime.Gce, isDryRun: Boolean): F[Option[Runtime]] =
         for {
-          runtimeOpt <- deps.computeService
-            .getInstance(runtime.googleProject, runtime.zone, InstanceName(runtime.runtimeName))
+          isBillingEnabled <- deps.billingService.isBillingEnabled(runtime.googleProject)
+          runtimeOpt <- if (isBillingEnabled)
+            deps
+              .computeService
+              .getInstance(runtime.googleProject, runtime.zone, InstanceName(runtime.runtimeName))
+          else
+            F.pure(none[Instance])
           res <-
             runtimeOpt match {
               case None =>
