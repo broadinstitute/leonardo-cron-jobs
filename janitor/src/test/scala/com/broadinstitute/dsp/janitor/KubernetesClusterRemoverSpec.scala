@@ -6,7 +6,7 @@ import cats.mtl.Ask
 import com.broadinstitute.dsp.Generators._
 import fs2.Stream
 import io.circe.Encoder
-import org.broadinstitute.dsde.workbench.google2.{GoogleBillingService, GooglePublisher}
+import org.broadinstitute.dsde.workbench.google2.{GoogleBillingService}
 import org.broadinstitute.dsde.workbench.google2.mock.{
   FakeGoogleBillingInterpreter,
   FakeGooglePublisher,
@@ -14,6 +14,7 @@ import org.broadinstitute.dsde.workbench.google2.mock.{
 }
 import org.broadinstitute.dsde.workbench.model.TraceId
 import org.broadinstitute.dsde.workbench.openTelemetry.FakeOpenTelemetryMetricsInterpreter
+import org.broadinstitute.dsde.workbench.util2.messaging.CloudPublisher
 import org.scalatest.flatspec.AnyFlatSpec
 import cats.effect.unsafe.implicits.global
 import org.broadinstitute.dsde.workbench.model.google.GoogleProject
@@ -81,7 +82,7 @@ final class KubernetesClusterRemoverSpec extends AnyFlatSpec with CronJobsTestSu
     }
   }
 
-  private def initDeps(publisher: GooglePublisher[IO],
+  private def initDeps(publisher: CloudPublisher[IO],
                        billingService: GoogleBillingService[IO] = FakeGoogleBillingInterpreter
   ): LeoPublisherDeps[IO] = {
     val checkRunnerDeps =

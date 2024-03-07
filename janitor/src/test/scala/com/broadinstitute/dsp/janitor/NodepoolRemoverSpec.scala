@@ -14,6 +14,7 @@ import org.broadinstitute.dsde.workbench.google2.mock.{
 }
 import org.broadinstitute.dsde.workbench.model.TraceId
 import org.broadinstitute.dsde.workbench.openTelemetry.FakeOpenTelemetryMetricsInterpreter
+import org.broadinstitute.dsde.workbench.util2.messaging.CloudPublisher
 import org.scalatest.flatspec.AnyFlatSpec
 import cats.effect.unsafe.implicits.global
 
@@ -96,7 +97,7 @@ final class NodepoolRemoverSpec extends AnyFlatSpec with CronJobsTestSuite {
     }
   }
 
-  private def initDeps(publisher: GooglePublisher[IO]): LeoPublisherDeps[IO] = {
+  private def initDeps(publisher: CloudPublisher[IO]): LeoPublisherDeps[IO] = {
     val checkRunnerDeps =
       CheckRunnerDeps(ConfigSpec.config.reportDestinationBucket,
                       FakeGoogleStorageInterpreter,

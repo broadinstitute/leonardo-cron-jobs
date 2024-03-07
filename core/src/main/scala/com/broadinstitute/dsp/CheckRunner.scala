@@ -7,12 +7,12 @@ import fs2.Stream
 import org.broadinstitute.dsde.workbench.google2.{
   GcsBlobName,
   GoogleBillingService,
-  GooglePublisher,
   GoogleStorageService
 }
 import org.broadinstitute.dsde.workbench.model.TraceId
 import org.broadinstitute.dsde.workbench.model.google.GcsBucketName
 import org.broadinstitute.dsde.workbench.openTelemetry.OpenTelemetryMetrics
+import org.broadinstitute.dsde.workbench.util2.messaging.CloudPublisher
 import org.typelevel.log4cats.Logger
 
 import java.nio.charset.Charset
@@ -82,7 +82,7 @@ final case class CheckRunnerDeps[F[_]](reportDestinationBucket: GcsBucketName,
                                        storageService: GoogleStorageService[F],
                                        metrics: OpenTelemetryMetrics[F]
 )
-final case class LeoPublisherDeps[F[_]](publisher: GooglePublisher[F],
+final case class LeoPublisherDeps[F[_]](publisher: CloudPublisher[F],
                                         checkRunnerDeps: CheckRunnerDeps[F],
                                         billingService: GoogleBillingService[F]
 )
