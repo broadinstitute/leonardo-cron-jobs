@@ -74,7 +74,7 @@ object Janitor {
         appConfig.pathToCredential.toString,
         ProjectTopicName.of(appConfig.leonardoPubsub.googleProject.value, appConfig.leonardoPubsub.topicName)
       )
-      googlePublisher <- GooglePublisher.resource[F](publisherConfig)
+      googlePublisher <- GooglePublisher.cloudPublisherResource[F](publisherConfig)
       scopedCredential <- initGoogleCredentials(appConfig.pathToCredential)
       billingService <- GoogleBillingService.fromCredential(scopedCredential, blockerBound)
       xa <- DbTransactor.init(appConfig.database)

@@ -127,7 +127,7 @@ object ResourceValidator {
       aksService <- AzureContainerService.fromAzureAppRegistrationConfig(
         appConfig.runtimeCheckerConfig.azureAppRegistration
       )
-      googlePublisher <- GooglePublisher.resource[F](publisherConfig)
+      googlePublisher <- GooglePublisher.cloudPublisherResource[F](publisherConfig)
       xa <- DbTransactor.init(appConfig.database)
     } yield {
       val checkRunnerDeps = runtimeCheckerDeps.checkRunnerDeps
