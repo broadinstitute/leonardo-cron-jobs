@@ -3,7 +3,7 @@ import sbt._
 object Dependencies {
 
   val workbenchLibsHash = "92757f1"
-  val workbenchGoogle2Version = s"0.32-9c80583"
+  val workbenchGoogle2Version = s"0.36-9c80583"
   val workbenchAzureVersion = s"0.5-${workbenchLibsHash}"
   val openTelemetryVersion = s"0.6-${workbenchLibsHash}"
   val doobieVersion = "1.0.0-RC4"
