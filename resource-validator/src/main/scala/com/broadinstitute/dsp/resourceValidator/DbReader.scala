@@ -3,6 +3,7 @@ package resourceValidator
 
 import cats.effect.Async
 import com.broadinstitute.dsp.DbReaderImplicits._
+import com.broadinstitute.dsp.DbTransactor.leonardoDummyDate
 import doobie._
 import doobie.implicits._
 import fs2.Stream
@@ -30,7 +31,8 @@ object DbReader {
            WHERE
            (
              (pd1.status="Deleted" AND pd1.destroyedDate > now() - INTERVAL 30 DAY) OR
-             (pd1.status="Deleting" AND pd1.`dateAccessed` < now() - INTERVAL 30 MINUTE)
+             (pd1.status="Deleting" AND pd1.`dateAccessed` < now() - INTERVAL 30 MINUTE) OR
+             (pd1.status="Deleted" AND pd1.destroyedDate == ${leonardoDummyDate})
            ) AND
              NOT EXISTS
              (
