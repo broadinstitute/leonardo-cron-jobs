@@ -32,14 +32,19 @@ object DbTestHelper {
       _ <- Resource.make(IO.unit)(_ => truncateTables(xa))
     } yield ()
 
-  def insertDiskQuery(disk: Disk, status: String) =
+  def insertDiskQuery(disk: Disk, status: String, destroyedDate: Option[String]) = {
+    val destroyedDateInSql = destroyedDate.getOrElse(Instant.now().toString)
     sql"""INSERT INTO PERSISTENT_DISK
          (cloudContext, cloudProvider, zone, name, googleId, samResourceId, status, creator, createdDate, destroyedDate, dateAccessed, sizeGb, type, blockSizeBytes, serviceAccount, formattedBy)
-         VALUES (${disk.cloudContext.asString}, ${disk.cloudContext.cloudProvider}, ${disk.zone}, ${disk.diskName}, "fakeGoogleId", "fakeSamResourceId", ${status}, "fake@broadinstitute.org", now(), now(), now(), 50, "Standard", "4096", "pet@broadinsitute.org", "GCE")
+         VALUES (${disk.cloudContext.asString}, ${disk.cloudContext.cloudProvider}, ${disk.zone}, ${disk.diskName}, "fakeGoogleId", "fakeSamResourceId", ${status}, "fake@broadinstitute.org", now(),
+         $destroyedDateInSql, now(), 50, "Standard", "4096", "pet@broadinsitute.org", "GCE")
          """.update
+  }
 
-  def insertDisk(disk: Disk, status: String = "Ready")(implicit xa: Transactor[IO]): IO[Long] =
-    insertDiskQuery(disk, status: String).withUniqueGeneratedKeys[Long]("id").transact(xa)
+  def insertDisk(disk: Disk, status: String = "Ready", destroyedDate: Option[String] = None)(implicit
+    xa: Transactor[IO]
+  ): IO[Long] =
+    insertDiskQuery(disk, status: String, destroyedDate).withUniqueGeneratedKeys[Long]("id").transact(xa)
 
   def insertK8sCluster(cluster: KubernetesCluster, status: String = "RUNNING")(implicit
     xa: Transactor[IO]
