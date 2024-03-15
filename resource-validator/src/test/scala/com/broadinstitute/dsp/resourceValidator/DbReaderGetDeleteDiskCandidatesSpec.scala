@@ -13,7 +13,7 @@ class DbReaderGetDeleteDiskCandidatesSpec extends AnyFlatSpec with CronJobsTestS
   implicit val config: DatabaseConfig = ConfigSpec.config.database
   implicit val transactor: Transactor[IO] = yoloTransactor
 
-  it should "return disks that have been deleted without destroyedDate for over an hour in the Leo DB" taggedAs DbTest in {
+  it should "return disks that have been deleted without destroyedDate in the Leo DB" taggedAs DbTest in {
     val disk = genDisk.sample.get
     val res = isolatedDbTest.use { _ =>
       val dbReader = DbReader.impl(transactor)
