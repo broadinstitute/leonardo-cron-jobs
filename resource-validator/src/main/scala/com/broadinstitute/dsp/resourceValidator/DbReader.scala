@@ -61,7 +61,8 @@ object DbReader {
               WHERE
                 c2.cloudContext = c1.cloudContext AND
                 c2.runtimeName = c1.runtimeName AND
-                (c2.status != "Deleted" OR c2.status != "Deleting")
+                c2.status != "Deleted" AND
+                c2.status != "Deleting"
           )"""
       .query[Runtime]
 
@@ -78,7 +79,8 @@ object DbReader {
               WHERE
                 c2.cloudContext = c1.cloudContext AND
                 c2.runtimeName = c1.runtimeName AND
-                (c2.status != "Deleted" OR c2.status != "Deleting")
+                c2.status != "Deleted" AND
+                c2.status != "Deleting"
           )"""
       .query[Runtime]
 
