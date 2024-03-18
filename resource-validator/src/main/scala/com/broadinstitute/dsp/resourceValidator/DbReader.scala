@@ -50,8 +50,11 @@ object DbReader {
           FROM CLUSTER AS c1
           INNER JOIN RUNTIME_CONFIG AS rt ON c1.runtimeConfigId = rt.id
           WHERE
-            c1.status = "Deleted" AND
-            c1.destroyedDate > now() - INTERVAL 30 DAY AND
+            (
+              (c1.status = "Deleted" AND c1.destroyedDate > now() - INTERVAL 30 DAY) OR
+              (c1.status="Deleted" AND c1.destroyedDate = '1970-01-01 00:00:01.000000')
+            )
+            AND
             NOT EXISTS (
               SELECT *
               FROM CLUSTER AS c2
