@@ -28,7 +28,7 @@ final class NodepoolRemoverSpec extends AnyFlatSpec with CronJobsTestSuite {
       var count = 0
 
       val publisher = new FakeGooglePublisher {
-        override def publishOne[MessageType](message: MessageType)(implicit
+        override def publishOne[MessageType](message: MessageType, messageAttributes: Map[String, String])(implicit
           evidence: Encoder[MessageType],
           ev: Ask[IO, TraceId]
         ): IO[Unit] =
@@ -36,7 +36,7 @@ final class NodepoolRemoverSpec extends AnyFlatSpec with CronJobsTestSuite {
             IO.raiseError(fail("Shouldn't publish message in dryRun mode"))
           else {
             count = count + 1
-            super.publishOne(message)(evidence, ev)
+            super.publishOne(message, Map("leonardo" -> "true"))(evidence, ev)
           }
       }
 
@@ -78,13 +78,13 @@ final class NodepoolRemoverSpec extends AnyFlatSpec with CronJobsTestSuite {
       var count = 0
 
       val publisher = new FakeGooglePublisher {
-        override def publishOne[MessageType](message: MessageType)(implicit
+        override def publishOne[MessageType](message: MessageType, messageAttributes: Map[String, String])(implicit
           evidence: Encoder[MessageType],
           ev: Ask[IO, TraceId]
         ): IO[Unit] = {
           count = count + 1
           message shouldBe nodepoolToRemove
-          super.publishOne(message)(evidence, ev)
+          super.publishOne(message, Map("leonardo" -> "true"))(evidence, ev)
         }
       }
 

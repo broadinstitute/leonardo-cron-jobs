@@ -33,7 +33,7 @@ class DeletedOrErroredNodepoolCheckerSpec extends AnyFlatSpec with CronJobsTestS
       var count = 0
 
       val publisher = new FakeGooglePublisher {
-        override def publishOne[MessageType](message: MessageType)(implicit
+        override def publishOne[MessageType](message: MessageType, messageAttributes: Map[String, String])(implicit
           evidence$2: Encoder[MessageType],
           ev: Ask[IO, TraceId]
         ): IO[Unit] =
@@ -41,7 +41,7 @@ class DeletedOrErroredNodepoolCheckerSpec extends AnyFlatSpec with CronJobsTestS
             IO.raiseError(fail("Shouldn't publish message in dryRun mode"))
           else {
             count = count + 1
-            super.publishOne(message)(evidence$2, ev)
+            super.publishOne(message, Map("leonardo" -> "true"))(evidence$2, ev)
           }
       }
 
