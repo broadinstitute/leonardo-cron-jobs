@@ -13,6 +13,7 @@ import org.broadinstitute.dsde.workbench.google2.{
   GoogleStorageService
 }
 import org.broadinstitute.dsde.workbench.openTelemetry.FakeOpenTelemetryMetricsInterpreter
+import org.broadinstitute.dsde.workbench.util2.messaging.CloudPublisher
 
 object InitDependenciesHelper {
   val config = Config.appConfig.toOption.get

@@ -2,10 +2,10 @@ import sbt._
 
 object Dependencies {
 
-  val workbenchLibsHash = "92757f1"
-  val workbenchGoogle2Version = s"0.36-904925ad-SNAP"
-  val workbenchAzureVersion = s"0.5-${workbenchLibsHash}"
-  val openTelemetryVersion = s"0.6-${workbenchLibsHash}"
+  val workbenchLibsHash = "1c0cf92"
+  val workbenchGoogle2Version = s"0.36-${workbenchLibsHash}"
+  val workbenchAzureVersion = s"0.7-${workbenchLibsHash}"
+  val openTelemetryVersion = s"0.8-${workbenchLibsHash}"
   val doobieVersion = "1.0.0-RC4"
   val declineVersion = "2.4.1"
 

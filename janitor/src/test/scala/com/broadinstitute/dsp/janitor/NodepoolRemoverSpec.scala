@@ -6,7 +6,6 @@ import cats.mtl.Ask
 import com.broadinstitute.dsp.Generators._
 import fs2.Stream
 import io.circe.Encoder
-import org.broadinstitute.dsde.workbench.google2.GooglePublisher
 import org.broadinstitute.dsde.workbench.google2.mock.{
   FakeGoogleBillingInterpreter,
   FakeGooglePublisher,
