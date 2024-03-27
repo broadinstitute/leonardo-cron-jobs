@@ -5,6 +5,7 @@ import doobie.ExecutionContexts
 import doobie.hikari.HikariTransactor
 
 object DbTransactor {
+  val leonardoDummyDate = "1970-01-01 00:00:01.000000"
   def init[F[_]: Async](databaseConfig: DatabaseConfig): Resource[F, HikariTransactor[F]] =
     for {
       fixedThreadPool <- ExecutionContexts.fixedThreadPool(100)
