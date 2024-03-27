@@ -23,7 +23,8 @@ class InitBucketCheckerSpec extends AnyFlatSpec with CronJobsTestSuite with Mock
       override def getBucket(googleProject: GoogleProject,
                              bucketName: GcsBucketName,
                              bucketGetOptions: List[Storage.BucketGetOption],
-                             traceId: Option[TraceId]
+                             traceId: Option[TraceId],
+                             warnOnError: Boolean = false
       ): IO[Option[Bucket]] =
         IO.pure(None)
     }
@@ -46,7 +47,8 @@ class InitBucketCheckerSpec extends AnyFlatSpec with CronJobsTestSuite with Mock
         override def getBucket(googleProject: GoogleProject,
                                bucketName: GcsBucketName,
                                bucketGetOptions: List[Storage.BucketGetOption],
-                               traceId: Option[TraceId]
+                               traceId: Option[TraceId],
+                               warnOnError: Boolean = false
         ): IO[Option[Bucket]] =
           IO.pure(Some(mockBucket))
 

@@ -10,10 +10,10 @@ import org.broadinstitute.dsde.workbench.google2.{
   GoogleBillingService,
   GoogleComputeService,
   GoogleDataprocService,
-  GooglePublisher,
   GoogleStorageService
 }
 import org.broadinstitute.dsde.workbench.openTelemetry.FakeOpenTelemetryMetricsInterpreter
+import org.broadinstitute.dsde.workbench.util2.messaging.CloudPublisher
 
 object InitDependenciesHelper {
   val config = Config.appConfig.toOption.get
@@ -44,7 +44,7 @@ object InitDependenciesHelper {
 
   def initNodepoolCheckerDeps(gkeService: GKEService[IO] = MockGKEService,
                               googleStorageService: GoogleStorageService[IO] = FakeGoogleStorageInterpreter,
-                              publisher: GooglePublisher[IO] = new FakeGooglePublisher
+                              publisher: CloudPublisher[IO] = new FakeGooglePublisher
   ) =
     NodepoolCheckerDeps(
       CheckRunnerDeps(config.reportDestinationBucket, googleStorageService, FakeOpenTelemetryMetricsInterpreter),

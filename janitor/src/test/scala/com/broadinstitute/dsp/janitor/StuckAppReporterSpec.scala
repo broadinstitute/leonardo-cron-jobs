@@ -3,13 +3,14 @@ package janitor
 
 import cats.effect.IO
 import fs2.Stream
-import org.broadinstitute.dsde.workbench.google2.{GoogleBillingService, GooglePublisher}
+import org.broadinstitute.dsde.workbench.google2.GoogleBillingService
 import org.broadinstitute.dsde.workbench.google2.mock.{
   FakeGoogleBillingInterpreter,
   FakeGooglePublisher,
   FakeGoogleStorageInterpreter
 }
 import org.broadinstitute.dsde.workbench.openTelemetry.FakeOpenTelemetryMetricsInterpreter
+import org.broadinstitute.dsde.workbench.util2.messaging.CloudPublisher
 import org.scalatest.flatspec.AnyFlatSpec
 import cats.effect.unsafe.implicits.global
 
@@ -40,7 +41,7 @@ final class StuckAppReporterSpec extends AnyFlatSpec with CronJobsTestSuite {
     }
   }
 
-  private def initDeps(publisher: GooglePublisher[IO],
+  private def initDeps(publisher: CloudPublisher[IO],
                        billingService: GoogleBillingService[IO] = FakeGoogleBillingInterpreter
   ): LeoPublisherDeps[IO] = {
     val checkRunnerDeps =

@@ -6,7 +6,6 @@ import cats.mtl.Ask
 import com.broadinstitute.dsp.Generators._
 import fs2.Stream
 import io.circe.Encoder
-import org.broadinstitute.dsde.workbench.google2.GooglePublisher
 import org.broadinstitute.dsde.workbench.google2.mock.{
   FakeGoogleBillingInterpreter,
   FakeGooglePublisher,
@@ -14,6 +13,7 @@ import org.broadinstitute.dsde.workbench.google2.mock.{
 }
 import org.broadinstitute.dsde.workbench.model.TraceId
 import org.broadinstitute.dsde.workbench.openTelemetry.FakeOpenTelemetryMetricsInterpreter
+import org.broadinstitute.dsde.workbench.util2.messaging.CloudPublisher
 import org.scalatest.flatspec.AnyFlatSpec
 import cats.effect.unsafe.implicits.global
 
@@ -28,7 +28,7 @@ final class NodepoolRemoverSpec extends AnyFlatSpec with CronJobsTestSuite {
       var count = 0
 
       val publisher = new FakeGooglePublisher {
-        override def publishOne[MessageType](message: MessageType)(implicit
+        override def publishOne[MessageType](message: MessageType, messageAttributes: Map[String, String])(implicit
           evidence: Encoder[MessageType],
           ev: Ask[IO, TraceId]
         ): IO[Unit] =
@@ -36,7 +36,7 @@ final class NodepoolRemoverSpec extends AnyFlatSpec with CronJobsTestSuite {
             IO.raiseError(fail("Shouldn't publish message in dryRun mode"))
           else {
             count = count + 1
-            super.publishOne(message)(evidence, ev)
+            super.publishOne(message, Map("leonardo" -> "true"))(evidence, ev)
           }
       }
 
@@ -78,13 +78,13 @@ final class NodepoolRemoverSpec extends AnyFlatSpec with CronJobsTestSuite {
       var count = 0
 
       val publisher = new FakeGooglePublisher {
-        override def publishOne[MessageType](message: MessageType)(implicit
+        override def publishOne[MessageType](message: MessageType, messageAttributes: Map[String, String])(implicit
           evidence: Encoder[MessageType],
           ev: Ask[IO, TraceId]
         ): IO[Unit] = {
           count = count + 1
           message shouldBe nodepoolToRemove
-          super.publishOne(message)(evidence, ev)
+          super.publishOne(message, Map("leonardo" -> "true"))(evidence, ev)
         }
       }
 
@@ -96,7 +96,7 @@ final class NodepoolRemoverSpec extends AnyFlatSpec with CronJobsTestSuite {
     }
   }
 
-  private def initDeps(publisher: GooglePublisher[IO]): LeoPublisherDeps[IO] = {
+  private def initDeps(publisher: CloudPublisher[IO]): LeoPublisherDeps[IO] = {
     val checkRunnerDeps =
       CheckRunnerDeps(ConfigSpec.config.reportDestinationBucket,
                       FakeGoogleStorageInterpreter,

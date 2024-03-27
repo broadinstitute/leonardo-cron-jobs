@@ -49,7 +49,8 @@ object DeletedOrErroredNodepoolChecker {
                     )
                     logger.warn(s"${nodepool.toString} still exists in Google. Going to delete") >> deps.publisher
                       .publishOne(
-                        msg
+                        msg,
+                        Map("leonardo" -> "true")
                       )
                   }
                 }

@@ -41,7 +41,7 @@ object NodepoolRemover {
             n.cloudContext match {
               case CloudContext.Gcp(value) =>
                 val msg = DeleteNodepoolMessage(n.nodepoolId, value, Some(ctx))
-                val publish = if (isDryRun) F.unit else deps.publisher.publishOne(msg)
+                val publish = if (isDryRun) F.unit else deps.publisher.publishOne(msg, Map("leonardo" -> "true"))
                 publish.as(n.some)
               case CloudContext.Azure(_) =>
                 logger.warn("Azure k8s NodepoolRemover is not supported").as(none)

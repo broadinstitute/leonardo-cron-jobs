@@ -16,13 +16,13 @@ import org.broadinstitute.dsde.workbench.google2.{
   GoogleComputeService,
   GoogleDataprocService,
   GoogleDiskService,
-  GooglePublisher,
   GoogleStorageService,
   RegionName,
   ZoneName
 }
 import org.broadinstitute.dsde.workbench.model.google.{GcsBucketName, GoogleProject}
 import org.broadinstitute.dsde.workbench.openTelemetry.OpenTelemetryMetrics
+import org.broadinstitute.dsde.workbench.util2.messaging.CloudPublisher
 import org.typelevel.log4cats.StructuredLogger
 
 import java.nio.file.Path
@@ -133,7 +133,7 @@ final case class KubernetesClusterCheckerDeps[F[_]](checkRunnerDeps: CheckRunner
 
 final case class NodepoolCheckerDeps[F[_]](checkRunnerDeps: CheckRunnerDeps[F],
                                            gkeService: GKEService[F],
-                                           publisher: GooglePublisher[F]
+                                           publisher: CloudPublisher[F]
 )
 
 final case class DiskCheckerDeps[F[_]](checkRunnerDeps: CheckRunnerDeps[F], googleDiskService: GoogleDiskService[F])
