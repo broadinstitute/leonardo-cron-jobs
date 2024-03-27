@@ -4,11 +4,7 @@ import cats.effect.Async
 import cats.mtl.Ask
 import cats.syntax.all._
 import fs2.Stream
-import org.broadinstitute.dsde.workbench.google2.{
-  GcsBlobName,
-  GoogleBillingService,
-  GoogleStorageService
-}
+import org.broadinstitute.dsde.workbench.google2.{GcsBlobName, GoogleBillingService, GoogleStorageService}
 import org.broadinstitute.dsde.workbench.model.TraceId
 import org.broadinstitute.dsde.workbench.model.google.GcsBucketName
 import org.broadinstitute.dsde.workbench.openTelemetry.OpenTelemetryMetrics
