@@ -15,17 +15,26 @@ import org.mockito.ArgumentMatchers.{any, anyLong, anyString}
 import org.mockito.Mockito.{mock, verify, when}
 import org.scalatest.flatspec.AnyFlatSpec
 
-class DeletedDiskCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
+class DeletedDiskCheckerSpec extends AnyFlatSpec with CronJobsTestSuite{
+
+  var mockDbReader: DbReader[IO] = _
+  var mockCheckRunnerDeps: CheckRunnerDeps[IO] = _
+  var mockGoogleDiskService: GoogleDiskService[IO] = _
+  var mockDiskCheckerDeps: DiskCheckerDeps[IO] = _
+  var checker: CheckRunner[IO, Disk] = _
+  def setupMocks(): Unit = {
+    mockDbReader = mock(classOf[DbReader[IO]])
+    mockCheckRunnerDeps = mock(classOf[CheckRunnerDeps[IO]])
+    mockGoogleDiskService = mock(classOf[GoogleDiskService[IO]])
+    mockDiskCheckerDeps = DiskCheckerDeps(mockCheckRunnerDeps, mockGoogleDiskService)
+    checker = DeletedDiskChecker.impl(mockDbReader, mockDiskCheckerDeps)
+  }
+
   it should "call updateDiskStatus when billing is disabled" in {
 
     forAll { (disk: Disk) =>
       // Arrange
-      val mockDbReader = mock(classOf[DbReader[IO]])
-      val mockCheckRunnerDeps = mock(classOf[CheckRunnerDeps[IO]])
-      val mockGoogleDiskService = mock(classOf[GoogleDiskService[IO]])
-      val mockDiskCheckerDeps = DiskCheckerDeps(mockCheckRunnerDeps, mockGoogleDiskService)
-      val checker = DeletedDiskChecker.impl(mockDbReader, mockDiskCheckerDeps)
-
+      setupMocks()
       when(
         mockGoogleDiskService.getDisk(any[GoogleProject], ZoneName(anyString()), DiskName(anyString()))(
           any[Ask[IO, TraceId]]
