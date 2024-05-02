@@ -19,25 +19,33 @@ class DeletedDiskCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
   it should "call updateDiskStatus when billing is disabled" in {
 
     forAll { (disk: Disk) =>
-      //Arrange
+      // Arrange
       val mockDbReader = mock(classOf[DbReader[IO]])
       val mockCheckRunnerDeps = mock(classOf[CheckRunnerDeps[IO]])
       val mockGoogleDiskService = mock(classOf[GoogleDiskService[IO]])
       val mockDiskCheckerDeps = DiskCheckerDeps(mockCheckRunnerDeps, mockGoogleDiskService)
       val checker = DeletedDiskChecker.impl(mockDbReader, mockDiskCheckerDeps)
 
-      when(mockGoogleDiskService.getDisk(any[GoogleProject], ZoneName(anyString()), DiskName(anyString()))(
-        any[Ask[IO, TraceId]]
-      )).thenAnswer(_ =>
-        IO.raiseError(new PermissionDeniedException(new Exception("This API method requires billing to be enabled"),GrpcStatusCode.of(Status.Code.PERMISSION_DENIED),false)))
+      when(
+        mockGoogleDiskService.getDisk(any[GoogleProject], ZoneName(anyString()), DiskName(anyString()))(
+          any[Ask[IO, TraceId]]
+        )
+      ).thenAnswer(_ =>
+        IO.raiseError(
+          new PermissionDeniedException(new Exception("This API method requires billing to be enabled"),
+                                        GrpcStatusCode.of(Status.Code.PERMISSION_DENIED),
+                                        false
+          )
+        )
+      )
 
       when(mockDbReader.updateDiskStatus(anyLong())).thenReturn(IO.unit)
 
-      //Act
+      // Act
       val res = checker.checkResource(disk, isDryRun = false)
       res.unsafeRunSync()
 
-      //Assert
+      // Assert
       verify(mockDbReader).updateDiskStatus(anyLong())
       verify(mockGoogleDiskService).getDisk(any[GoogleProject], ZoneName(anyString()), DiskName(anyString()))(
         any[Ask[IO, TraceId]]
