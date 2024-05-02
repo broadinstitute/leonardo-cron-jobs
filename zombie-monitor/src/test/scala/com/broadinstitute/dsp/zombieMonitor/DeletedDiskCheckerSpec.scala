@@ -31,7 +31,6 @@ class DeletedDiskCheckerSpec extends AnyFlatSpec with CronJobsTestSuite{
   }
 
   it should "call updateDiskStatus when billing is disabled" in {
-
     forAll { (disk: Disk) =>
       // Arrange
       setupMocks()
@@ -44,6 +43,37 @@ class DeletedDiskCheckerSpec extends AnyFlatSpec with CronJobsTestSuite{
           new PermissionDeniedException(new Exception("This API method requires billing to be enabled"),
                                         GrpcStatusCode.of(Status.Code.PERMISSION_DENIED),
                                         false
+          )
+        )
+      )
+
+      when(mockDbReader.updateDiskStatus(anyLong())).thenReturn(IO.unit)
+
+      // Act
+      val res = checker.checkResource(disk, isDryRun = false)
+      res.unsafeRunSync()
+
+      // Assert
+      verify(mockDbReader).updateDiskStatus(anyLong())
+      verify(mockGoogleDiskService).getDisk(any[GoogleProject], ZoneName(anyString()), DiskName(anyString()))(
+        any[Ask[IO, TraceId]]
+      )
+    }
+  }
+
+  it should "call updateDiskStatus when compute engine has not been setup" in {
+    forAll { (disk: Disk) =>
+      // Arrange
+      setupMocks()
+      when(
+        mockGoogleDiskService.getDisk(any[GoogleProject], ZoneName(anyString()), DiskName(anyString()))(
+          any[Ask[IO, TraceId]]
+        )
+      ).thenAnswer(_ =>
+        IO.raiseError(
+          new PermissionDeniedException(new Exception("Compute Engine API has not been used"),
+            GrpcStatusCode.of(Status.Code.PERMISSION_DENIED),
+            false
           )
         )
       )
