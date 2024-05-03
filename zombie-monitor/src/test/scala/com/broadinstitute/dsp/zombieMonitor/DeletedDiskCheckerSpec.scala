@@ -7,6 +7,7 @@ import cats.mtl.Ask
 import com.broadinstitute.dsp.Generators._
 import com.google.api.gax.grpc.GrpcStatusCode
 import com.google.api.gax.rpc.{InternalException, PermissionDeniedException}
+import com.google.cloud.compute.v1
 import io.grpc.Status
 import org.broadinstitute.dsde.workbench.google2.{DiskName, GoogleDiskService, ZoneName}
 import org.broadinstitute.dsde.workbench.model.TraceId
@@ -33,6 +34,12 @@ class DeletedDiskCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
     GrpcStatusCode.of(Status.Code.PERMISSION_DENIED),
     false
   )
+
+  val googleDisk: v1.Disk = com.google.cloud.compute.v1.Disk.newBuilder()
+    .setName("disk-name")
+    .setSizeGb(100)
+    .setType("pd-standard")
+    .build()
   def setupMocks(): Unit = {
     mockDbReader = mock(classOf[DbReader[IO]])
     mockCheckRunnerDeps = mock(classOf[CheckRunnerDeps[IO]])
@@ -166,6 +173,49 @@ class DeletedDiskCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
 
       // Assert
       verify(mockDbReader, never()).updateDiskStatus(anyLong())
+    }
+  }
+
+  it should "not call updateDiskStatus when getDisk returns no disk in dryRun mode" in {
+    forAll { (disk: Disk) =>
+      // Arrange
+      setupMocks()
+      when(
+        mockGoogleDiskService.getDisk(any[GoogleProject], ZoneName(anyString()), DiskName(anyString()))(
+          any[Ask[IO, TraceId]]
+        )
+      ).thenAnswer(_ => IO.pure(None))
+
+      when(mockDbReader.updateDiskStatus(anyLong())).thenReturn(IO.unit)
+
+      // Act
+      val res = checker.checkResource(disk, isDryRun = true)
+      res.unsafeRunSync()
+
+      // Assert
+      verify(mockDbReader, never()).updateDiskStatus(anyLong())
+    }
+  }
+  it should "not call updateDiskStatus when getDisk returns a disk in dryRun mode" in {
+    forAll { (disk: Disk) =>
+      // Arrange
+      setupMocks()
+
+      when(
+        mockGoogleDiskService.getDisk(any[GoogleProject], ZoneName(anyString()), DiskName(anyString()))(
+          any[Ask[IO, TraceId]]
+        )
+      ).thenAnswer(_ => IO.pure(Some(googleDisk)))
+
+      when(mockDbReader.updateDiskStatus(anyLong())).thenReturn(IO.unit)
+
+      // Act
+      val res = checker.checkResource(disk, isDryRun = true)
+      res.unsafeRunSync()
+
+      // Assert
+      verify(mockDbReader, never()).updateDiskStatus(anyLong())
+
     }
   }
 }
