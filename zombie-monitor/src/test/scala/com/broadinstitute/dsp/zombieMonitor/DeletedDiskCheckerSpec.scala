@@ -215,7 +215,49 @@ class DeletedDiskCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
 
       // Assert
       verify(mockDbReader, never()).updateDiskStatus(anyLong())
+    }
+  }
 
+
+  it should "call updateDiskStatus when getDisk returns no disk" in {
+    forAll { (disk: Disk) =>
+      // Arrange
+      setupMocks()
+      when(
+        mockGoogleDiskService.getDisk(any[GoogleProject], ZoneName(anyString()), DiskName(anyString()))(
+          any[Ask[IO, TraceId]]
+        )
+      ).thenAnswer(_ => IO.pure(None))
+
+      when(mockDbReader.updateDiskStatus(anyLong())).thenReturn(IO.unit)
+
+      // Act
+      val res = checker.checkResource(disk, isDryRun = false)
+      res.unsafeRunSync()
+
+      // Assert
+      verify(mockDbReader).updateDiskStatus(anyLong())
+    }
+  }
+  it should "not call updateDiskStatus when getDisk returns a disk" in {
+    forAll { (disk: Disk) =>
+      // Arrange
+      setupMocks()
+
+      when(
+        mockGoogleDiskService.getDisk(any[GoogleProject], ZoneName(anyString()), DiskName(anyString()))(
+          any[Ask[IO, TraceId]]
+        )
+      ).thenAnswer(_ => IO.pure(Some(googleDisk)))
+
+      when(mockDbReader.updateDiskStatus(anyLong())).thenReturn(IO.unit)
+
+      // Act
+      val res = checker.checkResource(disk, isDryRun = false)
+      res.unsafeRunSync()
+
+      // Assert
+      verify(mockDbReader, never()).updateDiskStatus(anyLong())
     }
   }
 }
