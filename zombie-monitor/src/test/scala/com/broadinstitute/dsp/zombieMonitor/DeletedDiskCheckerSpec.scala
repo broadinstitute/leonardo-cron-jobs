@@ -15,7 +15,7 @@ import org.mockito.ArgumentMatchers.{any, anyLong, anyString}
 import org.mockito.Mockito.{mock, never, verify, when}
 import org.scalatest.flatspec.AnyFlatSpec
 
-class DeletedDiskCheckerSpec extends AnyFlatSpec with CronJobsTestSuite{
+class DeletedDiskCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
 
   var mockDbReader: DbReader[IO] = _
   var mockCheckRunnerDeps: CheckRunnerDeps[IO] = _
@@ -69,8 +69,8 @@ class DeletedDiskCheckerSpec extends AnyFlatSpec with CronJobsTestSuite{
       ).thenAnswer(_ =>
         IO.raiseError(
           new PermissionDeniedException(new Exception("Compute Engine API has not been used"),
-            GrpcStatusCode.of(Status.Code.PERMISSION_DENIED),
-            false
+                                        GrpcStatusCode.of(Status.Code.PERMISSION_DENIED),
+                                        false
           )
         )
       )
@@ -97,8 +97,8 @@ class DeletedDiskCheckerSpec extends AnyFlatSpec with CronJobsTestSuite{
       ).thenAnswer(_ =>
         IO.raiseError(
           new InternalException(new Exception("Compute Engine API has not been used"),
-            GrpcStatusCode.of(Status.Code.PERMISSION_DENIED),
-            false
+                                GrpcStatusCode.of(Status.Code.PERMISSION_DENIED),
+                                false
           )
         )
       )
