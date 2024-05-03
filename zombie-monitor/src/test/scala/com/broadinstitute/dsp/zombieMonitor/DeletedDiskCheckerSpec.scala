@@ -70,7 +70,7 @@ class DeletedDiskCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
       res.unsafeRunSync()
 
       // Assert
-      verify(mockDbReader).updateDiskStatus(anyLong())
+      verify(mockDbReader).updateDiskStatus(disk.id)
     }
   }
   it should "not call updateDiskStatus with error 'billing is disabled'  (isDryRun = true)" in {
@@ -87,14 +87,14 @@ class DeletedDiskCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
         )
       )
 
-      when(mockDbReader.updateDiskStatus(anyLong())).thenReturn(IO.unit)
+      when(mockDbReader.updateDiskStatus(disk.id)).thenReturn(IO.unit)
 
       // Act
       val res = checker.checkResource(disk, isDryRun = true)
       res.unsafeRunSync()
 
       // Assert
-      verify(mockDbReader, never()).updateDiskStatus(anyLong())
+      verify(mockDbReader, never()).updateDiskStatus(disk.id)
     }
   }
 
@@ -112,14 +112,14 @@ class DeletedDiskCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
         )
       )
 
-      when(mockDbReader.updateDiskStatus(anyLong())).thenReturn(IO.unit)
+      when(mockDbReader.updateDiskStatus(disk.id)).thenReturn(IO.unit)
 
       // Act
       val res = checker.checkResource(disk, isDryRun = false)
       res.unsafeRunSync()
 
       // Assert
-      verify(mockDbReader).updateDiskStatus(anyLong())
+      verify(mockDbReader).updateDiskStatus(disk.id)
     }
   }
   it should "not call updateDiskStatus with error 'compute engine has not been setup' (isDryRun = true)" in {
@@ -136,14 +136,14 @@ class DeletedDiskCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
         )
       )
 
-      when(mockDbReader.updateDiskStatus(anyLong())).thenReturn(IO.unit)
+      when(mockDbReader.updateDiskStatus(disk.id)).thenReturn(IO.unit)
 
       // Act
       val res = checker.checkResource(disk, isDryRun = true)
       res.unsafeRunSync()
 
       // Assert
-      verify(mockDbReader, never()).updateDiskStatus(anyLong())
+      verify(mockDbReader, never()).updateDiskStatus(disk.id)
     }
   }
 
@@ -164,14 +164,14 @@ class DeletedDiskCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
         )
       )
 
-      when(mockDbReader.updateDiskStatus(anyLong())).thenReturn(IO.unit)
+      when(mockDbReader.updateDiskStatus(disk.id)).thenReturn(IO.unit)
 
       // Act
       val res = checker.checkResource(disk, isDryRun = false)
       res.unsafeRunSync()
 
       // Assert
-      verify(mockDbReader, never()).updateDiskStatus(anyLong())
+      verify(mockDbReader, never()).updateDiskStatus(disk.id)
     }
   }
 
@@ -185,14 +185,14 @@ class DeletedDiskCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
         )
       ).thenAnswer(_ => IO.pure(None))
 
-      when(mockDbReader.updateDiskStatus(anyLong())).thenReturn(IO.unit)
+      when(mockDbReader.updateDiskStatus(disk.id)).thenReturn(IO.unit)
 
       // Act
       val res = checker.checkResource(disk, isDryRun = false)
       res.unsafeRunSync()
 
       // Assert
-      verify(mockDbReader).updateDiskStatus(anyLong())
+      verify(mockDbReader).updateDiskStatus(disk.id)
     }
   }
   it should "not call updateDiskStatus when getDisk returns no disk (isDryRun = true)" in {
@@ -205,14 +205,14 @@ class DeletedDiskCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
         )
       ).thenAnswer(_ => IO.pure(None))
 
-      when(mockDbReader.updateDiskStatus(anyLong())).thenReturn(IO.unit)
+      when(mockDbReader.updateDiskStatus(disk.id)).thenReturn(IO.unit)
 
       // Act
       val res = checker.checkResource(disk, isDryRun = true)
       res.unsafeRunSync()
 
       // Assert
-      verify(mockDbReader, never()).updateDiskStatus(anyLong())
+      verify(mockDbReader, never()).updateDiskStatus(disk.id)
     }
   }
 
@@ -227,14 +227,14 @@ class DeletedDiskCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
         )
       ).thenAnswer(_ => IO.pure(Some(googleDisk)))
 
-      when(mockDbReader.updateDiskStatus(anyLong())).thenReturn(IO.unit)
+      when(mockDbReader.updateDiskStatus(disk.id)).thenReturn(IO.unit)
 
       // Act
       val res = checker.checkResource(disk, isDryRun = false)
       res.unsafeRunSync()
 
       // Assert
-      verify(mockDbReader, never()).updateDiskStatus(anyLong())
+      verify(mockDbReader, never()).updateDiskStatus(disk.id)
     }
   }
   it should "not call updateDiskStatus when getDisk returns a disk (isDryRun = true)" in {
@@ -248,14 +248,14 @@ class DeletedDiskCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
         )
       ).thenAnswer(_ => IO.pure(Some(googleDisk)))
 
-      when(mockDbReader.updateDiskStatus(anyLong())).thenReturn(IO.unit)
+      when(mockDbReader.updateDiskStatus(disk.id)).thenReturn(IO.unit)
 
       // Act
       val res = checker.checkResource(disk, isDryRun = true)
       res.unsafeRunSync()
 
       // Assert
-      verify(mockDbReader, never()).updateDiskStatus(anyLong())
+      verify(mockDbReader, never()).updateDiskStatus(disk.id)
     }
   }
 }
