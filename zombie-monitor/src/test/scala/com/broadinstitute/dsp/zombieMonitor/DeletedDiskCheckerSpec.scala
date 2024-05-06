@@ -49,7 +49,7 @@ class DeletedDiskCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
     checker = DeletedDiskChecker.impl(mockDbReader, mockDiskCheckerDeps)
   }
 
-  it should "call updateDiskStatus with error 'billing is disabled' (isDryRun = false)" in {
+  it should "updateDiskStatus when GCP returns a 'billing is disabled' error (isDryRun = false)" in {
     forAll { (disk: Disk) =>
       // Arrange
       setupMocks()
@@ -73,7 +73,7 @@ class DeletedDiskCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
       verify(mockDbReader).updateDiskStatus(disk.id)
     }
   }
-  it should "not call updateDiskStatus with error 'billing is disabled'  (isDryRun = true)" in {
+  it should "not updateDiskStatus when GCP returns a 'billing is disabled' error (isDryRun = true)" in {
     forAll { (disk: Disk) =>
       // Arrange
       setupMocks()
@@ -98,7 +98,7 @@ class DeletedDiskCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
     }
   }
 
-  it should "call updateDiskStatus with error 'compute engine has not been setup' (isDryRun = false)" in {
+  it should "updateDiskStatus when GCP returns a 'compute engine has not been setup' error (isDryRun = false)" in {
     forAll { (disk: Disk) =>
       // Arrange
       setupMocks()
@@ -122,7 +122,7 @@ class DeletedDiskCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
       verify(mockDbReader).updateDiskStatus(disk.id)
     }
   }
-  it should "not call updateDiskStatus with error 'compute engine has not been setup' (isDryRun = true)" in {
+  it should "not updateDiskStatus when GCP returns a 'compute engine has not been setup' error (isDryRun = true)" in {
     forAll { (disk: Disk) =>
       // Arrange
       setupMocks()
@@ -147,7 +147,7 @@ class DeletedDiskCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
     }
   }
 
-  it should "not call updateDiskStatus with unhandled error (isDryRun = false)" in {
+  it should "not updateDiskStatus when GCP returns an unhandled error (isDryRun = false)" in {
     forAll { (disk: Disk) =>
       // Arrange
       setupMocks()
@@ -175,7 +175,7 @@ class DeletedDiskCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
     }
   }
 
-  it should "call updateDiskStatus when getDisk returns no disk (isDryRun = false)" in {
+  it should "updateDiskStatus when a call to GCP's getDisk endpoint returns no disk (isDryRun = false)" in {
     forAll { (disk: Disk) =>
       // Arrange
       setupMocks()
@@ -195,7 +195,7 @@ class DeletedDiskCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
       verify(mockDbReader).updateDiskStatus(disk.id)
     }
   }
-  it should "not call updateDiskStatus when getDisk returns no disk (isDryRun = true)" in {
+  it should "not updateDiskStatus when a call to GCP's getDisk endpoint returns no disk (isDryRun = true)" in {
     forAll { (disk: Disk) =>
       // Arrange
       setupMocks()
@@ -216,7 +216,7 @@ class DeletedDiskCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
     }
   }
 
-  it should "not call updateDiskStatus when getDisk returns a disk (isDryRun = false)" in {
+  it should "not updateDiskStatus when a call to GCP's getDisk endpoint returns a disk (isDryRun = false)" in {
     forAll { (disk: Disk) =>
       // Arrange
       setupMocks()
@@ -237,7 +237,7 @@ class DeletedDiskCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
       verify(mockDbReader, never()).updateDiskStatus(disk.id)
     }
   }
-  it should "not call updateDiskStatus when getDisk returns a disk (isDryRun = true)" in {
+  it should "not updateDiskStatus when a call to GCP's getDisk endpoint returns a disk (isDryRun = true)" in {
     forAll { (disk: Disk) =>
       // Arrange
       setupMocks()
