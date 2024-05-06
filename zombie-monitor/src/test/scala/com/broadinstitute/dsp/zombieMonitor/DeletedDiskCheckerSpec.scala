@@ -55,9 +55,7 @@ class DeletedDiskCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
     checker = DeletedDiskChecker.impl(mockDbReader, mockDiskCheckerDeps)
   }
 
-  for (
-    (title, getDiskResponse) <- gcpFailureConditions
-  )
+  for ((title, getDiskResponse) <- gcpFailureConditions)
     it should s"updateDiskStatus when $title (isDryRun = false)" in {
       forAll { (disk: Disk) =>
         // Arrange
@@ -79,9 +77,7 @@ class DeletedDiskCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
       }
     }
 
-  for (
-    (title, getDiskResponse) <- gcpFailureConditions
-  )
+  for ((title, getDiskResponse) <- gcpFailureConditions)
     it should s"not updateDiskStatus when $title (isDryRun = true)" in {
       forAll { (disk: Disk) =>
         // Arrange
@@ -114,8 +110,8 @@ class DeletedDiskCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
       ).thenAnswer(_ =>
         IO.raiseError(
           new InternalException(new Exception("Something unexpected happened"),
-            GrpcStatusCode.of(Status.Code.PERMISSION_DENIED),
-            false
+                                GrpcStatusCode.of(Status.Code.PERMISSION_DENIED),
+                                false
           )
         )
       )
