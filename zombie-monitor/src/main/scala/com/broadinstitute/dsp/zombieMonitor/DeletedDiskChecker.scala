@@ -37,11 +37,13 @@ object DeletedDiskChecker {
               val result = e match {
                 case ee: com.google.api.gax.rpc.PermissionDeniedException =>
                   if (
-                    ee.getCause.getMessage.contains("Compute Engine API has not been used") || ee.getCause.getMessage
-                      .contains("This API method requires billing to be enabled")
-                  )
+                    ee.getCause.getMessage.contains("Compute Engine API has not been used")
+                  ) {
                     if (isDryRun) F.unit else dbReader.updateDiskStatus(disk.id)
-                  else logger.error(e)(s"fail to get ${disk.diskName}")
+                  } else if(ee.getCause.getMessage
+                    .contains("This API method requires billing to be enabled")){
+                    logger.info(s"billing is disabled for ${disk.diskName}")
+                  } else logger.error(e)(s"fail to get ${disk.diskName}")
                 case e => logger.error(e)(s"fail to get ${disk.diskName}")
               }
               result.as(Some(disk))

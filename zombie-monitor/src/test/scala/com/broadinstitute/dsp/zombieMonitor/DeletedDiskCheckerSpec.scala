@@ -43,7 +43,6 @@ class DeletedDiskCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
     .build()
 
   var gcpFailureConditions: List[(String, IO[None.type])] = List(
-    ("GCP returns a 'billing is disabled' error", IO.raiseError(billingDisabledException)),
     ("GCP returns a 'compute engine has not been setup' error", IO.raiseError(computeEngineNotSetupException)),
     ("GCP's getDisk endpoint returns no disk", IO.pure(None))
   )
@@ -164,6 +163,28 @@ class DeletedDiskCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
 
       // Act
       val res = checker.checkResource(disk, isDryRun = true)
+      res.unsafeRunSync()
+
+      // Assert
+      verify(mockDbReader, never()).updateDiskStatus(disk.id)
+    }
+  }
+
+  it should "never updateDiskStatus when GCP's getDisk endpoint returns a 'billing is disabled' error" in {
+    forAll { (disk: Disk) =>
+      // Arrange
+      setupMocks()
+
+      when(
+        mockGoogleDiskService.getDisk(any[GoogleProject], ZoneName(anyString()), DiskName(anyString()))(
+          any[Ask[IO, TraceId]]
+        )
+      ).thenAnswer(_ => IO.raiseError(billingDisabledException))
+
+      when(mockDbReader.updateDiskStatus(disk.id)).thenReturn(IO.unit)
+
+      // Act
+      val res = checker.checkResource(disk, isDryRun = false)
       res.unsafeRunSync()
 
       // Assert
