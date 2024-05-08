@@ -43,8 +43,16 @@ class DeletedDiskCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
     .build()
 
   var gcpFailureConditions: List[(String, IO[None.type])] = List(
+    ("GCP returns a 'billing is disabled' error", IO.raiseError(billingDisabledException)),
     ("GCP returns a 'compute engine has not been setup' error", IO.raiseError(computeEngineNotSetupException)),
-    ("GCP's getDisk endpoint returns no disk", IO.pure(None))
+    ("GCP returns an unhandled error",
+     IO.raiseError(
+       new InternalException(new Exception("Something unexpected happened"),
+                             GrpcStatusCode.of(Status.Code.PERMISSION_DENIED),
+                             false
+       )
+     )
+    )
   )
   def setupMocks(): Unit = {
     mockDbReader = mock(classOf[DbReader[IO]])
@@ -55,7 +63,7 @@ class DeletedDiskCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
   }
 
   for ((title, getDiskResponse) <- gcpFailureConditions)
-    it should s"updateDiskStatus when $title (isDryRun = false)" in {
+    it should s"not updateDiskStatus when $title (isDryRun = false)" in {
       forAll { (disk: Disk) =>
         // Arrange
         setupMocks()
@@ -72,59 +80,9 @@ class DeletedDiskCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
         res.unsafeRunSync()
 
         // Assert
-        verify(mockDbReader).updateDiskStatus(disk.id)
-      }
-    }
-
-  for ((title, getDiskResponse) <- gcpFailureConditions)
-    it should s"not updateDiskStatus when $title (isDryRun = true)" in {
-      forAll { (disk: Disk) =>
-        // Arrange
-        setupMocks()
-        when(
-          mockGoogleDiskService.getDisk(any[GoogleProject], ZoneName(anyString()), DiskName(anyString()))(
-            any[Ask[IO, TraceId]]
-          )
-        ).thenAnswer(_ => getDiskResponse)
-
-        when(mockDbReader.updateDiskStatus(disk.id)).thenReturn(IO.unit)
-
-        // Act
-        val res = checker.checkResource(disk, isDryRun = true)
-        res.unsafeRunSync()
-
-        // Assert
         verify(mockDbReader, never()).updateDiskStatus(disk.id)
       }
     }
-
-  it should "not updateDiskStatus when GCP returns an unhandled error (isDryRun = false)" in {
-    forAll { (disk: Disk) =>
-      // Arrange
-      setupMocks()
-      when(
-        mockGoogleDiskService.getDisk(any[GoogleProject], ZoneName(anyString()), DiskName(anyString()))(
-          any[Ask[IO, TraceId]]
-        )
-      ).thenAnswer(_ =>
-        IO.raiseError(
-          new InternalException(new Exception("Something unexpected happened"),
-                                GrpcStatusCode.of(Status.Code.PERMISSION_DENIED),
-                                false
-          )
-        )
-      )
-
-      when(mockDbReader.updateDiskStatus(disk.id)).thenReturn(IO.unit)
-
-      // Act
-      val res = checker.checkResource(disk, isDryRun = false)
-      res.unsafeRunSync()
-
-      // Assert
-      verify(mockDbReader, never()).updateDiskStatus(disk.id)
-    }
-  }
 
   it should "not updateDiskStatus when a call to GCP's getDisk endpoint returns a disk (isDryRun = false)" in {
     forAll { (disk: Disk) =>
@@ -170,7 +128,7 @@ class DeletedDiskCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
     }
   }
 
-  it should "never updateDiskStatus when GCP's getDisk endpoint returns a 'billing is disabled' error" in {
+  it should "not updateDiskStatus when a call to GCP's getDisk endpoint returns no disk (isDryRun = true)" in {
     forAll { (disk: Disk) =>
       // Arrange
       setupMocks()
@@ -179,7 +137,29 @@ class DeletedDiskCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
         mockGoogleDiskService.getDisk(any[GoogleProject], ZoneName(anyString()), DiskName(anyString()))(
           any[Ask[IO, TraceId]]
         )
-      ).thenAnswer(_ => IO.raiseError(billingDisabledException))
+      ).thenAnswer(_ => IO.pure(None))
+
+      when(mockDbReader.updateDiskStatus(disk.id)).thenReturn(IO.unit)
+
+      // Act
+      val res = checker.checkResource(disk, isDryRun = true)
+      res.unsafeRunSync()
+
+      // Assert
+      verify(mockDbReader, never()).updateDiskStatus(disk.id)
+    }
+  }
+
+  it should "updateDiskStatus when a call to GCP's getDisk endpoint returns no disk (isDryRun = false)" in {
+    forAll { (disk: Disk) =>
+      // Arrange
+      setupMocks()
+
+      when(
+        mockGoogleDiskService.getDisk(any[GoogleProject], ZoneName(anyString()), DiskName(anyString()))(
+          any[Ask[IO, TraceId]]
+        )
+      ).thenAnswer(_ => IO.pure(None))
 
       when(mockDbReader.updateDiskStatus(disk.id)).thenReturn(IO.unit)
 
@@ -188,7 +168,7 @@ class DeletedDiskCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
       res.unsafeRunSync()
 
       // Assert
-      verify(mockDbReader, never()).updateDiskStatus(disk.id)
+      verify(mockDbReader).updateDiskStatus(disk.id)
     }
   }
 }
