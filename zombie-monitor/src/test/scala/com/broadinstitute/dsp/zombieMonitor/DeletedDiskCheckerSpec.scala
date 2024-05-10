@@ -12,7 +12,8 @@ import io.grpc.Status
 import org.broadinstitute.dsde.workbench.google2.{DiskName, GoogleDiskService, ZoneName}
 import org.broadinstitute.dsde.workbench.model.TraceId
 import org.broadinstitute.dsde.workbench.model.google.GoogleProject
-import org.mockito.ArgumentMatchers.{any, anyString}
+import org.broadinstitute.dsde.workbench.openTelemetry.OpenTelemetryMetrics
+import org.mockito.ArgumentMatchers.{any, anyLong, anyString}
 import org.mockito.Mockito.{mock, never, verify, when}
 import org.scalatest.flatspec.AnyFlatSpec
 
@@ -22,6 +23,7 @@ class DeletedDiskCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
   var mockCheckRunnerDeps: CheckRunnerDeps[IO] = _
   var mockGoogleDiskService: GoogleDiskService[IO] = _
   var mockDiskCheckerDeps: DiskCheckerDeps[IO] = _
+  var mockOpenTelemetryMetrics: OpenTelemetryMetrics[IO] = _
   var checker: CheckRunner[IO, Disk] = _
 
   var billingDisabledException = new PermissionDeniedException(
@@ -59,6 +61,7 @@ class DeletedDiskCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
     mockCheckRunnerDeps = mock(classOf[CheckRunnerDeps[IO]])
     mockGoogleDiskService = mock(classOf[GoogleDiskService[IO]])
     mockDiskCheckerDeps = DiskCheckerDeps(mockCheckRunnerDeps, mockGoogleDiskService)
+    mockOpenTelemetryMetrics = mock(classOf[OpenTelemetryMetrics[IO]])
     checker = DeletedDiskChecker.impl(mockDbReader, mockDiskCheckerDeps)
   }
 
@@ -67,6 +70,8 @@ class DeletedDiskCheckerSpec extends AnyFlatSpec with CronJobsTestSuite {
       forAll { (disk: Disk) =>
         // Arrange
         setupMocks()
+        when(mockCheckRunnerDeps.metrics).thenReturn(mockOpenTelemetryMetrics)
+        when(mockOpenTelemetryMetrics.incrementCounter(anyString(), anyLong(), any())).thenReturn(IO.unit)
         when(
           mockGoogleDiskService.getDisk(any[GoogleProject], ZoneName(anyString()), DiskName(anyString()))(
             any[Ask[IO, TraceId]]
