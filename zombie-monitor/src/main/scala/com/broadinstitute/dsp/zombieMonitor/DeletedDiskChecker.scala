@@ -40,7 +40,9 @@ object DeletedDiskChecker {
                     ee.getCause.getMessage.contains("Compute Engine API has not been used") || ee.getCause.getMessage
                       .contains("This API method requires billing to be enabled")
                   )
-                    if (isDryRun) F.unit else dbReader.updateDiskStatus(disk.id)
+                    logger.info(
+                      s"failed to get ${disk.diskName} due to ${ee.getCause.getMessage}"
+                    ) >> deps.checkRunnerDeps.metrics.incrementCounter("activeDiskBillingException")
                   else logger.error(e)(s"fail to get ${disk.diskName}")
                 case e => logger.error(e)(s"fail to get ${disk.diskName}")
               }
