@@ -45,7 +45,7 @@ object DbReader {
   implicit def apply[F[_]](implicit ev: DbReader[F]): DbReader[F] = ev
 
   /**
-   * Return all non-deleted GCP clusters with non-default nodepools that have apps that were all deleted
+   * Return all non-deleted GCP clusters with nodepools that have apps that were all deleted
    * or errored outside the grace period (1 hour). Note Azure Kubernetes clusters's lifecycle are managed by WSM separately. Hence
    * we don't need to check for Azure clusters.
    * We are including clusters with no nodepools and apps as well.
@@ -67,7 +67,7 @@ object DbReader {
           FROM NODEPOOL np
           RIGHT JOIN APP a ON np.id = a.nodepoolId
           WHERE
-            kc.id = np.clusterId AND np.isDefault = 0 AND
+            kc.id = np.clusterId AND
             (
               (a.status != "DELETED" AND a.status != "ERROR") OR
               (a.status = "DELETED" AND a.destroyedDate > now() - INTERVAL 1 HOUR) OR
