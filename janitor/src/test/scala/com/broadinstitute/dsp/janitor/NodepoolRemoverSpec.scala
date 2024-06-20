@@ -36,7 +36,7 @@ final class NodepoolRemoverSpec extends AnyFlatSpec with CronJobsTestSuite {
             IO.raiseError(fail("Shouldn't publish message in dryRun mode"))
           else {
             count = count + 1
-            super.publishOne(message, Map("leonardo" -> "true"))(evidence, ev)
+            super.publishOne(message)(evidence, ev)
           }
       }
 
@@ -84,7 +84,7 @@ final class NodepoolRemoverSpec extends AnyFlatSpec with CronJobsTestSuite {
         ): IO[Unit] = {
           count = count + 1
           message shouldBe nodepoolToRemove
-          super.publishOne(message, Map("leonardo" -> "true"))(evidence, ev)
+          super.publishOne(message)(evidence, ev)
         }
       }
 
