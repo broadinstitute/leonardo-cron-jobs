@@ -85,10 +85,3 @@ These are not run in CI, so you have to make sure you run them manually before m
 
 3. **Merge the automatically generated `terra-helm` PR.** You can merge this yourself. Another automatic commit will bump `leonardo`'s chart version. This will trigger another automatic commit
 in [terra-helmfile](https://github.com/broadinstitute/terra-helmfile). Note that this commit will only auto-bump `dev`, and will be auto-merged.
-
-4. **Sync the deployed `leonardo` app in Argo.** Once the terra-helmfile PR is auto-merged, go to [argo](https://ap-argocd.dsp-devops.broadinstitute.org/applications) (you need to be on VPN to access argo), and click the `SYNC APPS` button on the left upper corner. Select these boxes to sync:
- - `leonardo dev`
- - `prune`
-
-    This will sync leonardo's deployment to match [terra-helmfile](https://github.com/broadinstitute/terra-helmfile) repo.
-    the chartVersion bump and sync for other environments will happen automatically when there is a Terra monolith release.
