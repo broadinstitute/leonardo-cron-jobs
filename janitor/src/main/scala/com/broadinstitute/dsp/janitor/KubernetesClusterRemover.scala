@@ -46,7 +46,7 @@ object KubernetesClusterRemover {
                   if (!isDryRun && isBillingEnabled) {
                     val msg =
                       DeleteKubernetesClusterMessage(c.id, value, TraceId(s"kubernetesClusterRemover-$now"))
-                    deps.publisher.publishOne(msg, Map("leonardo" -> "true"))
+                    deps.publisher.publishOne(msg)
                   } else F.unit
                 res = if (isBillingEnabled) Some(c) else None
               } yield res

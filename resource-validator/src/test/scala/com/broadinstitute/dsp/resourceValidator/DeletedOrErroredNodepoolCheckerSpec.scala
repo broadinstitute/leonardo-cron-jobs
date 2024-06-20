@@ -41,7 +41,7 @@ class DeletedOrErroredNodepoolCheckerSpec extends AnyFlatSpec with CronJobsTestS
             IO.raiseError(fail("Shouldn't publish message in dryRun mode"))
           else {
             count = count + 1
-            super.publishOne(message, Map("leonardo" -> "true"))(evidence$2, ev)
+            super.publishOne(message)(evidence$2, ev)
           }
       }
 
