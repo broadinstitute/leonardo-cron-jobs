@@ -1,4 +1,4 @@
-[![Build Status](https://github.com/broadinstitute/leonardo-cron-jobs/workflows/Unit%20Tests/badge.svg)](https://github.com/broadinstitute/leonardo-cron-jobs/actions) 
+[![Build Status](https://github.com/broadinstitute/leonardo-cron-jobs/workflows/Unit%20Tests/badge.svg)](https://github.com/broadinstitute/leonardo-cron-jobs/actions)
 [![codecov](https://codecov.io/gh/broadinstitute/leonardo-cron-jobs/branch/master/graph/badge.svg)](https://codecov.io/gh/broadinstitute/leonardo-cron-jobs)
 
 # Introduction
@@ -10,7 +10,7 @@ This repo contains cron jobs running alongside with [Leonardo](https://github.co
 
 ## resource-validator
 
-This job detects and fixes anomalies by updating Google resources to match their status in Leonardo database. Apart from 
+This job detects and fixes anomalies by updating Google resources to match their status in Leonardo database. Apart from
 
 ## zombie-monitor
 This job detects and fixes anomalies by updating Leonardo database status of resources to match their status in Google or Azure.
@@ -67,7 +67,7 @@ e.g. `sbt "resourceValidator/run --dryRun --all"`
 
 ## Contributing
 
-1. Ideally, we should be able to just run `sbt test`. But for some reason, DB unit tests will fail if they're run this way. So you'd have to run them separately.
+1. **Run tests manually.** Ideally, we should be able to just run `sbt test`. But for some reason, DB unit tests will fail if they're run this way. So you'd have to run them separately.
 
 Run DB tests by projects will have fewer failures. Here's how you can run them by each project:
 
@@ -76,19 +76,12 @@ Run DB tests by projects will have fewer failures. Here's how you can run them b
 - `sbt resourceValidator/test`
 
 - `sbt janitor/test`
-  
+
   There will be a few failures, but should succeed when run individually. (Currently `com.broadinstitute.dsp.janitor.DbQueryBuilderSpec` has real error that we need to fix at some point).
 
 These are not run in CI, so you have to make sure you run them manually before merging any PRs. Instructions on running these can be found in the respective `DbReaderSpec` files.
 
-2. Once your PR is approved you can merge it and a new PR will be automatically created in [terra-helm](https://github.com/broadinstitute/terra-helm). 
+2. **Merge your `leonardo-cron-jobs` PR.** Once your PR is approved you can merge it and a new PR will be automatically created in [terra-helm](https://github.com/broadinstitute/terra-helm).
 
-3. Get this terra-helm PR merged (you can merge it yourself) and another automatic commit will bump leonardo's chart version. This will trigger another automatic commit 
+3. **Merge the automatically generated `terra-helm` PR.** You can merge this yourself. Another automatic commit will bump `leonardo`'s chart version. This will trigger another automatic commit
 in [terra-helmfile](https://github.com/broadinstitute/terra-helmfile). Note that this commit will only auto-bump `dev`, and will be auto-merged.
-
-4. Once the terra-helmfile PR is auto-merged, go to [argo](https://ap-argocd.dsp-devops.broadinstitute.org/applications) (you need to be on VPN to access argo), and click the `SYNC APPS` button on the left upper corner. Select these boxes to sync:
- - `leonardo dev`
- - `prune`
-    
-    This will sync leonardo's deployment to match [terra-helmfile](https://github.com/broadinstitute/terra-helmfile) repo.
-    the chartVersion bump and sync for other environments will happen automatically when there is a Terra monolith release.
