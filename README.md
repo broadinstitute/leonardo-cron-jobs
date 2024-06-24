@@ -81,7 +81,7 @@ Run DB tests by projects will have fewer failures. Here's how you can run them b
 
 These are not run in CI, so you have to make sure you run them manually before merging any PRs. Instructions on running these can be found in the respective `DbReaderSpec` files.
 
-2. **Merge your `leonardo-cron-jobs` PR.** Once your PR is approved you can merge it and a new PR will be automatically created in [terra-helm](https://github.com/broadinstitute/terra-helm).
+2. **Merge your `leonardo-cron-jobs` PR.** Once your PR is approved you can merge it and a new PR will be automatically created in [terra-helmfile](https://github.com/broadinstitute/terra-helmfile): expect a title like "Bump leonardo cron jobs version".
 
-3. **Merge the automatically generated `terra-helm` PR.** You can merge this yourself. Another automatic commit will bump `leonardo`'s chart version. This will trigger another automatic commit
+3. **Merge the automatically generated `terra-helmfile` PR.** You can merge this yourself. Another automatic commit will bump `leonardo`'s chart version. This will trigger another automatic commit
 in [terra-helmfile](https://github.com/broadinstitute/terra-helmfile). Note that this commit will only auto-bump `dev`, and will be auto-merged.
