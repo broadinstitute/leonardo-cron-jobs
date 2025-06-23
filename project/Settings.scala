@@ -9,7 +9,7 @@ import sbtassembly.AssemblyKeys._
 import sbtassembly.AssemblyPlugin.autoImport.assembly
 
 object Settings {
-  private lazy val artifactory = "https://broadinstitute.jfrog.io/artifactory/"
+  private lazy val artifactory = "https://us-central1-maven.pkg.dev/dsp-artifact-registry/"
 
   private lazy val commonResolvers = List(
     "artifactory-releases" at artifactory + "libs-release",
