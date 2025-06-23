@@ -21,7 +21,7 @@ jobs:
       - uses: olafurpg/setup-scala@v10
 
       # set up SBT cache
-      - uses: actions/cache@v2
+      - uses: actions/cache@v3
         with:
           path: |
             ~/.cache
