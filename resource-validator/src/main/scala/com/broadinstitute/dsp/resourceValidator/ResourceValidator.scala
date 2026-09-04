@@ -132,7 +132,9 @@ object ResourceValidator {
     } yield {
       val checkRunnerDeps = runtimeCheckerDeps.checkRunnerDeps
       val diskCheckerDeps = DiskCheckerDeps(checkRunnerDeps, diskService)
-      val kubernetesClusterCheckerDeps = KubernetesClusterCheckerDeps(checkRunnerDeps, gkeService, aksService)
+      // computeService is reused from runtimeCheckerDeps — same credentials, already usable for GCE VMs.
+      val kubernetesClusterCheckerDeps =
+        KubernetesClusterCheckerDeps(checkRunnerDeps, gkeService, aksService, runtimeCheckerDeps.computeService)
       val nodepoolCheckerDeps = NodepoolCheckerDeps(checkRunnerDeps, gkeService, googlePublisher)
       val dbReader = DbReader.impl(xa)
       ResourcevalidatorServerDeps(runtimeCheckerDeps,

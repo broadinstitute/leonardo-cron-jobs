@@ -27,7 +27,8 @@ object ZombieMonitor {
                                  shouldCheckDeletedRuntimes: Boolean,
                                  shouldCheckDeletedDisks: Boolean,
                                  shouldCheckDeletedK8sClusters: Boolean,
-                                 shouldCheckDeletedOrErroredNodepool: Boolean
+                                 shouldCheckDeletedOrErroredNodepool: Boolean,
+                                 shouldCheckDeletedGceGalaxyClusters: Boolean = true
   ): Stream[F, Nothing] = {
     implicit val logger =
       StructuredLogger.withContext[F](Slf4jLogger.getLogger[F])(loggingContext)
@@ -60,14 +61,22 @@ object ZombieMonitor {
             DeletedOrErroredNodepoolChecker.impl(deps.dbReader, deps.kubernetesClusterCheckerDeps).run(isDryRun)
           )
         else Stream.empty
+      deleteGceGalaxyClusterCheckerProcess =
+        if (shouldRunAll || shouldCheckDeletedGceGalaxyClusters)
+          Stream.eval(
+            GceGalaxyClusterChecker.impl(deps.dbReader, deps.kubernetesClusterCheckerDeps).run(isDryRun)
+          )
+        else Stream.empty
 
-      processes = Stream(deleteDiskCheckerProcess,
-                         deleteRuntimeCheckerProcess,
-                         deletek8sClusterCheckerProcess,
-                         deleteOrErroredNodepoolCheckerProcess
+      processes = Stream(
+        deleteDiskCheckerProcess,
+        deleteRuntimeCheckerProcess,
+        deletek8sClusterCheckerProcess,
+        deleteOrErroredNodepoolCheckerProcess,
+        deleteGceGalaxyClusterCheckerProcess
       ).covary[F]
 
-      _ <- processes.parJoin(4) // Number of checkers in 'processes'
+      _ <- processes.parJoin(5) // Number of checkers in 'processes'
     } yield ()
   }.drain
 
@@ -88,7 +97,10 @@ object ZombieMonitor {
     } yield {
       val dbReader = DbReader.impl(xa)
       val checkRunnerDeps = runtimeCheckerDeps.checkRunnerDeps
-      val k8sCheckerDeps = KubernetesClusterCheckerDeps(checkRunnerDeps, gkeService, aksService)
+      // computeService is reused from runtimeCheckerDeps — it already holds credentials that can
+      // access GCE VMs in user workspace projects (used for GCE runtime zombie checks).
+      val k8sCheckerDeps =
+        KubernetesClusterCheckerDeps(checkRunnerDeps, gkeService, aksService, runtimeCheckerDeps.computeService)
       ZombieMonitorDeps(DiskCheckerDeps(checkRunnerDeps, diskService), runtimeCheckerDeps, k8sCheckerDeps, dbReader)
     }
 }

@@ -128,6 +128,12 @@ object DbReaderImplicits {
         }
     }
 
+  // GCE Galaxy clusters are GCP-only: cloudContext is always a GoogleProject, zone from the attached disk.
+  implicit val gceGalaxyClusterRead: Read[GceGalaxyCluster] =
+    Read[(Long, String, String, String)].map { case (id, appName, cloudContext, zone) =>
+      GceGalaxyCluster(id, appName, GoogleProject(cloudContext), ZoneName(zone))
+    }
+
   /** Marshal a nodepool from the DB. Resource Validator and Janitor work only with GCP nodepools, but
    * Zombie Monitor accepts both GCP and Azure nodepools. */
   implicit val nodepoolRead: Read[Nodepool] =
