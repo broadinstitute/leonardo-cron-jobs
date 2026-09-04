@@ -11,7 +11,7 @@ import org.broadinstitute.dsde.workbench.azure.mock.FakeAzureContainerService
 import org.broadinstitute.dsde.workbench.azure.{AzureCloudContext, AzureContainerService}
 import org.broadinstitute.dsde.workbench.google2.GKEModels.NodepoolId
 import org.broadinstitute.dsde.workbench.google2.GKEService
-import org.broadinstitute.dsde.workbench.google2.mock.{FakeGoogleStorageInterpreter, MockGKEService}
+import org.broadinstitute.dsde.workbench.google2.mock.{FakeGoogleComputeService, FakeGoogleStorageInterpreter, MockGKEService}
 import org.broadinstitute.dsde.workbench.model.TraceId
 import org.broadinstitute.dsde.workbench.openTelemetry.FakeOpenTelemetryMetricsInterpreter
 import org.scalatest.flatspec.AnyFlatSpec
@@ -108,6 +108,6 @@ class DeletedOrErroredNodepoolCheckerSpec extends AnyFlatSpec with CronJobsTestS
     val config = Config.appConfig.toOption.get
     val checkRunnerDeps =
       CheckRunnerDeps(config.reportDestinationBucket, FakeGoogleStorageInterpreter, FakeOpenTelemetryMetricsInterpreter)
-    new KubernetesClusterCheckerDeps[IO](checkRunnerDeps, gkeService, aksService)
+    new KubernetesClusterCheckerDeps[IO](checkRunnerDeps, gkeService, aksService, FakeGoogleComputeService)
   }
 }

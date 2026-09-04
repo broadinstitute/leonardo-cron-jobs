@@ -128,7 +128,10 @@ final case class RuntimeCheckerDeps[F[_]](computeService: GoogleComputeService[F
 
 final case class KubernetesClusterCheckerDeps[F[_]](checkRunnerDeps: CheckRunnerDeps[F],
                                                     gkeService: GKEService[F],
-                                                    aksService: AzureContainerService[F]
+                                                    aksService: AzureContainerService[F],
+                                                    // Used to check GCE VM existence for Galaxy apps,
+                                                    // which use a GCE VM rather than a real GKE cluster.
+                                                    computeService: GoogleComputeService[F]
 )
 
 final case class NodepoolCheckerDeps[F[_]](checkRunnerDeps: CheckRunnerDeps[F],

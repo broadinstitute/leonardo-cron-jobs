@@ -11,6 +11,7 @@ import fs2.Stream
 trait DbReader[F[_]] {
   def getDisksToDeleteCandidate: Stream[F, Disk]
   def getk8sClustersToDeleteCandidate: Stream[F, KubernetesCluster]
+  def getGceGalaxyClustersToDeleteCandidate: Stream[F, GceGalaxyCluster]
   def getk8sNodepoolsToDeleteCandidate: Stream[F, Nodepool]
   def getRuntimeCandidate: Stream[F, Runtime]
 
@@ -40,12 +41,32 @@ object DbReader {
             WHERE c1.status!="Deleted" AND c1.status!="Error" AND c1.createdDate < now() - INTERVAL 1 HOUR
         """.query[Runtime]
 
+  // GCE Galaxy apps use a KUBERNETES_CLUSTER row as a pure DB abstraction (no real GKE cluster is
+  // created). Exclude them here so DeletedKubernetesClusterChecker doesn't mistake the missing GKE
+  // cluster for a zombie. GceGalaxyClusterChecker handles them separately by checking the GCE VM.
   val activeK8sClustersQuery =
     sql"""select id, clusterName, cloudContext, location, cloudProvider
-          from
-            KUBERNETES_CLUSTER
-          where status != "DELETED" and status != "ERROR";
+          from KUBERNETES_CLUSTER
+          where status != "DELETED" and status != "ERROR"
+          AND NOT EXISTS (
+            SELECT 1 FROM NODEPOOL np JOIN APP a ON a.nodepoolId = np.id
+            WHERE np.clusterId = KUBERNETES_CLUSTER.id AND a.appType = 'GALAXY'
+          )
         """.query[KubernetesCluster]
+
+  // Retrieves all non-deleted, non-errored GCE Galaxy cluster records so GceGalaxyClusterChecker
+  // can verify the corresponding GCE VM still exists. The VM name is galaxy-{appName} and the zone
+  // comes from the app's attached disk, falling back to the cluster's configured location.
+  val gceGalaxyClustersQuery =
+    sql"""select kc.id, a.appName, kc.cloudContext, COALESCE(pd.zone, kc.location)
+          from KUBERNETES_CLUSTER kc
+          JOIN NODEPOOL np ON kc.id = np.clusterId
+          JOIN APP a ON a.nodepoolId = np.id
+          LEFT JOIN PERSISTENT_DISK pd ON a.diskId = pd.id
+          where kc.status != "DELETED" and kc.status != "ERROR"
+          AND a.appType = 'GALAXY'
+          AND kc.cloudProvider = 'GCP'
+        """.query[GceGalaxyCluster]
 
   val activeNodepoolsQuery =
     sql"""select np.id, np.nodepoolName, cluster.id, cluster.clusterName, cluster.cloudProvider, cluster.cloudContext, cluster.location from
@@ -130,6 +151,9 @@ object DbReader {
 
     override def getk8sClustersToDeleteCandidate: Stream[F, KubernetesCluster] =
       activeK8sClustersQuery.stream.transact(xa)
+
+    override def getGceGalaxyClustersToDeleteCandidate: Stream[F, GceGalaxyCluster] =
+      gceGalaxyClustersQuery.stream.transact(xa)
 
     override def updateDiskStatus(id: Long): F[Unit] =
       updateDiskStatusQuery(id.toInt).run.transact(xa).void

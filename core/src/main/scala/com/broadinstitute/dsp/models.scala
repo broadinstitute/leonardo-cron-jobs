@@ -57,6 +57,20 @@ final case class KubernetesCluster(id: Long,
   override def toString: String = s"${cloudContext.asStringWithProvider}/${clusterName}"
 }
 
+// Represents a GCE-based Galaxy app cluster record in Leo's DB.
+// Galaxy on GCE is stored as a KUBERNETES_CLUSTER row (pure DB abstraction — no real GKE cluster
+// is created). The zombie monitor must check the GCE VM rather than a GKE cluster for these.
+// The VM name is always `galaxy-{appName}` and the zone comes from the app's attached disk.
+final case class GceGalaxyCluster(
+  clusterId: Long,
+  appName: String,
+  project: GoogleProject,
+  zone: ZoneName
+) {
+  override def toString: String =
+    s"GCE Galaxy cluster ${clusterId} (app=${appName}, project=${project.value}, zone=${zone.value})"
+}
+
 final case class Nodepool(nodepoolId: Long,
                           nodepoolName: NodepoolName,
                           kubernetesClusterId: Long,
