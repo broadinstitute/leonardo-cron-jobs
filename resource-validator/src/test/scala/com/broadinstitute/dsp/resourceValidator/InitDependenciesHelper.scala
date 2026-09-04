@@ -34,12 +34,14 @@ object InitDependenciesHelper {
 
   def initKubernetesClusterCheckerDeps(gkeService: GKEService[IO] = MockGKEService,
                                        aksService: AzureContainerService[IO] = new FakeAzureContainerService,
-                                       googleStorageService: GoogleStorageService[IO] = FakeGoogleStorageInterpreter
+                                       googleStorageService: GoogleStorageService[IO] = FakeGoogleStorageInterpreter,
+                                       computeService: GoogleComputeService[IO] = FakeGoogleComputeService
   ) =
     KubernetesClusterCheckerDeps(
       CheckRunnerDeps(config.reportDestinationBucket, googleStorageService, FakeOpenTelemetryMetricsInterpreter),
       gkeService,
-      aksService
+      aksService,
+      computeService
     )
 
   def initNodepoolCheckerDeps(gkeService: GKEService[IO] = MockGKEService,

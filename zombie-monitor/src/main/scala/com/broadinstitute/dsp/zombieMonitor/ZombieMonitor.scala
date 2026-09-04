@@ -68,11 +68,12 @@ object ZombieMonitor {
           )
         else Stream.empty
 
-      processes = Stream(deleteDiskCheckerProcess,
-                         deleteRuntimeCheckerProcess,
-                         deletek8sClusterCheckerProcess,
-                         deleteOrErroredNodepoolCheckerProcess,
-                         deleteGceGalaxyClusterCheckerProcess
+      processes = Stream(
+        deleteDiskCheckerProcess,
+        deleteRuntimeCheckerProcess,
+        deletek8sClusterCheckerProcess,
+        deleteOrErroredNodepoolCheckerProcess,
+        deleteGceGalaxyClusterCheckerProcess
       ).covary[F]
 
       _ <- processes.parJoin(5) // Number of checkers in 'processes'
