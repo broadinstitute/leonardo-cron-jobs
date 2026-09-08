@@ -1,5 +1,5 @@
 steps:
-  - name: 'gcr.io/$PROJECT_ID/scala-sbt'
+  - name: 'sbtscala/scala-sbt:openjdk-17.0.2_1.7.2_2.13.10'
     args:
       - |
         testOnly -- -l cronJobs.dbTest; resourceValidator/docker:publishLocal
