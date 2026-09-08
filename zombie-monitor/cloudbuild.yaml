@@ -3,9 +3,11 @@ steps:
     entrypoint: 'bash'
     args:
       - '-c'
-      - 'sbt "testOnly -- -l cronJobs.dbTest" "zombieMonitor/docker:publishLocal"'
+      - 'sbt "testOnly -- -l cronJobs.dbTest" "zombieMonitor/docker:stage"'
     env:
       - 'JAVA_OPTS=-Xmx4G -Xms4G -Xss2M'
+  - name: 'gcr.io/cloud-builders/docker'
+    args: [ 'build', '-t', 'us.gcr.io/broad-dsp-gcr-public/zombie-monitor:latest', 'zombie-monitor/target/docker/stage/' ]
   - name: 'gcr.io/cloud-builders/docker'
     args: [ 'image', 'tag', 'us.gcr.io/broad-dsp-gcr-public/zombie-monitor:latest', 'us.gcr.io/broad-dsp-gcr-public/zombie-monitor:$SHORT_SHA']
 images: [
