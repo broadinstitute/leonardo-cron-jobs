@@ -1,8 +1,9 @@
 steps:
   - name: 'sbtscala/scala-sbt:openjdk-17.0.2_1.7.2_2.13.10'
+    entrypoint: 'bash'
     args:
-      - |
-        testOnly -- -l cronJobs.dbTest; zombieMonitor/docker:publishLocal
+      - '-c'
+      - 'sbt "testOnly -- -l cronJobs.dbTest" "zombieMonitor/docker:publishLocal"'
     env:
       - 'JAVA_OPTS=-Xmx4G -Xms4G -Xss2M'
   - name: 'gcr.io/cloud-builders/docker'
