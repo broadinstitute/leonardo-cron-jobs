@@ -68,11 +68,17 @@ object DbReader {
           AND kc.cloudProvider = 'GCP'
         """.query[GceGalaxyCluster]
 
+  // GCE Galaxy apps use a NODEPOOL row as a pure DB abstraction (no real GKE nodepool is
+  // created). Exclude them here so DeletedOrErroredNodepoolChecker doesn't mistake the missing
+  // GKE nodepool for a zombie. GceGalaxyClusterChecker handles them via the cluster-level check.
   val activeNodepoolsQuery =
     sql"""select np.id, np.nodepoolName, cluster.id, cluster.clusterName, cluster.cloudProvider, cluster.cloudContext, cluster.location from
          	NODEPOOL AS np INNER JOIN KUBERNETES_CLUSTER AS cluster
          	on cluster.id = np.clusterId
          	where np.status != "DELETED" and np.status != "ERROR"
+         	AND NOT EXISTS (
+         	  SELECT 1 FROM APP a WHERE a.nodepoolId = np.id AND a.appType = 'GALAXY'
+         	)
          	""".query[Nodepool]
 
   def updateDiskStatusQuery(id: Int) =
