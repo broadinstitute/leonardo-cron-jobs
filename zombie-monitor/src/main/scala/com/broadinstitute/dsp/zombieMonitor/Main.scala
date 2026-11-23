@@ -16,22 +16,14 @@ object Main
     val shouldCheckDeletedOrErrorRuntimes =
       Opts.flag("checkDeletedOrErroredRuntimes", "check all deleted or error-ed runtimes").orFalse
     val shouldCheckDeletedDisks = Opts.flag("checkDeletedDisks", "check all deleted runtimes").orFalse
-    val shouldCheckDeletedK8sClusters = Opts.flag("checkDeletedK8sClusters", "check all deleted clusters").orFalse
-    val shouldCheckDeletedOrErroredNodepools =
-      Opts.flag("checkDeletedNodepools", "check all deleted or errored nodepools").orFalse
 
-    (enableDryRun,
-     shouldRunAll,
-     shouldCheckDeletedOrErrorRuntimes,
-     shouldCheckDeletedDisks,
-     shouldCheckDeletedK8sClusters,
-     shouldCheckDeletedOrErroredNodepools
-    ).mapN { (dryRun, runAll, runCheckDeletedRuntimes, checkDisks, runCheckDeletedK8sClusters, checkNodepools) =>
-      ZombieMonitor
-        .run[IO](dryRun, runAll, runCheckDeletedRuntimes, checkDisks, runCheckDeletedK8sClusters, checkNodepools)
-        .compile
-        .drain
-        .as(ExitCode.Success)
+    (enableDryRun, shouldRunAll, shouldCheckDeletedOrErrorRuntimes, shouldCheckDeletedDisks).mapN {
+      (dryRun, runAll, runCheckDeletedRuntimes, checkDisks) =>
+        ZombieMonitor
+          .run[IO](dryRun, runAll, runCheckDeletedRuntimes, checkDisks)
+          .compile
+          .drain
+          .as(ExitCode.Success)
     }
   }
 }

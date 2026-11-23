@@ -4,7 +4,7 @@ import cats.syntax.all._
 import doobie.implicits.javasql.TimestampMeta
 import doobie.{Get, Meta, Read}
 import org.broadinstitute.dsde.workbench.azure.AzureCloudContext
-import org.broadinstitute.dsde.workbench.google2.GKEModels.{KubernetesClusterName, NodepoolName}
+import org.broadinstitute.dsde.workbench.google2.GKEModels.KubernetesClusterName
 import org.broadinstitute.dsde.workbench.google2.{DiskName, Location, RegionName, ZoneName}
 import org.broadinstitute.dsde.workbench.model.google.{GcsBucketName, GoogleProject}
 
@@ -91,72 +91,9 @@ object DbReaderImplicits {
         }
     }
 
-  implicit val kubernetesClusterToRemoveRead: Read[KubernetesClusterToRemove] =
-    Read[(Long, String, CloudProvider)].map { case (id, cloudContextDb, cloudProvider) =>
-      cloudProvider match {
-        case CloudProvider.Azure =>
-          AzureCloudContext.fromString(cloudContextDb) match {
-            case Left(value) =>
-              throw new RuntimeException(
-                s"${value} is not valid azure cloud context"
-              )
-            case Right(value) =>
-              KubernetesClusterToRemove(id, CloudContext.Azure(value))
-          }
-        case CloudProvider.Gcp =>
-          KubernetesClusterToRemove(id, CloudContext.Gcp(GoogleProject(cloudContextDb)))
-      }
-    }
-
-  /** Marshal a kubernetes cluster from the DB. Resource Validator and Janitor work only with GCP clusters, but
-   * Zombie Monitor accepts both GCP and Azure clusters. */
-  implicit val kubernetesClusterRead: Read[KubernetesCluster] =
-    Read[(Long, KubernetesClusterName, String, Location, CloudProvider)].map {
-      case (id, name, cloudContextDb, location, cloudProvider) =>
-        cloudProvider match {
-          case CloudProvider.Azure =>
-            AzureCloudContext.fromString(cloudContextDb) match {
-              case Left(value) =>
-                throw new RuntimeException(
-                  s"${value} is not valid azure cloud context"
-                )
-              case Right(value) =>
-                KubernetesCluster(id, name, CloudContext.Azure(value), location)
-            }
-          case CloudProvider.Gcp =>
-            KubernetesCluster(id, name, CloudContext.Gcp(GoogleProject(cloudContextDb)), location)
-        }
-    }
-
   // GCE Galaxy clusters are GCP-only: cloudContext is always a GoogleProject, zone from the attached disk.
   implicit val gceGalaxyClusterRead: Read[GceGalaxyCluster] =
     Read[(Long, String, String, String)].map { case (id, appName, cloudContext, zone) =>
       GceGalaxyCluster(id, appName, GoogleProject(cloudContext), ZoneName(zone))
-    }
-
-  /** Marshal a nodepool from the DB. Resource Validator and Janitor work only with GCP nodepools, but
-   * Zombie Monitor accepts both GCP and Azure nodepools. */
-  implicit val nodepoolRead: Read[Nodepool] =
-    Read[(Long, NodepoolName, Long, KubernetesClusterName, CloudProvider, String, Location)].map {
-      case (id, nodepoolName, k8sClusterId, k8sClusterName, cloudProvider, cloudContextDb, location) =>
-        cloudProvider match {
-          case CloudProvider.Azure =>
-            AzureCloudContext.fromString(cloudContextDb) match {
-              case Left(value) =>
-                throw new RuntimeException(
-                  s"${value} is not valid azure cloud context"
-                )
-              case Right(value) =>
-                Nodepool(id, nodepoolName, k8sClusterId, k8sClusterName, CloudContext.Azure(value), location)
-            }
-          case CloudProvider.Gcp =>
-            Nodepool(id,
-                     nodepoolName,
-                     k8sClusterId,
-                     k8sClusterName,
-                     CloudContext.Gcp(GoogleProject(cloudContextDb)),
-                     location
-            )
-        }
     }
 }

@@ -23,8 +23,6 @@ object Janitor {
   )
   def run[F[_]: Async: Parallel](isDryRun: Boolean,
                                  shouldCheckAll: Boolean,
-                                 shouldCheckKubernetesClustersToBeRemoved: Boolean,
-                                 shouldCheckNodepoolsToBeRemoved: Boolean,
                                  shouldCheckStagingBucketsToBeRemoved: Boolean,
                                  shouldCheckStuckAppsToBeReported: Boolean
   ): Stream[F, Nothing] = {
@@ -37,16 +35,6 @@ object Janitor {
       deps <- Stream.resource(initDependencies(config))
       checkRunnerDep = deps.runtimeCheckerDeps.checkRunnerDeps
 
-      removeKubernetesClusters =
-        if (shouldCheckAll || shouldCheckKubernetesClustersToBeRemoved)
-          Stream.eval(KubernetesClusterRemover.impl(deps.dbReader, deps.leoPublisherDeps).run(isDryRun))
-        else Stream.empty
-
-      removeNodepools =
-        if (shouldCheckAll || shouldCheckNodepoolsToBeRemoved)
-          Stream.eval(NodepoolRemover.impl(deps.dbReader, deps.leoPublisherDeps).run(isDryRun))
-        else Stream.empty
-
       removeStagingBuckets =
         if (shouldCheckAll || shouldCheckStagingBucketsToBeRemoved)
           Stream.eval(StagingBucketRemover.impl(deps.dbReader, checkRunnerDep).run(isDryRun))
@@ -57,9 +45,9 @@ object Janitor {
           Stream.eval(StuckAppReporter.impl(deps.dbReader, deps.leoPublisherDeps).run(isDryRun))
         else Stream.empty
 
-      processes = Stream(removeKubernetesClusters, removeNodepools, removeStagingBuckets, reportStuckApps).covary[F]
+      processes = Stream(removeStagingBuckets, reportStuckApps).covary[F]
 
-      _ <- processes.parJoin(4) // Number of checkers in 'processes'
+      _ <- processes.parJoin(2) // Number of checkers in 'processes'
     } yield ExitCode.Success
   }.drain
 
@@ -80,9 +68,9 @@ object Janitor {
       xa <- DbTransactor.init(appConfig.database)
     } yield {
       val checkRunnerDeps = runtimeCheckerDeps.checkRunnerDeps
-      val kubernetesClusterToRemoveDeps = LeoPublisherDeps(googlePublisher, checkRunnerDeps, billingService)
+      val leoPublisherDeps = LeoPublisherDeps(googlePublisher, checkRunnerDeps, billingService)
       val dbReader = DbReader.impl(xa)
-      JanitorDeps(runtimeCheckerDeps, kubernetesClusterToRemoveDeps, dbReader)
+      JanitorDeps(runtimeCheckerDeps, leoPublisherDeps, dbReader)
     }
 }
 

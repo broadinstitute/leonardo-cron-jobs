@@ -15,8 +15,6 @@ trait DbReader[F[_]] {
   def getErroredRuntimes: Stream[F, Runtime]
   def getStoppedRuntimes: Stream[F, Runtime]
   def getInitBucketsToDelete: Stream[F, InitBucketToRemove]
-  def getDeletedAndErroredKubernetesClusters: Stream[F, KubernetesCluster]
-  def getDeletedAndErroredNodepools: Stream[F, Nodepool]
   def getRuntimesWithWorkers: Stream[F, RuntimeWithWorkers]
 }
 
@@ -116,23 +114,6 @@ object DbReader {
              )"""
       .query[Runtime]
 
-  // Leonardo doesn't manage cluster for Azure. Hence excluding AKS clusters
-  val deletedAndErroredKubernetesClusterQuery =
-    sql"""SELECT kc1.id, kc1.clusterName, cloudContext, location, cloudProvider
-          FROM KUBERNETES_CLUSTER as kc1
-          WHERE (kc1.status="DELETED" OR kc1.status="ERROR") AND kc1.cloudProvider = "GCP"
-          """
-      .query[KubernetesCluster]
-
-  // Leonardo doesn't manage nodepool for Azure. Hence excluding Azure nodepools
-  val deletedAndErroredNodepoolQuery =
-    sql"""SELECT np.id, np.nodepoolName, kc.id, kc.clusterName, kc.cloudProvider, kc.cloudContext, kc.location
-         FROM NODEPOOL AS np
-         INNER JOIN KUBERNETES_CLUSTER AS kc ON np.clusterId = kc.id
-         WHERE (np.status="DELETED" OR np.status="ERROR") AND kc.cloudProvider = "GCP"
-         """
-      .query[Nodepool]
-
   // We're excluding cluster id 6220 because it's a known anomaly and user ed team has reached out to hufengzhou@g.harvard.edu
   val dataprocClusterWithWorkersQuery =
     sql"""SELECT DISTINCT c1.id, cloudContext, runtimeName, rt.cloudService, c1.status, rt.region, rt.numberOfWorkers, rt.numberOfPreemptibleWorkers
@@ -169,12 +150,6 @@ object DbReader {
     // Same disk names might be re-used
     override def getDeletedDisks: Stream[F, Disk] =
       shouldBedeletedDisksQuery.stream.transact(xa)
-
-    override def getDeletedAndErroredKubernetesClusters: Stream[F, KubernetesCluster] =
-      deletedAndErroredKubernetesClusterQuery.stream.transact(xa)
-
-    override def getDeletedAndErroredNodepools: Stream[F, Nodepool] =
-      deletedAndErroredNodepoolQuery.stream.transact(xa)
 
     override def getRuntimesWithWorkers: Stream[F, RuntimeWithWorkers] =
       dataprocClusterWithWorkersQuery.stream.transact(xa)

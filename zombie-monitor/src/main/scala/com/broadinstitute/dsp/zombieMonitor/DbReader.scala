@@ -10,17 +10,13 @@ import fs2.Stream
 
 trait DbReader[F[_]] {
   def getDisksToDeleteCandidate: Stream[F, Disk]
-  def getk8sClustersToDeleteCandidate: Stream[F, KubernetesCluster]
   def getGceGalaxyClustersToDeleteCandidate: Stream[F, GceGalaxyCluster]
-  def getk8sNodepoolsToDeleteCandidate: Stream[F, Nodepool]
   def getRuntimeCandidate: Stream[F, Runtime]
 
   def updateDiskStatus(id: Long): F[Unit]
   def markRuntimeDeleted(id: Long): F[Unit]
   def updateRuntimeStatus(id: Long, status: String): F[Unit]
   def markK8sClusterDeleted(id: Long): F[Unit]
-  def markNodepoolAndAppDeleted(nodepoolId: Long): F[Unit]
-  def updateNodepoolAndAppStatus(nodepoolId: Long, status: String): F[Unit]
   def insertClusterError(clusterId: Long, errorCode: Option[Int], errorMessage: String): F[Unit]
   def updateRuntimeDeletedFrom(runtimeId: Long, deletedFrom: String): F[Unit]
 }
@@ -41,19 +37,6 @@ object DbReader {
             WHERE c1.status!="Deleted" AND c1.status!="Error" AND c1.createdDate < now() - INTERVAL 1 HOUR
         """.query[Runtime]
 
-  // GCE Galaxy apps use a KUBERNETES_CLUSTER row as a pure DB abstraction (no real GKE cluster is
-  // created). Exclude them here so DeletedKubernetesClusterChecker doesn't mistake the missing GKE
-  // cluster for a zombie. GceGalaxyClusterChecker handles them separately by checking the GCE VM.
-  val activeK8sClustersQuery =
-    sql"""select id, clusterName, cloudContext, location, cloudProvider
-          from KUBERNETES_CLUSTER
-          where status != "DELETED" and status != "ERROR"
-          AND NOT EXISTS (
-            SELECT 1 FROM NODEPOOL np JOIN APP a ON a.nodepoolId = np.id
-            WHERE np.clusterId = KUBERNETES_CLUSTER.id AND a.appType = 'GALAXY'
-          )
-        """.query[KubernetesCluster]
-
   // Retrieves all non-deleted, non-errored GCE Galaxy cluster records so GceGalaxyClusterChecker
   // can verify the corresponding GCE VM still exists. The VM name is galaxy-{appName} and the zone
   // comes from the app's attached disk, falling back to the cluster's configured location.
@@ -67,19 +50,6 @@ object DbReader {
           AND a.appType = 'GALAXY'
           AND kc.cloudProvider = 'GCP'
         """.query[GceGalaxyCluster]
-
-  // GCE Galaxy apps use a NODEPOOL row as a pure DB abstraction (no real GKE nodepool is
-  // created). Exclude them here so DeletedOrErroredNodepoolChecker doesn't mistake the missing
-  // GKE nodepool for a zombie. GceGalaxyClusterChecker handles them via the cluster-level check.
-  val activeNodepoolsQuery =
-    sql"""select np.id, np.nodepoolName, cluster.id, cluster.clusterName, cluster.cloudProvider, cluster.cloudContext, cluster.location from
-         	NODEPOOL AS np INNER JOIN KUBERNETES_CLUSTER AS cluster
-         	on cluster.id = np.clusterId
-         	where np.status != "DELETED" and np.status != "ERROR"
-         	AND NOT EXISTS (
-         	  SELECT 1 FROM APP a WHERE a.nodepoolId = np.id AND a.appType = 'GALAXY'
-         	)
-         	""".query[Nodepool]
 
   def updateDiskStatusQuery(id: Int) =
     sql"""
@@ -95,11 +65,6 @@ object DbReader {
           SET diskId = NULL, KUBERNETES_CLUSTER.status = "DELETED", KUBERNETES_CLUSTER.destroyedDate = now(), NODEPOOL.status = "DELETED", NODEPOOL.destroyedDate=now(), APP_USAGE.`stopTime` = APP.dateAccessed
           where KUBERNETES_CLUSTER.id = $id""".update
 
-  def markNodepoolDeletedQuery(id: Long) =
-    sql"""
-           update NODEPOOL set status = "DELETED", destroyedDate = now() where id = $id
-           """.update
-
   def markRuntimeDeletedQuery(id: Long) =
     sql"""
            update RUNTIME_CONFIG
@@ -111,30 +76,6 @@ object DbReader {
   def updateRuntimeStatusQuery(id: Long, status: String) =
     sql"""
            update CLUSTER set status = $status where id = $id
-           """.update
-
-  def updateNodepoolStatus(id: Long, status: String) =
-    sql"""
-           update NODEPOOL set status = $status where id = $id
-           """.update
-
-  def markAppDeletedForNodepoolIdQuery(nodepoolId: Long) =
-    sql"""
-           update APP set status = "DELETED", destroyedDate = now() where nodepoolId = $nodepoolId
-           """.update
-
-  def markAppUsageStopTimeQuery(nodepoolId: Long): Update0 =
-    sql"""
-         update APP_USAGE
-         INNER JOIN APP ON APP.id = APP_USAGE.`appId`
-         INNER JOIN NODEPOOL ON NODEPOOL.id = APP.nodepoolId
-         set APP_USAGE.stopTime = APP.dateAccessed
-         where NODEPOOL.id = ${nodepoolId}
-         """.update
-
-  def updateAppStatusForNodepoolId(nodepoolId: Long, status: String) =
-    sql"""
-           update APP set status = $status where nodepoolId = $nodepoolId
            """.update
 
   def insertClusterErrorQuery(clusterId: Long, errorCode: Option[Int], errorMessage: String) =
@@ -155,9 +96,6 @@ object DbReader {
     override def getDisksToDeleteCandidate: Stream[F, Disk] =
       activeDisksQuery.stream.transact(xa)
 
-    override def getk8sClustersToDeleteCandidate: Stream[F, KubernetesCluster] =
-      activeK8sClustersQuery.stream.transact(xa)
-
     override def getGceGalaxyClustersToDeleteCandidate: Stream[F, GceGalaxyCluster] =
       gceGalaxyClustersQuery.stream.transact(xa)
 
@@ -166,26 +104,6 @@ object DbReader {
 
     override def markK8sClusterDeleted(id: Long): F[Unit] =
       markK8sClusterDeletedQuery(id.toInt).run.transact(xa).void
-
-    override def getk8sNodepoolsToDeleteCandidate: Stream[F, Nodepool] =
-      activeNodepoolsQuery.stream.transact(xa)
-
-    override def markNodepoolAndAppDeleted(nodepoolId: Long): F[Unit] = {
-      val res = for {
-        _ <- markNodepoolDeletedQuery(nodepoolId).run
-        _ <- markAppDeletedForNodepoolIdQuery(nodepoolId).run
-        _ <- markAppUsageStopTimeQuery(nodepoolId).run
-      } yield ()
-      res.transact(xa)
-    }
-
-    override def updateNodepoolAndAppStatus(nodepoolId: Long, status: String): F[Unit] = {
-      val res = for {
-        _ <- updateNodepoolStatus(nodepoolId, status).run
-        _ <- updateAppStatusForNodepoolId(nodepoolId, status).run
-      } yield ()
-      res.transact(xa)
-    }
 
     override def updateRuntimeStatus(id: Long, status: String): F[Unit] =
       updateRuntimeStatusQuery(id, status).run.transact(xa).void

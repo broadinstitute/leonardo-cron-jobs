@@ -12,6 +12,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
       - uses: sbt/setup-sbt@v1
       - name: Run tests
         run: sbt coverage "testOnly -- -l cronJobs.dbTest" coverageReport
@@ -27,6 +31,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
       - uses: sbt/setup-sbt@v1
       - name: Formatting
         run: sbt scalafmtSbtCheck scalafmtCheck test:scalafmtCheck

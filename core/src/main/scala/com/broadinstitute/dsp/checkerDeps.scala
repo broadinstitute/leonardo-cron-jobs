@@ -3,15 +3,9 @@ package com.broadinstitute.dsp
 import cats.Parallel
 import cats.effect.std.Semaphore
 import cats.effect.{Async, Resource}
-import org.broadinstitute.dsde.workbench.azure.{
-  AzureAppRegistrationConfig,
-  AzureCloudContext,
-  AzureContainerService,
-  AzureVmService
-}
+import org.broadinstitute.dsde.workbench.azure.{AzureAppRegistrationConfig, AzureCloudContext, AzureVmService}
 import org.broadinstitute.dsde.workbench.google2.util.RetryPredicates
 import org.broadinstitute.dsde.workbench.google2.{
-  GKEService,
   GoogleBillingService,
   GoogleComputeService,
   GoogleDataprocService,
@@ -22,7 +16,6 @@ import org.broadinstitute.dsde.workbench.google2.{
 }
 import org.broadinstitute.dsde.workbench.model.google.{GcsBucketName, GoogleProject}
 import org.broadinstitute.dsde.workbench.openTelemetry.OpenTelemetryMetrics
-import org.broadinstitute.dsde.workbench.util2.messaging.CloudPublisher
 import org.typelevel.log4cats.StructuredLogger
 
 import java.nio.file.Path
@@ -126,17 +119,8 @@ final case class RuntimeCheckerDeps[F[_]](computeService: GoogleComputeService[F
                                           azureVmService: AzureVmService[F]
 )
 
-final case class KubernetesClusterCheckerDeps[F[_]](checkRunnerDeps: CheckRunnerDeps[F],
-                                                    gkeService: GKEService[F],
-                                                    aksService: AzureContainerService[F],
-                                                    // Used to check GCE VM existence for Galaxy apps,
-                                                    // which use a GCE VM rather than a real GKE cluster.
-                                                    computeService: GoogleComputeService[F]
-)
-
-final case class NodepoolCheckerDeps[F[_]](checkRunnerDeps: CheckRunnerDeps[F],
-                                           gkeService: GKEService[F],
-                                           publisher: CloudPublisher[F]
+final case class GceGalaxyClusterCheckerDeps[F[_]](checkRunnerDeps: CheckRunnerDeps[F],
+                                                   computeService: GoogleComputeService[F]
 )
 
 final case class DiskCheckerDeps[F[_]](checkRunnerDeps: CheckRunnerDeps[F], googleDiskService: GoogleDiskService[F])

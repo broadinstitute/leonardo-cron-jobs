@@ -13,8 +13,7 @@ import org.typelevel.log4cats.Logger
  * Checks GCE Galaxy cluster records in Leo's DB against the actual GCE VM in GCP.
  *
  * Galaxy on GCE is stored in KUBERNETES_CLUSTER as a pure DB abstraction — no real GKE cluster is
- * ever created. DeletedKubernetesClusterChecker excludes these rows (they would always look like
- * zombies to the GKE API). This checker handles them correctly by looking up the GCE VM instead.
+ * ever created. This checker looks up the GCE VM instead.
  *
  * VM naming convention (from GKEInterpreter.installGalaxyVm): `galaxy-{appName}`
  *
@@ -25,7 +24,7 @@ import org.typelevel.log4cats.Logger
 object GceGalaxyClusterChecker {
   def impl[F[_]](
     dbReader: DbReader[F],
-    deps: KubernetesClusterCheckerDeps[F]
+    deps: GceGalaxyClusterCheckerDeps[F]
   )(implicit F: Concurrent[F], logger: Logger[F], ev: Ask[F, TraceId]): CheckRunner[F, GceGalaxyCluster] =
     new CheckRunner[F, GceGalaxyCluster] {
       override def appName: String = zombieMonitor.appName

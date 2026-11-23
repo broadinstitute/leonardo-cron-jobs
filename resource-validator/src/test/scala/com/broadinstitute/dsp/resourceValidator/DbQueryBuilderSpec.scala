@@ -38,14 +38,6 @@ final class DbQueryBuilderSpec extends AnyFlatSpec with CronJobsTestSuite with I
     check(DbReader.stoppedRuntimeQuery)
   }
 
-  it should "build deletedAndErroredKubernetesClusterQuery properly" taggedAs DbTest in {
-    check(DbReader.deletedAndErroredKubernetesClusterQuery)
-  }
-
-  it should "build deletedAndErroredNodepoolQuery properly" taggedAs DbTest in {
-    check(DbReader.deletedAndErroredNodepoolQuery)
-  }
-
   // This test will fail because region is an optional field, and we're trying to read it as non optional field.
   // But this is okay in reality because if we're reading it as `Dataproc` runtime, region should always exist;
   // and we should get a runtime exception if there's a polluted data in DB.
