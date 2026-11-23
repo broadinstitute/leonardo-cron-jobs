@@ -10,13 +10,13 @@ import fs2.Stream
 
 trait DbReader[F[_]] {
   def getDisksToDeleteCandidate: Stream[F, Disk]
-  def getGceGalaxyClustersToDeleteCandidate: Stream[F, GceGalaxyCluster]
+  def getGceGalaxyAppsToDeleteCandidate: Stream[F, GceGalaxyApp]
   def getRuntimeCandidate: Stream[F, Runtime]
 
   def updateDiskStatus(id: Long): F[Unit]
   def markRuntimeDeleted(id: Long): F[Unit]
   def updateRuntimeStatus(id: Long, status: String): F[Unit]
-  def markK8sClusterDeleted(id: Long): F[Unit]
+  def markGalaxyAppDeleted(appId: Long): F[Unit]
   def insertClusterError(clusterId: Long, errorCode: Option[Int], errorMessage: String): F[Unit]
   def updateRuntimeDeletedFrom(runtimeId: Long, deletedFrom: String): F[Unit]
 }
@@ -37,33 +37,30 @@ object DbReader {
             WHERE c1.status!="Deleted" AND c1.status!="Error" AND c1.createdDate < now() - INTERVAL 1 HOUR
         """.query[Runtime]
 
-  // Retrieves all non-deleted, non-errored GCE Galaxy cluster records so GceGalaxyClusterChecker
-  // can verify the corresponding GCE VM still exists. The VM name is galaxy-{appName} and the zone
-  // comes from the app's attached disk, falling back to the cluster's configured location.
-  val gceGalaxyClustersQuery =
-    sql"""select kc.id, a.appName, kc.cloudContext, COALESCE(pd.zone, kc.location)
-          from KUBERNETES_CLUSTER kc
-          JOIN NODEPOOL np ON kc.id = np.clusterId
-          JOIN APP a ON a.nodepoolId = np.id
-          LEFT JOIN PERSISTENT_DISK pd ON a.diskId = pd.id
-          where kc.status != "DELETED" and kc.status != "ERROR"
-          AND a.appType = 'GALAXY'
-          AND kc.cloudProvider = 'GCP'
-        """.query[GceGalaxyCluster]
+  // Running Galaxy apps, so GceGalaxyAppChecker can verify their GCE VM still exists. The VM name is
+  // galaxy-{appName}; the zone comes from the app's data disk.
+  val gceGalaxyAppsQuery =
+    sql"""select a.id, a.appName, a.cloudContext, pd.zone
+          from APP a
+          JOIN PERSISTENT_DISK pd ON a.diskId = pd.id
+          where a.appType = 'GALAXY'
+          AND a.status = 'RUNNING'
+          AND a.cloudProvider = 'GCP'
+          AND a.cloudContext IS NOT NULL
+        """.query[GceGalaxyApp]
 
   def updateDiskStatusQuery(id: Int) =
     sql"""
            update PERSISTENT_DISK set status = "Deleted", destroyedDate = now() where id = $id
            """.update
 
-  def markK8sClusterDeletedQuery(id: Int): Update0 =
+  // Marks the app deleted, detaches its disk, and closes its open usage record.
+  def markGalaxyAppDeletedQuery(appId: Long): Update0 =
     sql"""
-          UPDATE KUBERNETES_CLUSTER
-          LEFT JOIN NODEPOOL ON KUBERNETES_CLUSTER.id = NODEPOOL.clusterId
-          LEFT JOIN APP ON APP.nodepoolId = NODEPOOL.id
-          LEFT JOIN APP_USAGE on APP.id = APP_USAGE.appId
-          SET diskId = NULL, KUBERNETES_CLUSTER.status = "DELETED", KUBERNETES_CLUSTER.destroyedDate = now(), NODEPOOL.status = "DELETED", NODEPOOL.destroyedDate=now(), APP_USAGE.`stopTime` = APP.dateAccessed
-          where KUBERNETES_CLUSTER.id = $id""".update
+          UPDATE APP
+          LEFT JOIN APP_USAGE ON APP.id = APP_USAGE.appId AND APP_USAGE.stopTime = ${DbTransactor.leonardoDummyDate}
+          SET APP.status = "DELETED", APP.destroyedDate = now(), APP.diskId = NULL, APP_USAGE.stopTime = APP.dateAccessed
+          where APP.id = $appId""".update
 
   def markRuntimeDeletedQuery(id: Long) =
     sql"""
@@ -96,14 +93,14 @@ object DbReader {
     override def getDisksToDeleteCandidate: Stream[F, Disk] =
       activeDisksQuery.stream.transact(xa)
 
-    override def getGceGalaxyClustersToDeleteCandidate: Stream[F, GceGalaxyCluster] =
-      gceGalaxyClustersQuery.stream.transact(xa)
+    override def getGceGalaxyAppsToDeleteCandidate: Stream[F, GceGalaxyApp] =
+      gceGalaxyAppsQuery.stream.transact(xa)
 
     override def updateDiskStatus(id: Long): F[Unit] =
       updateDiskStatusQuery(id.toInt).run.transact(xa).void
 
-    override def markK8sClusterDeleted(id: Long): F[Unit] =
-      markK8sClusterDeletedQuery(id.toInt).run.transact(xa).void
+    override def markGalaxyAppDeleted(appId: Long): F[Unit] =
+      markGalaxyAppDeletedQuery(appId).run.transact(xa).void
 
     override def updateRuntimeStatus(id: Long, status: String): F[Unit] =
       updateRuntimeStatusQuery(id, status).run.transact(xa).void

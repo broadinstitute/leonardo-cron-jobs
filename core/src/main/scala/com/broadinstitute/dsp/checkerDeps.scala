@@ -119,8 +119,8 @@ final case class RuntimeCheckerDeps[F[_]](computeService: GoogleComputeService[F
                                           azureVmService: AzureVmService[F]
 )
 
-final case class GceGalaxyClusterCheckerDeps[F[_]](checkRunnerDeps: CheckRunnerDeps[F],
-                                                   computeService: GoogleComputeService[F]
+final case class GceGalaxyAppCheckerDeps[F[_]](checkRunnerDeps: CheckRunnerDeps[F],
+                                               computeService: GoogleComputeService[F]
 )
 
 final case class DiskCheckerDeps[F[_]](checkRunnerDeps: CheckRunnerDeps[F], googleDiskService: GoogleDiskService[F])

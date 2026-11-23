@@ -25,7 +25,7 @@ object ZombieMonitor {
                                  shouldRunAll: Boolean,
                                  shouldCheckDeletedRuntimes: Boolean,
                                  shouldCheckDeletedDisks: Boolean,
-                                 shouldCheckDeletedGceGalaxyClusters: Boolean = true
+                                 shouldCheckDeletedGceGalaxyApps: Boolean = true
   ): Stream[F, Nothing] = {
     implicit val logger =
       StructuredLogger.withContext[F](Slf4jLogger.getLogger[F])(loggingContext)
@@ -46,17 +46,17 @@ object ZombieMonitor {
         if (shouldRunAll || shouldCheckDeletedRuntimes)
           Stream.eval(ActiveRuntimeChecker.impl(deps.dbReader, deps.runtimeCheckerDeps).run(isDryRun))
         else Stream.empty
-      deleteGceGalaxyClusterCheckerProcess =
-        if (shouldRunAll || shouldCheckDeletedGceGalaxyClusters)
+      deleteGceGalaxyAppCheckerProcess =
+        if (shouldRunAll || shouldCheckDeletedGceGalaxyApps)
           Stream.eval(
-            GceGalaxyClusterChecker.impl(deps.dbReader, deps.gceGalaxyClusterCheckerDeps).run(isDryRun)
+            GceGalaxyAppChecker.impl(deps.dbReader, deps.gceGalaxyAppCheckerDeps).run(isDryRun)
           )
         else Stream.empty
 
       processes = Stream(
         deleteDiskCheckerProcess,
         deleteRuntimeCheckerProcess,
-        deleteGceGalaxyClusterCheckerProcess
+        deleteGceGalaxyAppCheckerProcess
       ).covary[F]
 
       _ <- processes.parJoin(3) // Number of checkers in 'processes'
@@ -77,11 +77,11 @@ object ZombieMonitor {
       val checkRunnerDeps = runtimeCheckerDeps.checkRunnerDeps
       // computeService is reused from runtimeCheckerDeps — it already holds credentials that can
       // access GCE VMs in user workspace projects (used for GCE runtime zombie checks).
-      val gceGalaxyClusterCheckerDeps =
-        GceGalaxyClusterCheckerDeps(checkRunnerDeps, runtimeCheckerDeps.computeService)
+      val gceGalaxyAppCheckerDeps =
+        GceGalaxyAppCheckerDeps(checkRunnerDeps, runtimeCheckerDeps.computeService)
       ZombieMonitorDeps(DiskCheckerDeps(checkRunnerDeps, diskService),
                         runtimeCheckerDeps,
-                        gceGalaxyClusterCheckerDeps,
+                        gceGalaxyAppCheckerDeps,
                         dbReader
       )
     }
@@ -90,6 +90,6 @@ object ZombieMonitor {
 final case class ZombieMonitorDeps[F[_]](
   diskCheckerDeps: DiskCheckerDeps[F],
   runtimeCheckerDeps: RuntimeCheckerDeps[F],
-  gceGalaxyClusterCheckerDeps: GceGalaxyClusterCheckerDeps[F],
+  gceGalaxyAppCheckerDeps: GceGalaxyAppCheckerDeps[F],
   dbReader: DbReader[F]
 )

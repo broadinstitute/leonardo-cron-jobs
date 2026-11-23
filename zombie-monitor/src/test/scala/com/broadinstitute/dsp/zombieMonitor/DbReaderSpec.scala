@@ -8,6 +8,7 @@ import com.broadinstitute.dsp.Generators._
 import doobie.Transactor
 import doobie.scalatest.IOChecker
 import org.broadinstitute.dsde.workbench.google2.DiskName
+import org.broadinstitute.dsde.workbench.model.google.GoogleProject
 import org.scalatest.flatspec.AnyFlatSpec
 
 import java.util.{Calendar, GregorianCalendar}
@@ -27,8 +28,8 @@ final class DbReaderSpec extends AnyFlatSpec with CronJobsTestSuite with IOCheck
     check(DbReader.activeDisksQuery)
   }
 
-  it should "build gceGalaxyClustersQuery properly" taggedAs DbTest in {
-    check(DbReader.gceGalaxyClustersQuery)
+  it should "build gceGalaxyAppsQuery properly" taggedAs DbTest in {
+    check(DbReader.gceGalaxyAppsQuery)
   }
 
   it should "build activeRuntime properly" taggedAs DbTest in {
@@ -109,7 +110,28 @@ final class DbReaderSpec extends AnyFlatSpec with CronJobsTestSuite with IOCheck
     }
   }
 
-  it should "update k8s cluster and unlink PD properly" taggedAs DbTest in {
+  it should "return only running Galaxy apps that have a cloud context" taggedAs DbTest in {
+    forAll { (cluster: KubernetesCluster, disk: Disk) =>
+      val res = isolatedDbTest.use { _ =>
+        val dbReader = DbReader.impl(transactor)
+        for {
+          diskId <- insertDisk(disk)
+          clusterId <- insertK8sCluster(cluster)
+          nodepoolId <- insertNodepool(clusterId, "nodepool1", false)
+          runningId <- insertApp(nodepoolId, "running", diskId)
+          _ <- setAppCloudContext(runningId, "GCP", "project1")
+          deletedId <- insertApp(nodepoolId, "deleted", diskId, status = "DELETED")
+          _ <- setAppCloudContext(deletedId, "GCP", "project1")
+          // Created by a Leo version that does not write the cloud context yet.
+          _ <- insertApp(nodepoolId, "no-context", diskId)
+          apps <- dbReader.getGceGalaxyAppsToDeleteCandidate.compile.toList
+        } yield apps shouldBe List(GceGalaxyApp(runningId, "running", GoogleProject("project1"), disk.zone))
+      }
+      res.unsafeRunSync()
+    }
+  }
+
+  it should "mark a Galaxy app deleted, detach its disk and close its usage record" taggedAs DbTest in {
     forAll { (cluster: KubernetesCluster, disk: Disk) =>
       val res = isolatedDbTest.use { _ =>
         val dbReader = DbReader.impl(transactor)
@@ -119,48 +141,15 @@ final class DbReaderSpec extends AnyFlatSpec with CronJobsTestSuite with IOCheck
           nodepoolId <- insertNodepool(clusterId, "nodepool1", false)
           appId <- insertApp(nodepoolId, "app1", diskId)
           _ <- insertAppUsage(appId)
-          _ <- dbReader.markK8sClusterDeleted(clusterId)
-          status <- getK8sClusterStatus(clusterId)
-          pdId <- getPdIdFromK8sCluster(appId)
+          _ <- dbReader.markGalaxyAppDeleted(appId)
+          status <- getAppStatus(appId)
+          appDiskId <- getAppDiskId(appId)
           appUsageStopTime <- getAppUsageStopTime(appId)
           appDateAccessedTime <- getAppDateAccessed(appId)
         } yield {
           status shouldBe "DELETED"
-          pdId shouldBe None
+          appDiskId shouldBe None
           appUsageStopTime shouldBe appDateAccessedTime
-        }
-      }
-      res.unsafeRunSync()
-    }
-  }
-
-  it should "update k8s cluster when there's no nodepool or app row" taggedAs DbTest in {
-    forAll { (cluster: KubernetesCluster) =>
-      val res = isolatedDbTest.use { _ =>
-        val dbReader = DbReader.impl(transactor)
-        for {
-          clusterId <- insertK8sCluster(cluster)
-          _ <- dbReader.markK8sClusterDeleted(clusterId)
-          status <- getK8sClusterStatus(clusterId)
-        } yield status shouldBe "DELETED"
-      }
-      res.unsafeRunSync()
-    }
-  }
-
-  it should "update k8s cluster and nodepool when there's no App record" taggedAs DbTest in {
-    forAll { (cluster: KubernetesCluster) =>
-      val res = isolatedDbTest.use { _ =>
-        val dbReader = DbReader.impl(transactor)
-        for {
-          clusterId <- insertK8sCluster(cluster)
-          nodepoolId <- insertNodepool(clusterId, "nodepool1", false)
-          _ <- dbReader.markK8sClusterDeleted(clusterId)
-          status <- getK8sClusterStatus(clusterId)
-          nodepoolStatus <- getNodepoolStatus(nodepoolId)
-        } yield {
-          status shouldBe "DELETED"
-          nodepoolStatus shouldBe "DELETED"
         }
       }
       res.unsafeRunSync()

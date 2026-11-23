@@ -153,6 +153,17 @@ object DbTestHelper {
          VALUES (${nodepoolId}, "GALAXY", ${appName}, ${status}, "samId", "fake@broadinstitute.org", ${createdDate}, ${destroyedDate}, now(), ${appName + "-ns"}, ${diskId}, "", "gsa", "ksa", "chart1", "release1")
          """.update.withUniqueGeneratedKeys[Long]("id").transact(xa)
 
+  def setAppCloudContext(appId: Long, cloudProvider: String, cloudContext: String)(implicit
+    xa: Transactor[IO]
+  ): IO[Int] =
+    sql"""UPDATE APP SET cloudProvider = ${cloudProvider}, cloudContext = ${cloudContext} WHERE id = ${appId}""".update.run
+      .transact(xa)
+
+  def getAppDiskId(id: Long)(implicit xa: Transactor[IO]): IO[Option[Long]] =
+    sql"""
+         SELECT diskId FROM APP where id = ${id}
+         """.query[Option[Long]].unique.transact(xa)
+
   def insertAppUsage(appId: Long)(implicit
     xa: Transactor[IO]
   ): IO[Int] =
