@@ -7,7 +7,6 @@ import com.broadinstitute.dsp.DbTestHelper.{
   insertApp,
   insertDisk,
   insertK8sCluster,
-  insertNamespace,
   insertNodepool,
   isolatedDbTest,
   yoloTransactor
@@ -15,7 +14,6 @@ import com.broadinstitute.dsp.DbTestHelper.{
 import com.broadinstitute.dsp.Generators._
 import doobie.Transactor
 import doobie.scalatest.IOChecker
-import org.broadinstitute.dsde.workbench.google2.KubernetesSerializableName.NamespaceName
 import org.scalatest.flatspec.AnyFlatSpec
 
 import java.time.Instant
@@ -45,9 +43,7 @@ class DbReaderGetAppStuckToReportSpec extends AnyFlatSpec with CronJobsTestSuite
           clusterId <- insertK8sCluster(cluster, "RUNNING")
           _ <- insertNodepool(clusterId, "default-np", true)
           nodepoolId <- insertNodepool(clusterId, "np", false, "RUNNING")
-          namespaceId <- insertNamespace(clusterId, NamespaceName("ns"))
           appId_deleting <- insertApp(nodepoolId,
-                                      namespaceId,
                                       "app_deleting",
                                       diskId,
                                       "DELETING",
@@ -55,7 +51,6 @@ class DbReaderGetAppStuckToReportSpec extends AnyFlatSpec with CronJobsTestSuite
                                       now.minusSeconds(gracePeriod_deleting + 200)
           )
           appId_creating <- insertApp(nodepoolId,
-                                      namespaceId,
                                       "app_creating",
                                       diskId,
                                       "PROVISIONING",
@@ -80,9 +75,7 @@ class DbReaderGetAppStuckToReportSpec extends AnyFlatSpec with CronJobsTestSuite
           clusterId <- insertK8sCluster(cluster, "RUNNING")
           _ <- insertNodepool(clusterId, "default-np", true)
           nodepoolId <- insertNodepool(clusterId, "np", false, "RUNNING")
-          namespaceId <- insertNamespace(clusterId, NamespaceName("ns"))
           _ <- insertApp(nodepoolId,
-                         namespaceId,
                          "app_deleting",
                          diskId,
                          "DELETING",
@@ -90,7 +83,6 @@ class DbReaderGetAppStuckToReportSpec extends AnyFlatSpec with CronJobsTestSuite
                          now.minusSeconds(gracePeriod_deleting + 200)
           )
           _ <- insertApp(nodepoolId,
-                         namespaceId,
                          "app_creating",
                          diskId,
                          "PROVISIONING",

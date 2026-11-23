@@ -8,7 +8,6 @@ import com.broadinstitute.dsp.Generators._
 import doobie.Transactor
 import doobie.scalatest.IOChecker
 import org.broadinstitute.dsde.workbench.google2.DiskName
-import org.broadinstitute.dsde.workbench.google2.KubernetesSerializableName.NamespaceName
 import org.scalatest.flatspec.AnyFlatSpec
 
 import java.util.{Calendar, GregorianCalendar}
@@ -118,8 +117,7 @@ final class DbReaderSpec extends AnyFlatSpec with CronJobsTestSuite with IOCheck
           diskId <- insertDisk(disk)
           clusterId <- insertK8sCluster(cluster)
           nodepoolId <- insertNodepool(clusterId, "nodepool1", false)
-          namespaceId <- insertNamespace(clusterId, NamespaceName("ns1"))
-          appId <- insertApp(nodepoolId, namespaceId, "app1", diskId)
+          appId <- insertApp(nodepoolId, "app1", diskId)
           _ <- insertAppUsage(appId)
           _ <- dbReader.markK8sClusterDeleted(clusterId)
           status <- getK8sClusterStatus(clusterId)

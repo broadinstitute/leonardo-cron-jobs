@@ -75,7 +75,9 @@ object DbReader {
           (status in ("PRECREATING", "PROVISIONING") AND createdDate < now() - INTERVAL 2 HOUR) OR
           (status="DELETING" AND createdDate < now() - INTERVAL 1 HOUR);
         """
-      .query[AppToReport]
+      // APP.status is nullable in the schema; the WHERE clause only matches non-null statuses.
+      .query[(Long, String, Option[String], Timestamp)]
+      .map { case (id, name, status, createdDate) => AppToReport(id, name, status.getOrElse(""), createdDate) }
 
   def impl[F[_]](xa: Transactor[F])(implicit F: Async[F]): DbReader[F] = new DbReader[F] {
     override def getStagingBucketsToDelete: Stream[F, BucketToRemove] =

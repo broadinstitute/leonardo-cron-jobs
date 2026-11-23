@@ -5,7 +5,6 @@ import com.broadinstitute.dsp.DbReaderImplicits._
 import doobie.Put
 import doobie.implicits._
 import doobie.util.transactor.Transactor
-import org.broadinstitute.dsde.workbench.google2.KubernetesSerializableName.NamespaceName
 import org.broadinstitute.dsde.workbench.google2.{RegionName, ZoneName}
 import org.scalatest.Tag
 
@@ -33,7 +32,8 @@ object DbTestHelper {
     } yield ()
 
   def insertDiskQuery(disk: Disk, status: String, destroyedDate: Option[String]) = {
-    val destroyedDateInSql = destroyedDate.getOrElse(Instant.now().toString)
+    // Leo stores "not destroyed" as its dummy date.
+    val destroyedDateInSql = destroyedDate.getOrElse(DbTransactor.leonardoDummyDate)
     sql"""INSERT INTO PERSISTENT_DISK
          (cloudContext, cloudProvider, zone, name, googleId, samResourceId, status, creator, createdDate, destroyedDate, dateAccessed, sizeGb, type, blockSizeBytes, serviceAccount, formattedBy)
          VALUES (${disk.cloudContext.asString}, ${disk.cloudContext.cloudProvider}, ${disk.zone}, ${disk.diskName}, "fakeGoogleId", "fakeSamResourceId", ${status}, "fake@broadinstitute.org", now(),
@@ -58,8 +58,8 @@ object DbTestHelper {
     xa: Transactor[IO]
   ): IO[Long] =
     sql"""INSERT INTO NODEPOOL
-         (clusterId, nodepoolName, status, creator, createdDate, destroyedDate, dateAccessed, machineType, numNodes, autoScalingMin, autoScalingMax, isDefault)
-         VALUES (${clusterId}, ${nodepoolName}, ${status}, "fake@broadinstitute.org", now(), now(), now(), "n1-standard-1", 1, 0, 1, ${isDefault})
+         (clusterId, nodepoolName, status, creator, createdDate, destroyedDate, machineType, numNodes, autoScalingMin, autoScalingMax, isDefault)
+         VALUES (${clusterId}, ${nodepoolName}, ${status}, "fake@broadinstitute.org", now(), now(), "n1-standard-1", 1, 0, 1, ${isDefault})
          """.update.withUniqueGeneratedKeys[Long]("id").transact(xa)
 
   def insertRuntime(runtime: Runtime,
@@ -139,16 +139,7 @@ object DbTestHelper {
          """.update.withUniqueGeneratedKeys[Long]("id").transact(xa)
   }
 
-  def insertNamespace(clusterId: Long, namespaceName: NamespaceName)(implicit
-    xa: Transactor[IO]
-  ): IO[Long] =
-    sql"""INSERT INTO NAMESPACE
-         (clusterId, namespaceName)
-         VALUES (${clusterId}, ${namespaceName})
-         """.update.withUniqueGeneratedKeys[Long]("id").transact(xa)
-
   def insertApp(nodepoolId: Long,
-                namespaceId: Long,
                 appName: String,
                 diskId: Long,
                 status: String = "RUNNING",
@@ -158,8 +149,8 @@ object DbTestHelper {
     xa: Transactor[IO]
   ): IO[Long] =
     sql"""INSERT INTO APP
-         (nodepoolId, appType, appName, status, samResourceId, creator, createdDate, destroyedDate, dateAccessed, namespaceId, diskId, customEnvironmentVariables, googleServiceAccount, kubernetesServiceAccount, chart, `release`)
-         VALUES (${nodepoolId}, "GALAXY", ${appName}, ${status}, "samId", "fake@broadinstitute.org", ${createdDate}, ${destroyedDate}, now(), ${namespaceId}, ${diskId}, "", "gsa", "ksa", "chart1", "release1")
+         (nodepoolId, appType, appName, status, samResourceId, creator, createdDate, destroyedDate, dateAccessed, namespace, diskId, customEnvironmentVariables, googleServiceAccount, kubernetesServiceAccount, chart, `release`)
+         VALUES (${nodepoolId}, "GALAXY", ${appName}, ${status}, "samId", "fake@broadinstitute.org", ${createdDate}, ${destroyedDate}, now(), ${appName + "-ns"}, ${diskId}, "", "gsa", "ksa", "chart1", "release1")
          """.update.withUniqueGeneratedKeys[Long]("id").transact(xa)
 
   def insertAppUsage(appId: Long)(implicit
@@ -233,7 +224,6 @@ object DbTestHelper {
     val res = for {
       _ <- sql"Delete from APP_USAGE".update.run
       _ <- sql"Delete from APP".update.run
-      _ <- sql"Delete from NAMESPACE".update.run
       _ <- sql"Delete from NODEPOOL".update.run
       _ <- sql"Delete from PERSISTENT_DISK".update.run
       _ <- sql"Delete from NODEPOOL".update.run
