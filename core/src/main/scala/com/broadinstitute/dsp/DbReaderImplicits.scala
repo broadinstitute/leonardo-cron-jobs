@@ -91,9 +91,13 @@ object DbReaderImplicits {
         }
     }
 
-  // GCE Galaxy clusters are GCP-only: cloudContext is always a GoogleProject, zone from the attached disk.
-  implicit val gceGalaxyClusterRead: Read[GceGalaxyCluster] =
-    Read[(Long, String, String, String)].map { case (id, appName, cloudContext, zone) =>
-      GceGalaxyCluster(id, appName, GoogleProject(cloudContext), ZoneName(zone))
+  // GCE Galaxy apps are GCP-only: cloudContext is always a GoogleProject, zone from the attached disk.
+  // APP.cloudContext is nullable; the query filters out NULLs, so a NULL here is a query bug.
+  implicit val gceGalaxyAppRead: Read[GceGalaxyApp] =
+    Read[(Long, String, Option[String], String)].map { case (id, appName, cloudContextOpt, zone) =>
+      val cloudContext = cloudContextOpt.getOrElse(
+        throw new RuntimeException(s"Galaxy app ${id} has no cloudContext. Query must filter these out")
+      )
+      GceGalaxyApp(id, appName, GoogleProject(cloudContext), ZoneName(zone))
     }
 }
