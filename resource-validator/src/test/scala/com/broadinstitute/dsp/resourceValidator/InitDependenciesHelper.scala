@@ -1,19 +1,17 @@
 package com.broadinstitute.dsp.resourceValidator
 
 import cats.effect.IO
-import com.broadinstitute.dsp.{CheckRunnerDeps, KubernetesClusterCheckerDeps, NodepoolCheckerDeps, RuntimeCheckerDeps}
-import org.broadinstitute.dsde.workbench.azure.{AzureContainerService, AzureVmService}
-import org.broadinstitute.dsde.workbench.azure.mock.{FakeAzureContainerService, FakeAzureVmService}
+import com.broadinstitute.dsp.{CheckRunnerDeps, RuntimeCheckerDeps}
+import org.broadinstitute.dsde.workbench.azure.AzureVmService
+import org.broadinstitute.dsde.workbench.azure.mock.FakeAzureVmService
 import org.broadinstitute.dsde.workbench.google2.mock._
 import org.broadinstitute.dsde.workbench.google2.{
-  GKEService,
   GoogleBillingService,
   GoogleComputeService,
   GoogleDataprocService,
   GoogleStorageService
 }
 import org.broadinstitute.dsde.workbench.openTelemetry.FakeOpenTelemetryMetricsInterpreter
-import org.broadinstitute.dsde.workbench.util2.messaging.CloudPublisher
 
 object InitDependenciesHelper {
   val config = Config.appConfig.toOption.get
@@ -30,27 +28,5 @@ object InitDependenciesHelper {
       CheckRunnerDeps(config.reportDestinationBucket, googleStorageService, FakeOpenTelemetryMetricsInterpreter),
       googleBillingService,
       azureVmService
-    )
-
-  def initKubernetesClusterCheckerDeps(gkeService: GKEService[IO] = MockGKEService,
-                                       aksService: AzureContainerService[IO] = new FakeAzureContainerService,
-                                       googleStorageService: GoogleStorageService[IO] = FakeGoogleStorageInterpreter,
-                                       computeService: GoogleComputeService[IO] = FakeGoogleComputeService
-  ) =
-    KubernetesClusterCheckerDeps(
-      CheckRunnerDeps(config.reportDestinationBucket, googleStorageService, FakeOpenTelemetryMetricsInterpreter),
-      gkeService,
-      aksService,
-      computeService
-    )
-
-  def initNodepoolCheckerDeps(gkeService: GKEService[IO] = MockGKEService,
-                              googleStorageService: GoogleStorageService[IO] = FakeGoogleStorageInterpreter,
-                              publisher: CloudPublisher[IO] = new FakeGooglePublisher
-  ) =
-    NodepoolCheckerDeps(
-      CheckRunnerDeps(config.reportDestinationBucket, googleStorageService, FakeOpenTelemetryMetricsInterpreter),
-      gkeService,
-      publisher
     )
 }

@@ -59,40 +59,17 @@ object Generators {
     case CloudService.AzureVM  => KubernetesCluster(id, name, CloudContext.Azure(azureCloudContext), location)
   }
 
-  val genNodepool: Gen[Nodepool] = for {
-    id <- Gen.chooseNum(0, 100)
-    k8sClusterId <- Gen.chooseNum(0, 100)
-    nodepoolName <- genNodepoolName
-    clusterName <- Gen.uuid.map(x => KubernetesClusterName(x.toString))
-    project <- genGoogleProject
-    location <- genLocation
-  } yield Nodepool(id, nodepoolName, k8sClusterId, clusterName, CloudContext.Gcp(project), location)
-
-  val genKubernetesClusterToRemove: Gen[KubernetesClusterToRemove] = for {
-    id <- Gen.chooseNum(0, 100)
-    project <- genGoogleProject
-  } yield KubernetesClusterToRemove(id, CloudContext.Gcp(project))
-
   val genRuntimeWithWorkers: Gen[RuntimeWithWorkers] = for {
     runtime <- genDataprocRuntime
     num1 <- Gen.chooseNum(1, 100)
     num2 <- Gen.chooseNum(1, 100)
   } yield RuntimeWithWorkers(runtime, WorkerConfig(Some(num1), Some(num2)))
 
-  val genRemovableNodepoolStatus: Gen[RemovableNodepoolStatus] = for {
-    status <- Gen.oneOf(RemovableNodepoolStatus.removableStatuses)
-  } yield status
-
   val arbDataprocRuntime: Arbitrary[Runtime.Dataproc] = Arbitrary(genDataprocRuntime)
   implicit val arbRuntime: Arbitrary[Runtime] = Arbitrary(genRuntime(None))
   implicit val arbCloudService: Arbitrary[CloudService] = Arbitrary(genCloudService)
   implicit val arbDisk: Arbitrary[Disk] = Arbitrary(genDisk)
   implicit val arbInitBucket: Arbitrary[InitBucketToRemove] = Arbitrary(genInitBucket)
-  implicit val arbRemovableNodepoolStatus: Arbitrary[RemovableNodepoolStatus] = Arbitrary(genRemovableNodepoolStatus)
-  implicit val arbKubernetesClusterToRemove: Arbitrary[KubernetesClusterToRemove] = Arbitrary(
-    genKubernetesClusterToRemove
-  )
   implicit val arbKubernetesCluster: Arbitrary[KubernetesCluster] = Arbitrary(genKubernetesCluster)
-  implicit val arbNodepool: Arbitrary[Nodepool] = Arbitrary(genNodepool)
   implicit val arbRuntimeWithWorkers: Arbitrary[RuntimeWithWorkers] = Arbitrary(genRuntimeWithWorkers)
 }

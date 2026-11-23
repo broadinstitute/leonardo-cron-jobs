@@ -18,14 +18,6 @@ final class DbQueryBuilderSpec extends AnyFlatSpec with CronJobsTestSuite with I
   implicit val config: DatabaseConfig = ConfigSpec.config.database
   implicit val transactor: Transactor[IO] = yoloTransactor
 
-  it should "build kubernetesClustersToDeleteQuery properly" taggedAs DbTest in {
-    check(DbReader.kubernetesClustersToDeleteQuery)
-  }
-
-  it should "build applessNodepoolQuery properly" taggedAs DbTest in {
-    check(DbReader.applessNodepoolQuery)
-  }
-
   it should "build stagingBucketsToDeleteQuery properly" taggedAs DbTest in {
     check(DbReader.stagingBucketsToDeleteQuery)
   }

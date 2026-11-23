@@ -18,10 +18,6 @@ object Main
     val shouldCheckDeletingRuntimes = Opts.flag("checkDeletingRuntimes", "check all deleting runtimes").orFalse
     val shouldCheckErroredRuntimes = Opts.flag("checkErroredRuntimes", "check all errored runtimes").orFalse
     val shouldCheckStoppedRuntimes = Opts.flag("checkStoppedRuntimes", "check all stopped runtimes").orFalse
-    val shouldCheckDeletedKubernetesClusters =
-      Opts.flag("checkDeletedKubernetesClusters", "check all deleted or errored kubernetes clusters").orFalse
-    val shouldCheckDeletedNodepools =
-      Opts.flag("checkDeletedNodepools", "check all deleted or errored nodepools").orFalse
     val shouldCheckDeletedDisks = Opts.flag("checkDeletedDisks", "check all deleted disks").orFalse
     val shouldCheckInitBuckets =
       Opts.flag("checkInitBuckets", "checks that init buckets for deleted runtimes are deleted").orFalse
@@ -34,8 +30,6 @@ object Main
      shouldCheckDeletingRuntimes,
      shouldCheckErroredRuntimes,
      shouldCheckStoppedRuntimes,
-     shouldCheckDeletedKubernetesClusters,
-     shouldCheckDeletedNodepools,
      shouldCheckDeletedDisks,
      shouldCheckInitBuckets,
      shouldCheckDataprocWorkers
@@ -46,8 +40,6 @@ object Main
        shouldCheckDeletingRuntimes,
        shouldCheckErroredRuntimes,
        shouldCheckStoppedRuntimes,
-       shouldCheckDeletedKubernetesClusters,
-       shouldCheckDeletedNodepools,
        shouldCheckDeletedDisks,
        shouldCheckInitBuckets,
        shouldCheckDataprocWorkers
@@ -60,8 +52,6 @@ object Main
             shouldCheckDeletingRuntimes = shouldCheckDeletingRuntimes,
             shouldCheckErroredRuntimes = shouldCheckErroredRuntimes,
             shouldCheckStoppedRuntimes = shouldCheckStoppedRuntimes,
-            shouldCheckDeletedKubernetesCluster = shouldCheckDeletedKubernetesClusters,
-            shouldCheckDeletedNodepool = shouldCheckDeletedNodepools,
             shouldCheckDeletedDisks = shouldCheckDeletedDisks,
             shouldCheckInitBuckets = shouldCheckInitBuckets,
             shouldCheckDataprocWorkers = shouldCheckDataprocWorkers

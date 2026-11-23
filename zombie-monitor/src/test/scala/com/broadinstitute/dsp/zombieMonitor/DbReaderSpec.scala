@@ -6,13 +6,9 @@ import cats.effect.unsafe.implicits.global
 import com.broadinstitute.dsp.DbTestHelper._
 import com.broadinstitute.dsp.Generators._
 import doobie.Transactor
-import doobie.implicits._
 import doobie.scalatest.IOChecker
-import org.broadinstitute.dsde.workbench.azure.{AzureCloudContext, ManagedResourceGroupName, SubscriptionId, TenantId}
 import org.broadinstitute.dsde.workbench.google2.DiskName
-import org.broadinstitute.dsde.workbench.google2.GKEModels.KubernetesClusterName
 import org.broadinstitute.dsde.workbench.google2.KubernetesSerializableName.NamespaceName
-import org.broadinstitute.dsde.workbench.model.google.GoogleProject
 import org.scalatest.flatspec.AnyFlatSpec
 
 import java.util.{Calendar, GregorianCalendar}
@@ -32,12 +28,8 @@ final class DbReaderSpec extends AnyFlatSpec with CronJobsTestSuite with IOCheck
     check(DbReader.activeDisksQuery)
   }
 
-  it should "build activeK8sClustersQuery properly" taggedAs DbTest in {
-    check(DbReader.activeK8sClustersQuery)
-  }
-
-  it should "build activeNodepoolsQuery properly" taggedAs DbTest in {
-    check(DbReader.activeNodepoolsQuery)
+  it should "build gceGalaxyClustersQuery properly" taggedAs DbTest in {
+    check(DbReader.gceGalaxyClustersQuery)
   }
 
   it should "build activeRuntime properly" taggedAs DbTest in {
@@ -98,41 +90,6 @@ final class DbReaderSpec extends AnyFlatSpec with CronJobsTestSuite with IOCheck
           d <- dbReader.getDisksToDeleteCandidate.compile.toList
         } yield d.map(_.copy(id = 0L)) should contain theSameElementsAs List(creatingDisk, readyDisk).map(
           _.copy(id = 0L)
-        )
-      }
-      res.unsafeRunSync()
-    }
-  }
-
-  it should "read a KubernetesCluster properly" taggedAs DbTest in {
-    forAll { (cluster: KubernetesCluster) =>
-      val res = isolatedDbTest.use { _ =>
-        val dbReader = DbReader.impl(transactor)
-
-        val precreatingCluster =
-          cluster.copy(cloudContext = CloudContext.Gcp(GoogleProject("p1")),
-                       clusterName = KubernetesClusterName("cluster2")
-          )
-        val runningCluster =
-          cluster.copy(cloudContext = CloudContext.Gcp(GoogleProject("p2")),
-                       clusterName = KubernetesClusterName("cluster3")
-          )
-        val azureCluster = cluster.copy(
-          cloudContext = CloudContext.Azure(
-            AzureCloudContext(TenantId("tenant"), SubscriptionId("sub"), ManagedResourceGroupName("mrg"))
-          ),
-          clusterName = KubernetesClusterName("cluster4")
-        )
-
-        for {
-          _ <- insertK8sCluster(cluster, "DELETED")
-          _ <- insertK8sCluster(precreatingCluster, "PRECREATING")
-          _ <- insertK8sCluster(runningCluster, "RUNNING")
-          _ <- insertK8sCluster(azureCluster, "RUNNING")
-          d <- dbReader.getk8sClustersToDeleteCandidate.compile.toList
-        } yield d.map(_.clusterName) should contain theSameElementsAs List(precreatingCluster.clusterName,
-                                                                           runningCluster.clusterName,
-                                                                           azureCluster.clusterName
         )
       }
       res.unsafeRunSync()
@@ -206,87 +163,6 @@ final class DbReaderSpec extends AnyFlatSpec with CronJobsTestSuite with IOCheck
         } yield {
           status shouldBe "DELETED"
           nodepoolStatus shouldBe "DELETED"
-        }
-      }
-      res.unsafeRunSync()
-    }
-  }
-
-  it should "update nodepool status properly" taggedAs DbTest in {
-    forAll { (cluster: KubernetesCluster) =>
-      val res = isolatedDbTest.use { _ =>
-        for {
-          clusterId <- insertK8sCluster(cluster)
-          nodepoolId <- insertNodepool(clusterId, "nodepool1", false)
-          _ <- DbReader.updateNodepoolStatus(nodepoolId, "ERROR").run.transact(transactor)
-          status <- getNodepoolStatus(nodepoolId)
-        } yield status shouldBe "ERROR"
-      }
-      res.unsafeRunSync()
-    }
-  }
-
-  it should "update App status properly" taggedAs DbTest in {
-    forAll { (cluster: KubernetesCluster, disk: Disk) =>
-      val res = isolatedDbTest.use { _ =>
-        for {
-          diskId <- insertDisk(disk)
-          clusterId <- insertK8sCluster(cluster)
-          nodepoolId <- insertNodepool(clusterId, "nodepool1", false)
-          namespaceId <- insertNamespace(clusterId, NamespaceName("ns1"))
-          appId <- insertApp(nodepoolId, namespaceId, "app1", diskId)
-          _ <- DbReader.updateAppStatusForNodepoolId(nodepoolId, "DELETED").run.transact(transactor)
-          status <- getAppStatus(appId)
-        } yield status shouldBe "DELETED"
-      }
-      res.unsafeRunSync()
-    }
-  }
-
-  it should "update nodepool and app status properly" taggedAs DbTest in {
-    forAll { (cluster: KubernetesCluster, disk: Disk) =>
-      val res = isolatedDbTest.use { _ =>
-        val dbReader = DbReader.impl(transactor)
-
-        for {
-          diskId <- insertDisk(disk)
-          clusterId <- insertK8sCluster(cluster)
-          nodepoolId <- insertNodepool(clusterId, "nodepool1", false)
-          namespaceId <- insertNamespace(clusterId, NamespaceName("ns1"))
-          appId <- insertApp(nodepoolId, namespaceId, "app1", diskId)
-          _ <- dbReader.updateNodepoolAndAppStatus(nodepoolId, "ERROR")
-          appStatus <- getAppStatus(appId)
-          nodepoolStatus <- getNodepoolStatus(nodepoolId)
-        } yield {
-          appStatus shouldBe "ERROR"
-          nodepoolStatus shouldBe "ERROR"
-        }
-      }
-      res.unsafeRunSync()
-    }
-  }
-
-  it should "update DB properly when Nodepool is deleted" taggedAs DbTest in {
-    forAll { (cluster: KubernetesCluster, disk: Disk) =>
-      val res = isolatedDbTest.use { _ =>
-        val dbReader = DbReader.impl(transactor)
-
-        for {
-          diskId <- insertDisk(disk)
-          clusterId <- insertK8sCluster(cluster)
-          nodepoolId <- insertNodepool(clusterId, "nodepool1", false)
-          namespaceId <- insertNamespace(clusterId, NamespaceName("ns1"))
-          appId <- insertApp(nodepoolId, namespaceId, "app1", diskId)
-          _ <- insertAppUsage(appId)
-          _ <- dbReader.markNodepoolAndAppDeleted(nodepoolId)
-          appStatus <- getAppStatus(appId)
-          nodepoolStatus <- getNodepoolStatus(nodepoolId)
-          appUsageStopTime <- getAppUsageStopTime(appId)
-          appDateAccessedTime <- getAppDateAccessed(appId)
-        } yield {
-          appStatus shouldBe "DELETED"
-          nodepoolStatus shouldBe "DELETED"
-          appUsageStopTime shouldBe appDateAccessedTime
         }
       }
       res.unsafeRunSync()

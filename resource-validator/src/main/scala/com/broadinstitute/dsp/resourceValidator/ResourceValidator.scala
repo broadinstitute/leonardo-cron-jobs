@@ -6,11 +6,9 @@ import cats.effect.std.Semaphore
 import cats.effect._
 import cats.mtl.Ask
 import com.broadinstitute.dsp.JsonCodec.serviceDataEncoder
-import com.google.pubsub.v1.ProjectTopicName
 import fs2.Stream
 import io.circe.syntax.EncoderOps
-import org.broadinstitute.dsde.workbench.azure.AzureContainerService
-import org.broadinstitute.dsde.workbench.google2.{GKEService, GoogleDiskService, GooglePublisher, PublisherConfig}
+import org.broadinstitute.dsde.workbench.google2.GoogleDiskService
 import org.broadinstitute.dsde.workbench.model.TraceId
 import org.broadinstitute.dsde.workbench.openTelemetry.OpenTelemetryMetrics
 import org.typelevel.log4cats.StructuredLogger
@@ -29,8 +27,6 @@ object ResourceValidator {
                                  shouldCheckDeletingRuntimes: Boolean,
                                  shouldCheckErroredRuntimes: Boolean,
                                  shouldCheckStoppedRuntimes: Boolean,
-                                 shouldCheckDeletedKubernetesCluster: Boolean,
-                                 shouldCheckDeletedNodepool: Boolean,
                                  shouldCheckDeletedDisks: Boolean,
                                  shouldCheckInitBuckets: Boolean,
                                  shouldCheckDataprocWorkers: Boolean
@@ -64,22 +60,6 @@ object ResourceValidator {
           Stream.eval(ErroredRuntimeChecker.iml(deps.dbReader, deps.runtimeCheckerDeps).run(isDryRun))
         else Stream.empty
 
-      deleteKubernetesClusterCheckerProcess =
-        if (shouldCheckAll || shouldCheckDeletedKubernetesCluster)
-          Stream.eval(
-            DeletedOrErroredKubernetesClusterChecker
-              .impl(deps.dbReader, deps.kubernetesClusterCheckerDeps)
-              .run(isDryRun)
-          )
-        else Stream.empty
-
-      deleteNodepoolCheckerProcess =
-        if (shouldCheckAll || shouldCheckDeletedNodepool)
-          Stream.eval(
-            DeletedOrErroredNodepoolChecker.impl(deps.dbReader, deps.nodepoolCheckerDeps).run(isDryRun)
-          )
-        else Stream.empty
-
       stoppedRuntimeCheckerProcess =
         if (shouldCheckAll || shouldCheckStoppedRuntimes)
           Stream.eval(StoppedRuntimeChecker.iml(deps.dbReader, deps.runtimeCheckerDeps).run(isDryRun))
@@ -102,12 +82,10 @@ object ResourceValidator {
         stoppedRuntimeCheckerProcess,
         deleteDiskCheckerProcess,
         removeInitBuckets,
-        deleteKubernetesClusterCheckerProcess,
-        deleteNodepoolCheckerProcess,
         workerProcess
       ).covary[F]
 
-      _ <- processes.parJoin(8) // Number of checkers in 'processes'
+      _ <- processes.parJoin(7) // Number of checkers in 'processes'
     } yield ()
   }.drain
 
@@ -119,37 +97,17 @@ object ResourceValidator {
       metrics <- OpenTelemetryMetrics.resource("leonardo-cron-jobs", appConfig.prometheus.port)
       runtimeCheckerDeps <- RuntimeCheckerDeps.init(appConfig.runtimeCheckerConfig, metrics, blockerBound)
       diskService <- GoogleDiskService.resource(appConfig.pathToCredential.toString, blockerBound)
-      publisherConfig = PublisherConfig(
-        appConfig.pathToCredential.toString,
-        ProjectTopicName.of(appConfig.leonardoPubsub.googleProject.value, appConfig.leonardoPubsub.topicName)
-      )
-      gkeService <- GKEService.resource(appConfig.pathToCredential, blockerBound)
-      aksService <- AzureContainerService.fromAzureAppRegistrationConfig(
-        appConfig.runtimeCheckerConfig.azureAppRegistration
-      )
-      googlePublisher <- GooglePublisher.cloudPublisherResource[F](publisherConfig)
       xa <- DbTransactor.init(appConfig.database)
     } yield {
       val checkRunnerDeps = runtimeCheckerDeps.checkRunnerDeps
       val diskCheckerDeps = DiskCheckerDeps(checkRunnerDeps, diskService)
-      // computeService is reused from runtimeCheckerDeps — same credentials, already usable for GCE VMs.
-      val kubernetesClusterCheckerDeps =
-        KubernetesClusterCheckerDeps(checkRunnerDeps, gkeService, aksService, runtimeCheckerDeps.computeService)
-      val nodepoolCheckerDeps = NodepoolCheckerDeps(checkRunnerDeps, gkeService, googlePublisher)
       val dbReader = DbReader.impl(xa)
-      ResourcevalidatorServerDeps(runtimeCheckerDeps,
-                                  diskCheckerDeps,
-                                  kubernetesClusterCheckerDeps,
-                                  nodepoolCheckerDeps,
-                                  dbReader
-      )
+      ResourcevalidatorServerDeps(runtimeCheckerDeps, diskCheckerDeps, dbReader)
     }
 }
 
 final case class ResourcevalidatorServerDeps[F[_]](
   runtimeCheckerDeps: RuntimeCheckerDeps[F],
   deletedDiskCheckerDeps: DiskCheckerDeps[F],
-  kubernetesClusterCheckerDeps: KubernetesClusterCheckerDeps[F],
-  nodepoolCheckerDeps: NodepoolCheckerDeps[F],
   dbReader: DbReader[F]
 )

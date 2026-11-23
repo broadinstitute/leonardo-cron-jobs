@@ -3,10 +3,8 @@ package com.broadinstitute.dsp
 import ca.mrvisser.sealerate
 import io.circe.Encoder
 import org.broadinstitute.dsde.workbench.azure.AzureCloudContext
-import org.broadinstitute.dsde.workbench.google2.GKEModels.{KubernetesClusterName, NodepoolName}
-import org.broadinstitute.dsde.workbench.google2.JsonCodec.{googleProjectEncoder, traceIdEncoder}
+import org.broadinstitute.dsde.workbench.google2.GKEModels.KubernetesClusterName
 import org.broadinstitute.dsde.workbench.google2.{DiskName, Location, ZoneName}
-import org.broadinstitute.dsde.workbench.model.TraceId
 import org.broadinstitute.dsde.workbench.model.google.{GcsBucketName, GoogleProject}
 
 sealed abstract class CloudService extends Product with Serializable {
@@ -47,8 +45,6 @@ final case class InitBucketToRemove(googleProject: GoogleProject, bucket: Option
   override def toString: String = s"${googleProject.value},${bucket.getOrElse("null")}"
 }
 
-final case class KubernetesClusterToRemove(id: Long, cloudContext: CloudContext)
-
 final case class KubernetesCluster(id: Long,
                                    clusterName: KubernetesClusterName,
                                    cloudContext: CloudContext,
@@ -69,44 +65,6 @@ final case class GceGalaxyCluster(
 ) {
   override def toString: String =
     s"GCE Galaxy cluster ${clusterId} (app=${appName}, project=${project.value}, zone=${zone.value})"
-}
-
-final case class Nodepool(nodepoolId: Long,
-                          nodepoolName: NodepoolName,
-                          kubernetesClusterId: Long,
-                          clusterName: KubernetesClusterName,
-                          cloudContext: CloudContext,
-                          location: Location
-) {
-  override def toString: String = s"${cloudContext.asStringWithProvider}/${nodepoolName.value}"
-}
-
-final case class DeleteNodepoolMessage(nodepoolId: Long, googleProject: GoogleProject, traceId: Option[TraceId]) {
-  val messageType: String = "deleteNodepool"
-}
-
-sealed abstract class RemovableNodepoolStatus extends Product with Serializable {
-  def asString: String
-}
-object RemovableNodepoolStatus {
-  final case object StatusUnspecified extends RemovableNodepoolStatus {
-    override def asString: String = "STATUS_UNSPECIFIED"
-  }
-  final case object Running extends RemovableNodepoolStatus {
-    override def asString: String = "RUNNING"
-  }
-  final case object Reconciling extends RemovableNodepoolStatus {
-    override def asString: String = "RECONCILING"
-  }
-  final case object Error extends RemovableNodepoolStatus {
-    override def asString: String = "ERROR"
-  }
-  final case object RunningWithError extends RemovableNodepoolStatus {
-    override def asString: String = "RUNNING_WITH_ERROR"
-  }
-  val removableStatuses = sealerate.values[RemovableNodepoolStatus]
-  val stringToStatus: Map[String, RemovableNodepoolStatus] =
-    sealerate.collect[RemovableNodepoolStatus].map(a => (a.asString, a)).toMap
 }
 
 sealed abstract class CloudProvider extends Product with Serializable {
@@ -142,11 +100,6 @@ object CloudContext {
 }
 
 object JsonCodec {
-  implicit val deleteNodepoolMessageEncoder: Encoder[DeleteNodepoolMessage] =
-    Encoder.forProduct4("messageType", "nodepoolId", "googleProject", "traceId")(x =>
-      (x.messageType, x.nodepoolId, x.googleProject, x.traceId)
-    )
-
   implicit val serviceDataEncoder: Encoder[ServiceData] = Encoder.forProduct2(
     "service",
     "version"
