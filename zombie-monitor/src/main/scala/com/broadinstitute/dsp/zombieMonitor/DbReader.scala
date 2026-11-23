@@ -81,8 +81,8 @@ object DbReader {
   def insertClusterErrorQuery(clusterId: Long, errorCode: Option[Int], errorMessage: String) =
     sql"""
           INSERT INTO CLUSTER_ERROR
-         (clusterId, errorCode, errorMessage)
-         VALUES (${clusterId}, ${errorCode}, ${errorMessage})
+         (clusterId, errorCode, errorMessage, timestamp)
+         VALUES (${clusterId}, ${errorCode}, ${errorMessage}, now())
            """.update
 
   def updateRuntimeDeletedFromQuery(runtimeId: Long, deletedFrom: String) =
